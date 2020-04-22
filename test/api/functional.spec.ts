@@ -9,6 +9,22 @@ describe('functional component patterns', () => {
     expect(true).toBe(true);
   });
 
+  test("array 'fragment' children", () => {
+    const { mount } = createBaahuApp();
+
+    const RootComponent: SFC = () =>
+      b('div', {}, b('h1', null, 'title'), [
+        b('p', null, 'first array kid'),
+        b('p', null, 'second array kid'),
+      ]);
+
+    $root = mount(RootComponent, $root) as HTMLElement;
+
+    expect($root.nodeName).toBe('DIV');
+    expect($root.firstChild?.nodeName).toBe('H1');
+    expect($root.childNodes.length).toBe(3);
+  });
+
   test('render props', () => {
     const { mount } = createBaahuApp();
 

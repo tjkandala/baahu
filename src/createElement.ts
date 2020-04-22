@@ -14,7 +14,7 @@ export interface PropsArg {
   [key: string]: string | RefCallback | undefined | EventHandler | number;
 }
 
-type ChildArg = VNode | string | number | null | undefined | false;
+type ChildArg = VNode | VNode[] | string | number | null | undefined | false;
 
 export type ChildrenArg = Array<ChildArg>;
 
@@ -82,9 +82,17 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
 
     switch (typeof child) {
       case 'object':
-        /** typeof null is object in js, so just check for truthiness */
-        child && children.push(child);
-        break;
+        if (Array.isArray(child)) {
+          const nested = processChildren(child);
+          for (let j = 0; j < nested.length; j++) {
+            children.push(nested[j]);
+          }
+          break;
+        } else {
+          /** typeof null is object in js, so check for truthiness */
+          child && children.push(child);
+          break;
+        }
       case 'string':
         children.push(createTextElement(child));
         break;
