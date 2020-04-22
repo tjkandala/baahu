@@ -37,9 +37,7 @@ export function renderDOM(node: VNode): HTMLElement | Text {
     case VNodeKind.T:
       return document.createTextNode(node.props.nodeValue);
 
-    case VNodeKind.M:
-      /** machine nodes are represented in the dom by their child, so call
-       * render with child during diff to avoid this almost meaningless case */
+    default:
       return renderDOM(node.child);
   }
 }

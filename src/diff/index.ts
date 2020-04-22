@@ -30,6 +30,24 @@ export function diff(
   if (oldVNode === newVNode) return $element => $element;
 
   switch (oldVNode.kind) {
+    case VNodeKind.F:
+      switch (newVNode.kind) {
+        case VNodeKind.F:
+          const patchChild = diff(oldVNode.child, newVNode.child);
+
+          return ($element: HTMLElement | Text): HTMLElement => {
+            patchChild($element);
+            return $element as HTMLElement;
+          };
+
+        default:
+          return ($element: HTMLElement | Text): HTMLElement => {
+            const $newElement = renderDOM(newVNode);
+            $element.replaceWith($newElement);
+            return $element as HTMLElement;
+          };
+      }
+
     case VNodeKind.M:
       switch (newVNode.kind) {
         case VNodeKind.M:
@@ -70,13 +88,19 @@ export function diff(
     case VNodeKind.T:
       switch (newVNode.kind) {
         case VNodeKind.M:
-          /** renderDOM machine, but don't mount/add instance to
-           * registry because that is done in "createElement" */
           return ($element: HTMLElement | Text): HTMLElement => {
             const $newElement = renderDOM(newVNode.child);
             $element.replaceWith($newElement);
             return $element as HTMLElement;
           };
+
+        case VNodeKind.F:
+          return ($element: HTMLElement | Text): HTMLElement => {
+            const $newElement = renderDOM(newVNode.child);
+            $element.replaceWith($newElement);
+            return $element as HTMLElement;
+          };
+
         case VNodeKind.T:
           if (oldVNode.props.nodeValue === newVNode.props.nodeValue) {
             // do nothing, the text value is the same
@@ -101,8 +125,13 @@ export function diff(
     case VNodeKind.E:
       switch (newVNode.kind) {
         case VNodeKind.M:
-          /** renderDOM machine, but don't mount/add instance to
-           * registry because that is done in "createElement" */
+          return ($element: HTMLElement | Text): HTMLElement => {
+            const $newElement = renderDOM(newVNode.child);
+            $element.replaceWith($newElement);
+            return $element as HTMLElement;
+          };
+
+        case VNodeKind.F:
           return ($element: HTMLElement | Text): HTMLElement => {
             const $newElement = renderDOM(newVNode.child);
             $element.replaceWith($newElement);

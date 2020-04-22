@@ -10,12 +10,12 @@ export function diffProps(
   oldProps: Props | null,
   newProps: Props | null
 ): PropPatchFunction | null {
-  // don't waste time creating and executing a function if neither vnodes have props
+  // don't waste time creating and executing a function if neither vnodes have attrs
   if (!oldProps && !newProps) return null;
 
   const patches: Array<PropPatchFunction> = [];
 
-  // DIFFING PROPS (both old props and new props exist)
+  // DIFFING ATTRS (both old props and new props exist)
 
   // setting new attrs
   if (newProps) {

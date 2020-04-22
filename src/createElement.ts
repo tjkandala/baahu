@@ -4,16 +4,6 @@ import { machineRegistry, machinesThatStillExist } from './machineRegistry';
 
 export type TagName = keyof HTMLElementTagNameMap;
 
-type RefCallback = (ref: HTMLElement) => void;
-type EventHandler = (e: Event) => void;
-
-export interface PropsArg {
-  ref?: RefCallback;
-  key?: string | number;
-  /** arbitrary keys */
-  [key: string]: string | RefCallback | undefined | EventHandler | number;
-}
-
 type ChildArg = VNode | VNode[] | string | number | null | undefined | false;
 
 export type ChildrenArg = Array<ChildArg>;
@@ -31,12 +21,19 @@ export type MachineInstance = {
 
 // DO NOT add optional keys to VNodes! more info: https://mrale.ph/blog/2015/01/11/whats-up-with-monomorphism.html
 
+// TODO: add function nodes, to make adding keys less awkward
+
 type MachineVNode = {
   kind: VNodeKind.M;
   key: string | number | undefined | null;
   mInst: MachineInstance;
-  /** a component only has one child. stateless components don't need to be represented in the virtual dom,
-   * becayse they just return one parent element node. on events, rerender and diff child */
+  child: VNode;
+};
+
+// it COULD store a reference to the function... but i don't need to right now so i'm not doing that
+type FunctionVNode = {
+  kind: VNodeKind.F;
+  key: string | number | undefined | null;
   child: VNode;
 };
 
@@ -64,9 +61,11 @@ export enum VNodeKind {
   T,
   /** MACHINE_NODE */
   M,
+  /** FUNCTION_NODE */
+  F,
 }
 
-export type VNode = ElementVNode | TextVNode | MachineVNode;
+export type VNode = ElementVNode | TextVNode | MachineVNode | FunctionVNode;
 
 function createTextElement(text: string): TextVNode {
   return {
@@ -149,7 +148,14 @@ export function b<Props extends PropsArg>(
         props as Props,
         children.length ? processChildren(children) : null
       );
-      return vNode ? vNode : nullVNode;
+
+      const fNode: FunctionVNode = {
+        kind: VNodeKind.F,
+        key: props && props.key ? props.key : null,
+        child: vNode ? vNode : nullVNode,
+      };
+
+      return fNode;
 
     /** machine, stateful! */
     case 'object':
@@ -198,9 +204,9 @@ export function b<Props extends PropsArg>(
         processChildren(children)
       );
 
-      const machineNode: VNode = {
+      const machineNode: MachineVNode = {
         kind: VNodeKind.M,
-        key: mProps.key,
+        key: mProps ? mProps.key : void 0,
         mInst: existingInstance,
         child: child ? child : nullVNode,
       };
@@ -211,3 +217,17 @@ export function b<Props extends PropsArg>(
       throw new TypeError('invalid element');
   }
 }
+
+export interface PropsArg {
+  ref?: RefCallback;
+  key?: string | number;
+  /** arbitrary keys */
+  [key: string]: string | RefCallback | undefined | EventHandler | number;
+}
+
+// TODO: work on prop + attr types. the current interface works like this:
+// if the component has specified its prop types (they should), it overrides
+// PropsArg. an element can't speficy props, so it uses the default PropsArg
+
+type RefCallback = (ref: HTMLElement) => void;
+type EventHandler = (e: Event) => void;
