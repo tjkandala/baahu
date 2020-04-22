@@ -1,5 +1,5 @@
 import { VNode, VNodeKind } from '../createElement';
-import { render } from '../render';
+import { renderDOM } from '../renderDOM';
 import { diffProps } from './props';
 import { diffChildren, keyedDiffChildren } from './children';
 
@@ -23,14 +23,11 @@ export function diff(
   if (!newVNode)
     return ($element: HTMLElement | Text): undefined => {
       $element.remove();
-      return undefined;
+      return void 0;
     };
 
   /** will optimize static elements! */
-  if (oldVNode === newVNode)
-    return ($element: HTMLElement | Text): HTMLElement | Text => {
-      return $element;
-    };
+  if (oldVNode === newVNode) return $element => $element;
 
   switch (oldVNode.kind) {
     case VNodeKind.M:
@@ -64,7 +61,7 @@ export function diff(
            */
 
           return ($element: HTMLElement | Text): HTMLElement => {
-            const $newElement = render(newVNode);
+            const $newElement = renderDOM(newVNode);
             $element.replaceWith($newElement);
             return $element as HTMLElement;
           };
@@ -73,19 +70,17 @@ export function diff(
     case VNodeKind.T:
       switch (newVNode.kind) {
         case VNodeKind.M:
-          /** render machine, but don't mount/add instance to
+          /** renderDOM machine, but don't mount/add instance to
            * registry because that is done in "createElement" */
           return ($element: HTMLElement | Text): HTMLElement => {
-            const $newElement = render(newVNode.child);
+            const $newElement = renderDOM(newVNode.child);
             $element.replaceWith($newElement);
             return $element as HTMLElement;
           };
         case VNodeKind.T:
           if (oldVNode.props.nodeValue === newVNode.props.nodeValue) {
             // do nothing, the text value is the same
-            return ($text: HTMLElement | Text): Text => {
-              return $text as Text;
-            };
+            return $text => $text;
           } else {
             // the text value has changed, update text value
             return ($text: HTMLElement | Text): Text => {
@@ -95,9 +90,9 @@ export function diff(
           }
 
         case VNodeKind.E:
-          // text node !== element node, so rerender
+          // text node !== element node, so rerenderDOM
           return ($element: HTMLElement | Text): HTMLElement => {
-            const $newElement = render(newVNode);
+            const $newElement = renderDOM(newVNode);
             $element.replaceWith($newElement);
             return $element as HTMLElement;
           };
@@ -106,10 +101,10 @@ export function diff(
     case VNodeKind.E:
       switch (newVNode.kind) {
         case VNodeKind.M:
-          /** render machine, but don't mount/add instance to
+          /** renderDOM machine, but don't mount/add instance to
            * registry because that is done in "createElement" */
           return ($element: HTMLElement | Text): HTMLElement => {
-            const $newElement = render(newVNode.child);
+            const $newElement = renderDOM(newVNode.child);
             $element.replaceWith($newElement);
             return $element as HTMLElement;
           };
@@ -117,10 +112,10 @@ export function diff(
         case VNodeKind.E:
           if (oldVNode.tag !== newVNode.tag) {
             /** since the tags are different, assume the tree is
-             * completely different (heuristic used in React): rerender */
+             * completely different (heuristic used in React): rerenderDOM */
 
             return ($element: HTMLElement | Text): HTMLElement => {
-              const $newElement = render(newVNode);
+              const $newElement = renderDOM(newVNode);
               $element.replaceWith($newElement);
               return $newElement as HTMLElement;
             };
@@ -163,17 +158,17 @@ export function diff(
             }
 
             return ($element: HTMLElement | Text): HTMLElement => {
-              patchProps($element as HTMLElement);
+              patchProps && patchProps($element as HTMLElement);
               patchChildren($element);
               return $element as HTMLElement;
             };
           }
 
         case VNodeKind.T:
-          /** text node !== element node, so rerender
+          /** text node !== element node, so rerenderDOM
            * a text node is necessarily a leaf, so no children */
           return ($element: HTMLElement | Text): Text => {
-            $element.replaceWith(render(newVNode));
+            $element.replaceWith(renderDOM(newVNode));
             return $element as Text;
           };
       }

@@ -29,6 +29,33 @@ export type MachineInstance = {
   spec: MachineComponent;
 };
 
+// DO NOT add optional keys to VNodes! more info: https://mrale.ph/blog/2015/01/11/whats-up-with-monomorphism.html
+
+type MachineVNode = {
+  kind: VNodeKind.M;
+  key: string | number | undefined | null;
+  mInst: MachineInstance;
+  /** a component only has one child. stateless components don't need to be represented in the virtual dom,
+   * becayse they just return one parent element node. on events, rerender and diff child */
+  child: VNode;
+};
+
+type TextVNode = {
+  kind: VNodeKind.T;
+  props: {
+    nodeValue: string;
+  };
+  key: null;
+};
+
+type ElementVNode = {
+  kind: VNodeKind.E;
+  tag: TagName;
+  key: string | number | null;
+  props: Props | null;
+  children: Array<VNode>;
+};
+
 /** unfortunately, i had to make this enum less readable bc the minifier wasn't doing the trick */
 export enum VNodeKind {
   /** ELEMENT_NODE */
@@ -39,38 +66,15 @@ export enum VNodeKind {
   M,
 }
 
-export type MachineVNode = {
-  kind: VNodeKind.M;
-  key: string | number | undefined;
-  mInst: MachineInstance;
-  /** a component only has one child. stateless components don't need to be represented in the virtual dom,
-   * becayse they just return one parent element node. on events, rerender and diff child */
-  child: VNode;
-};
+export type VNode = ElementVNode | TextVNode | MachineVNode;
 
-export type VNode =
-  | {
-      kind: VNodeKind.E;
-      tag: TagName;
-      key: string | number | undefined;
-      props: Props;
-      children: Array<VNode>;
-    }
-  | {
-      kind: VNodeKind.T;
-      props: {
-        nodeValue: string;
-      };
-      key?: string;
-    }
-  | MachineVNode;
-
-function createTextElement(text: string): VNode {
+function createTextElement(text: string): TextVNode {
   return {
     kind: VNodeKind.T,
     props: {
       nodeValue: text,
     },
+    key: null,
   };
 }
 
@@ -104,12 +108,13 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
   return children;
 }
 
-/** placeholder for null vnodes until i support null (it's an empty text node) */
+/** placeholder for null return from render until i support null in diff (it's an empty text node) */
 const nullVNode: VNode = {
   kind: VNodeKind.T,
   props: {
     nodeValue: '',
   },
+  key: null,
 };
 
 type TagType<Props extends PropsArg> =
@@ -121,7 +126,7 @@ type TagType<Props extends PropsArg> =
 export function b<Props extends PropsArg>(
   type: TagType<Props>,
   /** I call them props for everything, but they are really attributes for ELEMENT_NODEs */
-  props: Props | null,
+  props: Props | null | undefined,
   // TODO: type props better!! don't allow null when the machine/component has typed props!
   ...children: ChildrenArg
 ): VNode {
@@ -130,9 +135,9 @@ export function b<Props extends PropsArg>(
     case 'string':
       return {
         kind: VNodeKind.E,
-        key: props ? props.key : void 0,
+        key: props && props.key ? props.key : null,
         tag: type,
-        props: props ? new Map(Object.entries(props)) : new Map(),
+        props: props ? new Map(Object.entries(props)) : null,
         // think.. should elements always have children? who would use an element without a child or test node, right?
         children: processChildren(children),
       };
@@ -148,7 +153,7 @@ export function b<Props extends PropsArg>(
 
     /** machine, stateful! */
     case 'object':
-      const mProps: Props = props || ({} as Props);
+      const mProps: Props = props as Props;
       const instanceId =
         typeof type.id === 'function' ? type.id(mProps) : type.id;
       let existingInstance = machineRegistry.get(instanceId);

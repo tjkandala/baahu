@@ -1,6 +1,6 @@
 import { VNode } from '../createElement';
 import { PatchFunction, diff } from '.';
-import { render } from '../render';
+import { renderDOM } from '../renderDOM';
 
 /**
  * Diffing algorithm for keyed children. Call this when the first
@@ -91,13 +91,13 @@ export function keyedDiffChildren(
        * Iterate through the new list and mount the leftovers in between
        * the nodes at oldStart and oldEnd.
        *
-       * Render all nodes from newStart to newEnd, insert them before node
+       * RenderDOM all nodes from newStart to newEnd, insert them before node
        * at oldStart
        */
 
       while (newStart <= newEnd) {
         $parent.insertBefore(
-          render(newVChildren[newStart]),
+          renderDOM(newVChildren[newStart]),
           childNodes[oldStart]
         );
         newStart++;
@@ -223,7 +223,7 @@ export function keyedDiffChildren(
 
           case -1:
             // new node
-            $node = render(newVNode);
+            $node = renderDOM(newVNode);
 
             $nextNode
               ? $parent.insertBefore($node, $nextNode)
@@ -267,7 +267,7 @@ export function keyedDiffChildren(
         switch (actionAtIndex) {
           case -1:
             // new node
-            $node = render(newVNode);
+            $node = renderDOM(newVNode);
 
             $nextNode
               ? $parent.insertBefore($node, $nextNode)
@@ -411,7 +411,7 @@ export function diffChildren(
     /** This will only be executed if newVChildren is longer than oldVChildren */
     for (; i < newLen; i++) {
       // this variable has to be here (closure problem with i if code golfing it in patch)
-      const $new = render(newVChildren[i]);
+      const $new = renderDOM(newVChildren[i]);
 
       additionalPatches.push($el => {
         $el.appendChild($new);

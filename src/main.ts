@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { render } from './render';
+import { renderDOM } from './renderDOM';
 import { VNode, b, MachineInstance, PropsArg } from './createElement';
 import { MachineComponent, SFC, Effect } from './component';
 import { diff } from './diff';
@@ -289,7 +289,7 @@ export function baahu<
           : rootComponent({}, []);
 
       if (vNode) {
-        $root = render(vNode);
+        $root = renderDOM(vNode);
         $target.replaceWith($root);
 
         currentRootComponent = rootComponent;
