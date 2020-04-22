@@ -159,6 +159,7 @@ export function b<Props extends PropsArg>(
 
     /** machine, stateful! */
     case 'object':
+      // props can actually be null or undefined, so handle it properly in other fns
       const mProps: Props = props as Props;
       const instanceId =
         typeof type.id === 'function' ? type.id(mProps) : type.id;

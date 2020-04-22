@@ -7,8 +7,8 @@ export type PropPatchFunction = (
 
 // this is actually attrs.... rename!
 export function diffProps(
-  oldProps: Props | null,
-  newProps: Props | null
+  oldProps: Props | null | undefined,
+  newProps: Props | null | undefined
 ): PropPatchFunction | null {
   // don't waste time creating and executing a function if neither vnodes have attrs
   if (!oldProps && !newProps) return null;
