@@ -11,7 +11,7 @@ export type MachineInstance = {
    * which created by Baahu, should behave */
   spec: MachineComponent;
   /** last rendered vnode, for memoization */
-  lastChild: VNode;
+  lastChild: VNode | null;
 };
 
 export type MachineRegistry = Map<string, MachineInstance>;

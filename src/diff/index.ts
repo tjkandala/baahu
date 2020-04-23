@@ -10,14 +10,12 @@ export type PatchFunction = (
 /**
  * ELI5: this function returns a patch function for a $dom node represented
  * by oldVNode to make it look like newVNode.
- *
- * machine and function node rendering + diffing are handled in the same way, so they are represented by default
  * */
 export function diff(
   oldVNode: VNode,
   newVNode: VNode | undefined
 ): PatchFunction {
-  /** for memo or static elements! */
+  /** for isLeaf, memo, or static elements! */
   if (oldVNode === newVNode) return $element => $element;
 
   /** there is no node in the new tree corresponding

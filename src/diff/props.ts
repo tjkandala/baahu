@@ -15,7 +15,7 @@ export function diffProps(
 
   const patches: Array<PropPatchFunction> = [];
 
-  // DIFFING ATTRS (both old props and new props exist)
+  // DIFFING ATTRS
 
   // setting new attrs
   if (newProps) {

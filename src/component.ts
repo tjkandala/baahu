@@ -13,52 +13,6 @@ export type SFC<Props extends PropsArg = any> = (
   children: Array<VNode> | null
 ) => VNode | null;
 
-function defaultCompare<Props extends PropsArg = any>(
-  oldProps: Props,
-  newProps: Props
-): boolean {
-  // https://jsperf.com/object-keys-vs-hasownproperty/55
-
-  // TODO: Dev mode type errors
-  for (const k in newProps) {
-    if (newProps.hasOwnProperty(k)) {
-      if (newProps[k] !== oldProps[k]) return false;
-    }
-  }
-
-  return true;
-}
-
-export function memo<Props extends PropsArg = any>(
-  component: SFC<Props>,
-  compare: (oldProps: Props, newProps: Props) => boolean = defaultCompare
-): SFC<Props> {
-  let firstRender = true;
-  let prevProps: Props | false = false;
-  let cached: VNode | null = null;
-
-  return (props: Props, children: Array<VNode> | null) => {
-    // this condition will take care of primitives (null === null, string === string, etc),
-    // so in compare() we know props are objects!
-    if (props !== prevProps || firstRender || children) {
-      let sameProps = false;
-      if (prevProps) {
-        sameProps = compare(prevProps, props);
-      }
-      if (!sameProps) {
-        cached = component(props, children);
-
-        // same props will have to be false on first render
-        if (firstRender) {
-          firstRender = false;
-        }
-      }
-      prevProps = props;
-    }
-    return cached;
-  };
-}
-
 /** MACHINE COMPONENTS */
 
 export interface MachineComponent<
@@ -103,11 +57,13 @@ export interface MachineComponent<
     }
   >;
   // UI
-  render(
+  render?(
     state: StateSchema,
     context: ContextSchema,
+    /** the id of the machine. useful for emitting events to self */
+    self: string,
     children: Array<VNode>
-  ): VNode;
+  ): VNode | null;
 }
 
 type DeriveIdFunction<Props extends PropsArg = any> = (props: Props) => string;

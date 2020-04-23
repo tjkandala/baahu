@@ -8,7 +8,15 @@ import {
 
 export type TagName = keyof HTMLElementTagNameMap;
 
-type ChildArg = VNode | VNode[] | string | number | null | undefined | false;
+type ChildArg =
+  | VNode
+  | VNode[]
+  | ChildArg[]
+  | string
+  | number
+  | null
+  | undefined
+  | false;
 
 export type ChildrenArg = Array<ChildArg>;
 
@@ -38,6 +46,7 @@ export enum VNodeKind {
   E,
   /** TEXT_NODE */
   T,
+
   // /** MACHINE_NODE */
   // M,
   // /** FUNCTION_NODE */
@@ -47,7 +56,7 @@ export enum VNodeKind {
 // export type VNode = ElementVNode | TextVNode | MachineVNode | FunctionVNode;
 export type VNode = ElementVNode | TextVNode;
 
-function createTextElement(text: string): TextVNode {
+function createTextVNode(text: string): TextVNode {
   return {
     kind: VNodeKind.T,
     props: {
@@ -77,24 +86,15 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
           break;
         }
       case 'string':
-        children.push(createTextElement(child));
+        children.push(createTextVNode(child));
         break;
       case 'number':
-        children.push(createTextElement(child.toString()));
+        children.push(createTextVNode(child.toString()));
         break;
     }
   }
   return children;
 }
-
-/** placeholder for null return from render until i support null in diff (it's an empty text node) */
-const nullVNode: VNode = {
-  kind: VNodeKind.T,
-  props: {
-    nodeValue: '',
-  },
-  key: null,
-};
 
 type TagType<Props extends PropsArg> =
   | SFC<Props>
@@ -108,7 +108,7 @@ export function b<Props extends PropsArg>(
   props: Props | null | undefined,
   // TODO: type props better!! don't allow null when the machine/component has typed props!
   ...children: ChildrenArg
-): VNode {
+): VNode | null {
   switch (typeof type) {
     /** HTML element */
     case 'string':
@@ -117,7 +117,6 @@ export function b<Props extends PropsArg>(
         key: props && props.key ? props.key : null,
         tag: type,
         props: props ? new Map(Object.entries(props)) : null,
-        // think.. should elements always have children? who would use an element without a child or test node, right?
         children: processChildren(children),
       };
 
@@ -129,11 +128,14 @@ export function b<Props extends PropsArg>(
         children.length ? processChildren(children) : null
       );
 
+      // assign given key to vnode
+      props && props.key && vNode && (vNode.key = props.key);
+
       // TODO: memoized function instances
 
-      return vNode ? vNode : nullVNode;
+      return vNode ? vNode : null;
 
-    /** machine, stateful! */
+    /** pure sfc OR machine, stateful! */
     case 'object':
       // props can actually be null or undefined, so handle it properly in other fns
       const mProps: Props = props as Props;
@@ -166,56 +168,77 @@ export function b<Props extends PropsArg>(
         stateHandler.onEntry &&
           stateHandler.onEntry(initialContext, { type: 'MOUNT' }, instanceId);
 
-        const child = type.render(
-          type.initialState,
-          initialContext,
-          processChildren(children)
-        );
+        // NEW FEATURE: optional rendering for UI-less machines
+        if (type.render) {
+          const child = type.render(
+            type.initialState,
+            initialContext,
+            instanceId,
+            processChildren(children)
+          );
 
-        const newInstance = {
-          id: instanceId,
-          state: type.initialState,
-          ctx: initialContext,
-          spec: type,
-          isLeaf: type.isLeaf ? type.isLeaf : false,
-          lastChild: child,
-        };
-        machineRegistry.set(instanceId, newInstance);
+          // assign given key to vnode
+          props && props.key && child && (child.key = props.key);
 
-        return child ? child : nullVNode;
+          const newInstance = {
+            id: instanceId,
+            state: type.initialState,
+            ctx: initialContext,
+            spec: type,
+            isLeaf: type.isLeaf ? type.isLeaf : false,
+            lastChild: child,
+          };
+          machineRegistry.set(instanceId, newInstance);
+
+          return child;
+        } else return null;
       } else {
         /**
          * existing instance logic:
+         * - check if UI-less machine; if so, return null
          * - check if leaf
          * - if not leaf, render with latest info from instance. set lastChild (idk what to do for TS..) return
          * - if leaf, check if transitioned
          * - if not, return lastChild.
          * - if it has transitioned, render with latest info from instance. set lastChild, return
          */
+        if (!type.render) return null;
+
         if (existingInstance.isLeaf) {
           if (machinesThatTransitioned.has(existingInstance.id)) {
             /** separate logic from non-leaf instances because we need
              * to save the child vnode for later! */
+
             const child = type.render(
               existingInstance.state,
               existingInstance.ctx,
+              existingInstance.id,
               processChildren(children)
             );
 
+            // assign given key to vnode
+            props && props.key && child && (child.key = props.key);
+
             existingInstance.lastChild = child;
-            return child ? child : nullVNode;
+            return child;
           } else {
-            // yay, optimization!
+            // yay, optimization! (leaf that hasn't transitioned)
             return existingInstance.lastChild;
           }
         } else {
           // not a leaf, just render
+
           const child = type.render(
             existingInstance.state,
             existingInstance.ctx,
+            existingInstance.id,
             processChildren(children)
           );
-          return child ? child : nullVNode;
+
+          // assign given key to vnode
+          props && props.key && child && (child.key = props.key);
+
+          return child;
         }
       }
 
