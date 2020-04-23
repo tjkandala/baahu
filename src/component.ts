@@ -13,6 +13,69 @@ export type SFC<Props extends PropsArg = any> = (
   children: Array<VNode> | null
 ) => VNode | null;
 
+function defaultCompare<Props extends PropsArg = any>(
+  oldProps: Props,
+  newProps: Props
+): boolean {
+  // https://jsperf.com/object-keys-vs-hasownproperty/55
+
+  // also, getting Object.keys to check for
+  // changed length is too slow, it wouldn't be an optimization
+
+  if (process.env.NODE_ENV !== 'production') {
+    if (typeof oldProps !== 'object' || typeof newProps !== 'object') {
+      throw new TypeError('props must be an object');
+    }
+  }
+
+  // TODO: Dev mode type errors
+  for (const k in newProps) {
+    if (newProps.hasOwnProperty(k)) {
+      if (newProps[k] !== oldProps[k]) return false;
+    }
+  }
+
+  return true;
+}
+
+/** memoizes an instance of the functional component.
+ *
+ *  READ: it only works
+ * for one instance of a component. Correct usage of memoInstance involves
+ * components like navbars/sidebars, which take props which don't change very often.
+ *
+ * You CAN use it with static "components" like footers, but you should probably
+ * just use an element, e.g. `const footer = <div><p>my footer<p><div>` */
+export function memoInstance<Props extends PropsArg = any>(
+  component: SFC<Props>,
+  compare: (oldProps: Props, newProps: Props) => boolean = defaultCompare
+): SFC<Props> {
+  let firstRender = true;
+  let prevProps: Props | false = false;
+  let cached: VNode | null = null;
+
+  return (props: Props, children: Array<VNode> | null) => {
+    // this condition will take care of primitives (null === null, string === string, etc),
+    // so in compare() we know props are objects!
+    if (props !== prevProps || firstRender || children) {
+      let sameProps = false;
+      if (prevProps) {
+        sameProps = compare(prevProps, props);
+      }
+      if (!sameProps) {
+        cached = component(props, children);
+
+        // same props will have to be false on first render
+        if (firstRender) {
+          firstRender = false;
+        }
+      }
+      prevProps = props;
+    }
+    return cached;
+  };
+}
+
 /** MACHINE COMPONENTS */
 
 export interface MachineComponent<
