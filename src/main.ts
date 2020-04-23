@@ -1,10 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { renderDOM } from './renderDOM';
-import { VNode, b, MachineInstance, PropsArg } from './createElement';
+import { VNode, b, PropsArg } from './createElement';
 import { MachineComponent, SFC, Effect } from './component';
 import { diff } from './diff';
 import { RouTrie, Params } from './router';
-import { machineRegistry, diffMachines } from './machineRegistry';
+import {
+  machineRegistry,
+  MachineInstance,
+  diffMachines,
+  machinesThatTransitioned,
+} from './machineRegistry';
 
 /**
  * Creates a Baahu application instance
@@ -30,6 +35,7 @@ export function baahu<
    *
    * */
   function newRoute(): void {
+    // can't use emit here because we have to force rerender! routers are functional components, not machines.
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     transitionMachines({
       type: 'NEW_ROUTE',
@@ -52,6 +58,8 @@ export function baahu<
       currentVRoot = vNode;
     }
   }
+
+  // JUST CHANGE THIS TO EMIT WTF
 
   window.onpopstate = newRoute;
 
@@ -128,6 +136,7 @@ export function baahu<
 
                   transitions++;
                 }
+                machinesThatTransitioned.set(machineInstance.id, true);
               }
 
               if (target && target !== machineInstance.state) {
@@ -161,6 +170,7 @@ export function baahu<
                     );
 
                   transitions++;
+                  machinesThatTransitioned.set(machineInstance.id, true);
                 } else {
                   /** for js users who may specify invalid targets */
                   if (process.env.NODE_ENV !== 'production') {
@@ -216,6 +226,7 @@ export function baahu<
 
               stateHandler.on[eventType]?.effects?.forEach(effect => {
                 effects.push([effect, machineInstance]);
+                // machinesThatTransitioned.set(machineInstance.id, true);
               });
 
               if (target && target !== machineInstance.state) {
@@ -249,6 +260,7 @@ export function baahu<
                     );
 
                   transitions++;
+                  machinesThatTransitioned.set(machineInstance.id, true);
                 } else {
                   /** for js users who may specify invalid targets */
                   if (process.env.NODE_ENV !== 'production') {
@@ -272,10 +284,50 @@ export function baahu<
         effect(machineInstance.ctx, event, machineInstance.id);
 
         transitions++;
+        machinesThatTransitioned.set(machineInstance.id, true);
       }
     }
 
     return transitions;
+  }
+
+  function emit(
+    event: AppEvent,
+    target: LiteralUnion<MachineList> = '*'
+  ): void {
+    // if already transitioning, transition machines, but don't start render process
+    if (isTransitioning) {
+      transitionMachines(event, target);
+      return;
+    }
+
+    isTransitioning = true;
+
+    const transitions = transitionMachines(event, target);
+
+    isTransitioning = false;
+    if (transitions === 0) return;
+
+    /** Construct a new Virtual Dom Tree based on the new state of machines
+     * in the registry. If this point has been reached, that means some state
+     * has (likely) changed since the last render.
+     */
+
+    /**
+     * this is the call to createElement. at this point, machinesThatTransitioned has been populated.
+     * the render will reflect the new state. leaf machines that are not in the map (benchmark it vs set)
+     * will return their lastVNode. if the instance did update, render a newVNode, append it lo lastVNode, and return that!
+     */
+    const vNode: VNode | null =
+      typeof currentRootComponent === 'object'
+        ? b(currentRootComponent, {})
+        : currentRootComponent({}, []);
+
+    if (vNode) {
+      diff(currentVRoot, vNode)($root);
+      diffMachines();
+      currentVRoot = vNode;
+    }
   }
 
   return {
@@ -298,36 +350,7 @@ export function baahu<
 
       return $root;
     },
-    emit(event: AppEvent, target: LiteralUnion<MachineList> = '*'): void {
-      // if already transitioning, transition machines, but don't start render process
-      if (isTransitioning) {
-        transitionMachines(event, target);
-        return;
-      }
-
-      isTransitioning = true;
-
-      const transitions = transitionMachines(event, target);
-
-      isTransitioning = false;
-      if (transitions === 0) return;
-
-      /** Construct a new Virtual Dom Tree based on the new state of machines
-       * in the registry. If this point has been reached, that means some state
-       * has (likely) changed since the last render.
-       */
-
-      const vNode: VNode | null =
-        typeof currentRootComponent === 'object'
-          ? b(currentRootComponent, {})
-          : currentRootComponent({}, []);
-
-      if (vNode) {
-        diff(currentVRoot, vNode)($root);
-        diffMachines();
-        currentVRoot = vNode;
-      }
-    },
+    emit: emit,
     linkTo(path: string, state: any = null): void {
       /** wait for transitions/rerenders to complete. this logic is only in place because of the
        * possibility that a state transition could trigger a redirect. not really a good pattern,

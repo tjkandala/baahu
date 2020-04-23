@@ -5,6 +5,7 @@ describe('mounting', () => {
   const { mount } = baahu();
 
   const TestMach: MachineComponent = {
+    isLeaf: true,
     id: 'testRoot',
     initialContext: () => ({}),
     initialState: 'ready',

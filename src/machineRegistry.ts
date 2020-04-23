@@ -1,4 +1,18 @@
-import { MachineInstance } from './createElement';
+import { MachineComponent } from './component';
+import { VNode } from './createElement';
+
+export type MachineInstance = {
+  id: string;
+  state: string;
+  ctx: object;
+
+  isLeaf: boolean;
+  /** the spec is the object created by developers. it describes how the machine instance,
+   * which created by Baahu, should behave */
+  spec: MachineComponent;
+  /** last rendered vnode, for memoization */
+  lastChild: VNode;
+};
 
 export type MachineRegistry = Map<string, MachineInstance>;
 
@@ -12,7 +26,14 @@ export const machineRegistry: MachineRegistry = new Map();
  * */
 export const machinesThatStillExist: Map<string, true> = new Map();
 
-/** call this immediately after diff ONLY, and only ONCE, or else you'll wipe all machines */
+/** keep track of machines that transitioned in the latest cycle. used for
+ * memoizing leaf machines (if the machine didn't transition, it can return
+ * the memoized VNode). "dirty checking." reset after TODO FIGURE OUT WHEN */
+export const machinesThatTransitioned: Map<string, true> = new Map();
+
+/** call this immediately after diff ONLY, and only ONCE, or else you'll wipe all machines
+ * purpose is to unmount machines that don't exist anymore, reset machines that transitioned,
+ * and reset the map of 'machinesThatStillExist' */
 export function diffMachines(): void {
   for (const [id, machInst] of machineRegistry) {
     if (!machinesThatStillExist.has(id)) {
@@ -23,4 +44,5 @@ export function diffMachines(): void {
     }
   }
   machinesThatStillExist.clear();
+  machinesThatTransitioned.clear();
 }

@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MachineComponent, SFC } from './component';
-import { machineRegistry, machinesThatStillExist } from './machineRegistry';
+import {
+  machineRegistry,
+  machinesThatStillExist,
+  machinesThatTransitioned,
+} from './machineRegistry';
 
 export type TagName = keyof HTMLElementTagNameMap;
 
@@ -10,32 +14,7 @@ export type ChildrenArg = Array<ChildArg>;
 
 export type Props = Map<string, any>;
 
-export type MachineInstance = {
-  id: string;
-  state: string;
-  ctx: object;
-  /** the spec is the object created by developers. it describes how the machine instance,
-   * which created by Baahu, should behave */
-  spec: MachineComponent;
-};
-
 // DO NOT add optional keys to VNodes! more info: https://mrale.ph/blog/2015/01/11/whats-up-with-monomorphism.html
-
-// TODO: add function nodes, to make adding keys less awkward
-
-type MachineVNode = {
-  kind: VNodeKind.M;
-  key: string | number | undefined | null;
-  mInst: MachineInstance;
-  child: VNode;
-};
-
-// it COULD store a reference to the function... but i don't need to right now so i'm not doing that
-type FunctionVNode = {
-  kind: VNodeKind.F;
-  key: string | number | undefined | null;
-  child: VNode;
-};
 
 type TextVNode = {
   kind: VNodeKind.T;
@@ -59,13 +38,14 @@ export enum VNodeKind {
   E,
   /** TEXT_NODE */
   T,
-  /** MACHINE_NODE */
-  M,
-  /** FUNCTION_NODE */
-  F,
+  // /** MACHINE_NODE */
+  // M,
+  // /** FUNCTION_NODE */
+  // F,
 }
 
-export type VNode = ElementVNode | TextVNode | MachineVNode | FunctionVNode;
+// export type VNode = ElementVNode | TextVNode | MachineVNode | FunctionVNode;
+export type VNode = ElementVNode | TextVNode;
 
 function createTextElement(text: string): TextVNode {
   return {
@@ -149,13 +129,9 @@ export function b<Props extends PropsArg>(
         children.length ? processChildren(children) : null
       );
 
-      const fNode: FunctionVNode = {
-        kind: VNodeKind.F,
-        key: props && props.key ? props.key : null,
-        child: vNode ? vNode : nullVNode,
-      };
+      // TODO: memoized function instances
 
-      return fNode;
+      return vNode ? vNode : nullVNode;
 
     /** machine, stateful! */
     case 'object':
@@ -163,7 +139,7 @@ export function b<Props extends PropsArg>(
       const mProps: Props = props as Props;
       const instanceId =
         typeof type.id === 'function' ? type.id(mProps) : type.id;
-      let existingInstance = machineRegistry.get(instanceId);
+      const existingInstance = machineRegistry.get(instanceId);
 
       /** add to "machinesThatStillExist" whether it is new or old */
       machinesThatStillExist.set(instanceId, true);
@@ -190,29 +166,58 @@ export function b<Props extends PropsArg>(
         stateHandler.onEntry &&
           stateHandler.onEntry(initialContext, { type: 'MOUNT' }, instanceId);
 
-        existingInstance = {
+        const child = type.render(
+          type.initialState,
+          initialContext,
+          processChildren(children)
+        );
+
+        const newInstance = {
           id: instanceId,
           state: type.initialState,
           ctx: initialContext,
           spec: type,
+          isLeaf: type.isLeaf ? type.isLeaf : false,
+          lastChild: child,
         };
-        machineRegistry.set(instanceId, existingInstance);
+        machineRegistry.set(instanceId, newInstance);
+
+        return child ? child : nullVNode;
+      } else {
+        /**
+         * existing instance logic:
+         * - check if leaf
+         * - if not leaf, render with latest info from instance. set lastChild (idk what to do for TS..) return
+         * - if leaf, check if transitioned
+         * - if not, return lastChild.
+         * - if it has transitioned, render with latest info from instance. set lastChild, return
+         */
+        if (existingInstance.isLeaf) {
+          if (machinesThatTransitioned.has(existingInstance.id)) {
+            /** separate logic from non-leaf instances because we need
+             * to save the child vnode for later! */
+            const child = type.render(
+              existingInstance.state,
+              existingInstance.ctx,
+              processChildren(children)
+            );
+
+            existingInstance.lastChild = child;
+            return child ? child : nullVNode;
+          } else {
+            // yay, optimization!
+            return existingInstance.lastChild;
+          }
+        } else {
+          // not a leaf, just render
+          const child = type.render(
+            existingInstance.state,
+            existingInstance.ctx,
+            processChildren(children)
+          );
+          return child ? child : nullVNode;
+        }
       }
-
-      const child = type.render(
-        existingInstance.state,
-        existingInstance.ctx,
-        processChildren(children)
-      );
-
-      const machineNode: MachineVNode = {
-        kind: VNodeKind.M,
-        key: mProps ? mProps.key : void 0,
-        mInst: existingInstance,
-        child: child ? child : nullVNode,
-      };
-
-      return machineNode;
 
     default:
       throw new TypeError('invalid element');

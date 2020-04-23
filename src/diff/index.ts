@@ -95,21 +95,6 @@ export function diff(
         default:
           return createReplacePatch(newVNode);
       }
-
-    default:
-      switch (newVNode.kind) {
-        case VNodeKind.F:
-        case VNodeKind.M:
-          const patchChild = diff(oldVNode.child, newVNode.child);
-
-          return ($element: HTMLElement | Text): HTMLElement => {
-            patchChild($element);
-            return $element as HTMLElement;
-          };
-
-        default:
-          return createReplacePatch(newVNode);
-      }
   }
 }
 

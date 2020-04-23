@@ -1,4 +1,4 @@
-import { SFC } from '../../src/component';
+import { SFC, memo } from '../../src/component';
 import createBaahuApp, { b } from '../../src';
 import { VNode } from '../../src/createElement';
 
@@ -6,8 +6,79 @@ describe('functional component patterns', () => {
   let $root = document.body;
 
   test('memo', () => {
+    const nonMemoArray: string[] = [];
+    const memoArray: string[] = [];
+
+    const MyComp: SFC<{ name: string }> = ({ name }) => {
+      nonMemoArray.push('rendered');
+      return b('div', null, b('p', null, `good stuff ${name}`));
+    };
+
+    const MemoMyComp: SFC<{ name: string }> = memo(({ name }) => {
+      memoArray.push('rendered');
+      return b('div', null, b('p', null, `good stuff ${name}`));
+    });
+
+    let changingName = 'TJ';
+
+    const MyApp: SFC = () =>
+      b(
+        'div',
+        null,
+        b(MyComp, { name: 'TJ' }),
+        b(MemoMyComp, { name: changingName })
+      );
+
+    const { linkTo, mount } = createBaahuApp();
+
+    $root = mount(MyApp, $root) as HTMLElement;
+
+    expect(nonMemoArray.length).toBe(1);
+    expect(memoArray.length).toBe(1);
+
+    linkTo('rerender');
+
+    expect(nonMemoArray.length).toBe(2);
+    expect(memoArray.length).toBe(1);
+
+    changingName = 'kandala';
+
+    linkTo('rerender');
+
+    expect(nonMemoArray.length).toBe(3);
+    expect(memoArray.length).toBe(2);
+
     expect(true).toBe(true);
   });
+
+  // test('memo map return', () => {
+  //   const memoArray: string[] = [];
+
+  //   const names = ['TJ', 'Kandala', 'baahu'];
+
+  //   const MemoMyComp: SFC<{ name: string }> = memo(({ name }) => {
+  //     memoArray.push('rendered');
+  //     return b('div', null, b('p', null, `good stuff ${name}`));
+  //   });
+
+  //   const MyApp: SFC = () =>
+  //     b(
+  //       'div',
+  //       null,
+
+  //       names.map(name => b(MemoMyComp, { name }))
+  //     );
+
+  //   const { linkTo, mount } = createBaahuApp();
+
+  //   $root = mount(MyApp, $root) as HTMLElement;
+
+  //   expect(memoArray.length).toBe(names.length);
+
+  //   linkTo('rerender');
+
+  //   expect(memoArray.length).toBe(names.length);
+  // });
 
   test("array 'fragment' children", () => {
     const { mount } = createBaahuApp();

@@ -13,18 +13,47 @@ export type SFC<Props extends PropsArg = any> = (
   children: Array<VNode> | null
 ) => VNode | null;
 
+function defaultCompare<Props extends PropsArg = any>(
+  oldProps: Props,
+  newProps: Props
+): boolean {
+  // https://jsperf.com/object-keys-vs-hasownproperty/55
+
+  // TODO: Dev mode type errors
+  for (const k in newProps) {
+    if (newProps.hasOwnProperty(k)) {
+      if (newProps[k] !== oldProps[k]) return false;
+    }
+  }
+
+  return true;
+}
+
 export function memo<Props extends PropsArg = any>(
-  component: SFC<Props>
+  component: SFC<Props>,
+  compare: (oldProps: Props, newProps: Props) => boolean = defaultCompare
 ): SFC<Props> {
   let firstRender = true;
-  let prevProps: Props | null = null;
+  let prevProps: Props | false = false;
   let cached: VNode | null = null;
 
   return (props: Props, children: Array<VNode> | null) => {
+    // this condition will take care of primitives (null === null, string === string, etc),
+    // so in compare() we know props are objects!
     if (props !== prevProps || firstRender || children) {
+      let sameProps = false;
+      if (prevProps) {
+        sameProps = compare(prevProps, props);
+      }
+      if (!sameProps) {
+        cached = component(props, children);
+
+        // same props will have to be false on first render
+        if (firstRender) {
+          firstRender = false;
+        }
+      }
       prevProps = props;
-      cached = component(props, children);
-      firstRender && (firstRender = false);
     }
     return cached;
   };
@@ -42,6 +71,8 @@ export interface MachineComponent<
   id: DeriveIdFunction<Props> | string;
   initialContext: DeriveContextFunction<Props, ContextSchema>;
   initialState: StateSchema;
+  // defaulting isLeaf to false is good
+  isLeaf?: boolean;
   // behavior
   onMount?: (context: ContextSchema) => void;
   onUnmount?: (context: ContextSchema, state: StateSchema) => void;

@@ -36,8 +36,5 @@ export function renderDOM(node: VNode): HTMLElement | Text {
 
     case VNodeKind.T:
       return document.createTextNode(node.props.nodeValue);
-
-    default:
-      return renderDOM(node.child);
   }
 }
