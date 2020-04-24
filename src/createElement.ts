@@ -8,7 +8,7 @@ import {
 
 export type TagName = keyof HTMLElementTagNameMap;
 
-type ChildArg =
+export type ChildArg =
   | VNode
   | VNode[]
   | ChildArg[]
@@ -34,7 +34,7 @@ type TextVNode = {
 
 type ElementVNode = {
   kind: VNodeKind.E;
-  tag: TagName;
+  tag: string;
   key: string | number | null;
   props: Props | null;
   children: Array<VNode>;
@@ -96,14 +96,9 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
   return children;
 }
 
-type TagType<Props extends PropsArg> =
-  | SFC<Props>
-  | MachineComponent<Props>
-  | TagName;
-
 /** createElement */
 export function b<Props extends PropsArg>(
-  type: TagType<Props>,
+  type: SFC<Props> | MachineComponent<Props> | TagName,
   /** I call them props for everything, but they are really attributes for ELEMENT_NODEs */
   props: Props | null | undefined,
   ...children: ChildrenArg
