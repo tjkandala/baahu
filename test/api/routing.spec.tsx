@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { RouTrie } from '../../src/router';
+import { baahu } from '../../src/main';
+import { SFC, createMachine } from '../../src/component';
+import { b } from '../../src/index';
+import { machineRegistry } from '../../src/machineRegistry';
 
 /**
  * TODO: Make an easy decoupled+nested router system!
@@ -7,8 +11,71 @@ import { RouTrie } from '../../src/router';
  * The idea: set a string for the root!  */
 
 describe('router', () => {
+  let $root = document.body;
+  test('machine unmount on route change', () => {
+    const { linkTo, mount, createRouter } = baahu();
+
+    const HomeMachine = createMachine({
+      id: 'home',
+      initialContext: () => ({}),
+      initialState: 'here',
+      states: {
+        here: {},
+      },
+      render: () => <p>the home machine</p>,
+    });
+
+    const Home: SFC = () => (
+      <div>
+        <p>home page</p>
+        <HomeMachine />
+      </div>
+    );
+
+    const Room: SFC<{ roomid: string }> = ({ roomid }) => (
+      <div>
+        <p>{roomid}</p>
+      </div>
+    );
+
+    const MyRouter = createRouter({
+      '/': () => <Home />,
+      '/:roomid': ({ roomid }) => <Room roomid={roomid} />,
+    });
+
+    const App: SFC = () => <MyRouter />;
+
+    $root = mount(App, $root) as HTMLElement;
+
+    expect($root.firstChild?.nodeName).toBe('P');
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('home page');
+    expect($root.childNodes[1]?.nodeName).toBe('P');
+    expect($root.childNodes[1]?.firstChild?.nodeValue).toBe('the home machine');
+
+    // home machine should be in the registry after mount
+    expect([...machineRegistry.keys()]).toStrictEqual(['home']);
+
+    // navigate away from home. home machine should be unmounted
+    linkTo('/cool');
+
+    expect([...machineRegistry.keys()]).toStrictEqual([]);
+
+    expect($root.firstChild?.nodeName).toBe('P');
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('cool');
+
+    // go back home. home machine should be mounted
+    linkTo('/');
+
+    expect([...machineRegistry.keys()]).toStrictEqual(['home']);
+
+    expect($root.firstChild?.nodeName).toBe('P');
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('home page');
+    expect($root.childNodes[1]?.nodeName).toBe('P');
+    expect($root.childNodes[1]?.firstChild?.nodeValue).toBe('the home machine');
+  });
+
   test('route changes update dom', () => {
-    console.log(location.pathname);
+    // console.log(location.pathname);
     expect(true).toBe(true);
   });
 

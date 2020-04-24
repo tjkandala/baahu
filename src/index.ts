@@ -1,8 +1,25 @@
 import { baahu } from './main';
 import { b, ChildArg } from './createElement';
-import { memoInstance, createMachine } from './component';
+import {
+  memoInstance,
+  createMachine,
+  MachineComponent,
+  MachineSpec,
+  Effect,
+  BaahuEvent,
+  SFC,
+} from './component';
 
-export { b, memoInstance, createMachine };
+export {
+  b,
+  memoInstance,
+  createMachine,
+  MachineComponent,
+  MachineSpec,
+  Effect,
+  BaahuEvent,
+  SFC,
+};
 export default baahu;
 
 declare global {

@@ -192,7 +192,7 @@ export type Effect<ContextSchema = any, E extends Event = any> = (
 ) => void;
 
 /** All events, including events not defined by user and user-defined events */
-export type MechaEvent<AppEvent extends Event> = AppEvent | InternalEvent;
+export type BaahuEvent<AppEvent extends Event> = AppEvent | InternalEvent;
 
 type InternalEvent =
   | { type: 'MOUNT' }

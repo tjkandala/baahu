@@ -9,6 +9,7 @@ import {
   MachineInstance,
   diffMachines,
   machinesThatTransitioned,
+  machinesThatStillExist,
 } from './machineRegistry';
 
 /**
@@ -337,6 +338,9 @@ export function baahu<
 
         currentRootComponent = rootComponent;
         currentVRoot = vNode;
+        machinesThatStillExist.clear();
+        // have to clear after first render
+        // this happens during diffMachines() on subsequent renders
       }
 
       return $root;
