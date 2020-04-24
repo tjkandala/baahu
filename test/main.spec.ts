@@ -1,5 +1,5 @@
 import baahu, { b } from '../src';
-import { MachineComponent, SFC } from '../src/component';
+import { SFC, createMachine, MachineComponent } from '../src/component';
 import {
   machineRegistry,
   machinesThatStillExist,
@@ -17,7 +17,7 @@ type AppEvent = BadVideoEvent | ListEvent;
 
 const failures = [];
 
-const BadVideoComponent: MachineComponent<{}, BadVideoState, BadVideoEvent> = {
+const BadVideoComponent = createMachine<{}, BadVideoState, BadVideoEvent>({
   // make it optional, default to false
   isLeaf: false,
   id: 'video',
@@ -35,7 +35,7 @@ const BadVideoComponent: MachineComponent<{}, BadVideoState, BadVideoEvent> = {
   render() {
     return b('div', null, b('p', null, 'this component sucks'));
   },
-};
+});
 
 function createListDiffComponent(
   listOne: ListItem[],
@@ -43,7 +43,11 @@ function createListDiffComponent(
   diffType: string,
   testCase: string
 ): MachineComponent<{}, ListState, ListEvent> {
-  const ListMach: MachineComponent<{}, ListState, ListEvent> = {
+  const ListMach: MachineComponent<{}, ListState, ListEvent> = createMachine<
+    {},
+    ListState,
+    ListEvent
+  >({
     isLeaf: true,
     id: `listMach-${diffType}-${testCase}`,
     initialContext: () => ({}),
@@ -91,7 +95,7 @@ function createListDiffComponent(
           );
       }
     },
-  };
+  });
   return ListMach;
 }
 
@@ -323,7 +327,7 @@ const listMap: ListMap = {
 //     ctx.text = ctx.text + '!';
 //   }
 
-//   const testMach: MachineComponent<{}, MyState, MyEvent, MyContext> = {
+//   const testMach: MachineSpec<{}, MyState, MyEvent, MyContext> = {
 //     isLeaf: true,
 //     id: 'testMach',
 //     initialContext: () => ({
@@ -382,7 +386,7 @@ const listMap: ListMap = {
 
 //     const { mount, emit } = baahu<MyEvent>();
 
-//     const ToggleMachine: MachineComponent<{}, State, MyEvent> = {
+//     const ToggleMachine: MachineSpec<{}, State, MyEvent> = {
 //       isLeaf: true,
 //       id: 'toggle',
 //       initialContext: () => ({}),

@@ -31,14 +31,11 @@ describe('functional component patterns', () => {
     const RenderPropConsumer: SFC<Props> = ({ aRenderProp }) =>
       b('div', {}, aRenderProp());
 
-    const RootComponent: SFC = () =>
-      b(
-        'div',
-        {},
-        b(RenderPropConsumer, {
-          aRenderProp: () => b('p', {}, "i'm a render prop"),
-        })
-      );
+    const RootComponent: SFC = () => (
+      <div>
+        <RenderPropConsumer aRenderProp={() => <p>i'm a render prop</p>} />
+      </div>
+    );
 
     $root = mount(RootComponent, $root) as HTMLElement;
 

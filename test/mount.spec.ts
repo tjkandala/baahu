@@ -1,10 +1,10 @@
 import baahu, { b } from '../src';
-import { MachineComponent, SFC } from '../src/component';
+import { SFC, createMachine } from '../src/component';
 
 describe('mounting', () => {
   const { mount } = baahu();
 
-  const TestMach: MachineComponent = {
+  const TestMach = createMachine({
     isLeaf: true,
     id: 'testRoot',
     initialContext: () => ({}),
@@ -13,7 +13,7 @@ describe('mounting', () => {
       ready: {},
     },
     render: () => b('div', {}, b('h1', {}, 'mach test')),
-  };
+  });
 
   let $root = document.body;
 

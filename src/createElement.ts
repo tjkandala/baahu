@@ -29,7 +29,7 @@ type TextVNode = {
   props: {
     nodeValue: string;
   };
-  key: null;
+  key: string | number | null;
 };
 
 type ElementVNode = {
@@ -106,7 +106,6 @@ export function b<Props extends PropsArg>(
   type: TagType<Props>,
   /** I call them props for everything, but they are really attributes for ELEMENT_NODEs */
   props: Props | null | undefined,
-  // TODO: type props better!! don't allow null when the machine/component has typed props!
   ...children: ChildrenArg
 ): VNode | null {
   switch (typeof type) {
@@ -120,58 +119,45 @@ export function b<Props extends PropsArg>(
         children: processChildren(children),
       };
 
-    /** stateless functional component */
+    /** machine components or SFCs */
     case 'function':
-      // functional components don't need keys/special vnode representation. optional children
-      const vNode = type(
-        props as Props,
-        children.length ? processChildren(children) : null
-      );
+      // if the function has an id property, its a machine component
+      if ('id' in type) {
+        const mProps = props as Props;
+        const instanceId =
+          typeof type.id === 'function' ? type.id(mProps) : type.id;
 
-      // assign given key to vnode
-      props && props.key && vNode && (vNode.key = props.key);
+        const existingInstance = machineRegistry.get(instanceId);
 
-      // TODO: memoized function instances
+        /** add to "machinesThatStillExist" whether it is new or old */
+        machinesThatStillExist.set(instanceId, true);
 
-      return vNode ? vNode : null;
+        /** initializing instance */
+        if (!existingInstance) {
+          const spec = type(mProps);
 
-    /** pure sfc OR machine, stateful! */
-    case 'object':
-      // props can actually be null or undefined, so handle it properly in other fns
-      const mProps: Props = props as Props;
-      const instanceId =
-        typeof type.id === 'function' ? type.id(mProps) : type.id;
-      const existingInstance = machineRegistry.get(instanceId);
+          const initialContext = spec.initialContext
+            ? spec.initialContext(mProps)
+            : {};
 
-      /** add to "machinesThatStillExist" whether it is new or old */
-      machinesThatStillExist.set(instanceId, true);
+          spec.onMount && spec.onMount(initialContext);
 
-      /** initializing instance */
-      if (!existingInstance) {
-        const initialContext = type.initialContext
-          ? type.initialContext(mProps)
-          : {};
+          const stateHandler = spec.states[spec.initialState];
 
-        type.onMount && type.onMount(initialContext);
-
-        const stateHandler = type.states[type.initialState];
-
-        if (process.env.NODE_ENV !== 'production') {
-          if (!stateHandler) {
-            throw new TypeError(
-              `Machine ${instanceId} does not specify behavior for state: ${type.initialState}`
-            );
+          if (process.env.NODE_ENV !== 'production') {
+            if (!stateHandler) {
+              throw new TypeError(
+                `Machine ${instanceId} does not specify behavior for state: ${spec.initialState}`
+              );
+            }
           }
-        }
 
-        /** call onEntry for initial state */
-        stateHandler.onEntry &&
-          stateHandler.onEntry(initialContext, { type: 'MOUNT' }, instanceId);
+          /** call onEntry for initial state */
+          stateHandler.onEntry &&
+            stateHandler.onEntry(initialContext, { type: 'MOUNT' }, instanceId);
 
-        // NEW FEATURE: optional rendering for UI-less machines
-        if (type.render) {
-          const child = type.render(
-            type.initialState,
+          const child = spec.render(
+            spec.initialState,
             initialContext,
             instanceId,
             processChildren(children)
@@ -182,34 +168,37 @@ export function b<Props extends PropsArg>(
 
           const newInstance = {
             id: instanceId,
-            state: type.initialState,
+            state: spec.initialState,
             ctx: initialContext,
-            spec: type,
-            isLeaf: type.isLeaf ? type.isLeaf : false,
+            spec: spec,
+            isLeaf: spec.isLeaf ? spec.isLeaf : false,
             lastChild: child,
           };
           machineRegistry.set(instanceId, newInstance);
 
           return child;
-        } else return null;
-      } else {
-        /**
-         * existing instance logic:
-         * - check if UI-less machine; if so, return null
-         * - check if leaf
-         * - if not leaf, render with latest info from instance. set lastChild (idk what to do for TS..) return
-         * - if leaf, check if transitioned
-         * - if not, return lastChild.
-         * - if it has transitioned, render with latest info from instance. set lastChild, return
-         */
-        if (!type.render) return null;
+        } else {
+          /**
+           * existing instance logic:
+           * - check if UI-less machine; if so, return null (no UI-less machines yet)
+           * - check if leaf
+           * - if not leaf, render with latest info from instance. set lastChild (idk what to do for TS..) return
+           * - if leaf, check if transitioned
+           * - if not, return lastChild.
+           * - if it has transitioned, render with latest info from instance. set lastChild, return
+           */
+          const spec = existingInstance.spec;
+          // if (!spec.render) return null;
 
-        if (existingInstance.isLeaf) {
-          if (machinesThatTransitioned.has(existingInstance.id)) {
-            /** separate logic from non-leaf instances because we need
-             * to save the child vnode for later! */
-
-            const child = type.render(
+          if (
+            spec.isLeaf &&
+            !machinesThatTransitioned.has(existingInstance.id)
+          ) {
+            // yay, optimization! (leaf that hasn't transitioned)
+            return existingInstance.lastChild;
+          } else {
+            // not a leaf, or it is a leaf that has changed! rerender
+            const child = spec.render(
               existingInstance.state,
               existingInstance.ctx,
               existingInstance.id,
@@ -219,27 +208,21 @@ export function b<Props extends PropsArg>(
             // assign given key to vnode
             props && props.key && child && (child.key = props.key);
 
-            existingInstance.lastChild = child;
+            spec.isLeaf && (existingInstance.lastChild = child);
             return child;
-          } else {
-            // yay, optimization! (leaf that hasn't transitioned)
-            return existingInstance.lastChild;
           }
-        } else {
-          // not a leaf, just render
-
-          const child = type.render(
-            existingInstance.state,
-            existingInstance.ctx,
-            existingInstance.id,
-            processChildren(children)
-          );
-
-          // assign given key to vnode
-          props && props.key && child && (child.key = props.key);
-
-          return child;
         }
+      } else {
+        // SFC/Stateless Functional Components
+        const vNode = type(
+          props as Props,
+          children.length ? processChildren(children) : null
+        );
+
+        // assign given key to vnode
+        props && props.key && vNode && (vNode.key = props.key);
+
+        return vNode ? vNode : null;
       }
 
     default:

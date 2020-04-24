@@ -78,7 +78,53 @@ export function memoInstance<Props extends PropsArg = any>(
 
 /** MACHINE COMPONENTS */
 
+// MAKING THE SPEC "CALLABLE" FOR TSX
 export interface MachineComponent<
+  Props extends PropsArg = any,
+  StateSchema extends string = any,
+  EventSchema extends Event = any,
+  ContextSchema extends object = any
+> {
+  // the props arg will be thrown away, just keep it for type checking!
+  (props: Props): MachineSpec<Props, StateSchema, EventSchema, ContextSchema>;
+  // id differentiates this from SFC
+  id: DeriveIdFunction<Props> | string;
+}
+
+/**
+ * INTERNAL NOTES:
+ *
+ * had to wrap machineSpec in createMachine to support TSX! objects are not callable,
+ * so they can't be the first argument for createElement in TSX. this method is basically
+ * just as fast as using POJO machineSpec as the component because you only have to
+ * call the wrapped function once on the first render. store the spec on the instance after.
+ * can compare the id without calling it as the createMachine function stores it as a property
+ * on the 'machine component' wrapper
+ */
+
+/**
+ * Creates a machine based on behavior specification
+ *
+ * @param machineSpec Specification for how the machine should behave
+ */
+export function createMachine<
+  Props extends PropsArg = any,
+  StateSchema extends string = any,
+  EventSchema extends Event = any,
+  ContextSchema extends object = any
+>(
+  machineSpec: MachineSpec<Props, StateSchema, EventSchema, ContextSchema>
+): MachineComponent<Props, StateSchema, EventSchema, ContextSchema> {
+  function machineComponent() {
+    return machineSpec;
+  }
+
+  machineComponent.id = machineSpec.id;
+
+  return machineComponent;
+}
+
+export interface MachineSpec<
   Props extends PropsArg = any,
   StateSchema extends string = any,
   EventSchema extends Event = any,
@@ -120,7 +166,7 @@ export interface MachineComponent<
     }
   >;
   // UI
-  render?(
+  render(
     state: StateSchema,
     context: ContextSchema,
     /** the id of the machine. useful for emitting events to self */

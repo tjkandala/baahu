@@ -1,4 +1,4 @@
-import { MachineComponent } from '../../src/component';
+import { createMachine } from '../../src/component';
 import baahu, { b } from '../../src';
 
 describe('real world events', () => {
@@ -18,7 +18,7 @@ describe('real world events', () => {
       emit({ type: 'PROCESSED_DATA' });
     }
 
-    const NestedEventMach: MachineComponent<{}, MyState, MyEvent> = {
+    const NestedEventMach = createMachine<{}, MyState, MyEvent>({
       id: 'nestedEventMach',
       initialContext: () => ({}),
       initialState: 'loading',
@@ -41,7 +41,7 @@ describe('real world events', () => {
         complete: {},
       },
       render: state => b('h1', {}, state),
-    };
+    });
 
     $root = mount(NestedEventMach, $root) as HTMLElement;
 
@@ -62,7 +62,7 @@ describe('real world events', () => {
       }).then(() => emit({ type: 'PROCESSED_DATA' }));
     }
 
-    const NestedEventMach: MachineComponent<{}, MyState, MyEvent> = {
+    const NestedEventMach = createMachine<{}, MyState, MyEvent>({
       id: 'nestedEventMachAsync',
       initialContext: () => ({}),
       initialState: 'loading',
@@ -85,7 +85,7 @@ describe('real world events', () => {
         complete: {},
       },
       render: state => b('h1', {}, state),
-    };
+    });
 
     $root = mount(NestedEventMach, $root) as HTMLElement;
 

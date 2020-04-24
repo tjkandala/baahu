@@ -1,11 +1,39 @@
 // TODO: computed id + targeted events (this can be combined into one good test!)
 // TOOD: initial context? may just combine it with first test
 
-import { MachineComponent, SFC } from '../../src/component';
+import { SFC, createMachine } from '../../src/component';
 import baahu, { b } from '../../src';
 
 describe('machine components', () => {
   let $root = document.body;
+
+  test('constructor works', () => {
+    const MyMach = createMachine<{ name: string }>({
+      id: 'myMach',
+      initialContext: () => ({}),
+      initialState: 'loading',
+      states: {
+        loading: {},
+      },
+      render: () => (
+        <div>
+          <p>my mach</p>
+        </div>
+      ),
+    });
+
+    const App: SFC = () => (
+      <div>
+        <MyMach name="tj" />
+      </div>
+    );
+
+    const { mount, linkTo } = baahu();
+
+    mount(App, $root);
+
+    linkTo('rerender');
+  });
 
   test('computed ids for resuable machines', () => {
     type MachineList = 'wolf-machine' | 'dog-machine';
@@ -17,7 +45,7 @@ describe('machine components', () => {
     type State = 'sleeping' | 'eating';
     type Event = { type: 'WAKE_UP' } | { type: 'STOMACH_FILLED' };
 
-    const ReusableAnimalMachine: MachineComponent<Props, State, Event> = {
+    const ReusableAnimalMachine = createMachine<Props, State, Event>({
       id: props => `${props.species}-machine`,
       initialContext: () => ({}),
       initialState: 'sleeping',
@@ -38,7 +66,7 @@ describe('machine components', () => {
         },
       },
       render: state => b('h1', {}, state),
-    };
+    });
 
     const RootComponent: SFC = () =>
       b(
@@ -47,6 +75,13 @@ describe('machine components', () => {
         b(ReusableAnimalMachine, { species: 'wolf' }),
         b(ReusableAnimalMachine, { species: 'bear' })
       );
+
+    // const RootComp: SFC = () => (
+    //   <div>
+    //     <p>wtf</p>
+    //     <ReusableAnimalMachine />
+    //   </div>
+    // );
 
     $root = mount(RootComponent, $root) as HTMLElement;
 

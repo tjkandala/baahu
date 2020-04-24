@@ -1,4 +1,4 @@
-import { MachineComponent } from './component';
+import { MachineSpec } from './component';
 import { VNode } from './createElement';
 
 export type MachineInstance = {
@@ -9,7 +9,7 @@ export type MachineInstance = {
   isLeaf: boolean;
   /** the spec is the object created by developers. it describes how the machine instance,
    * which created by Baahu, should behave */
-  spec: MachineComponent;
+  spec: MachineSpec;
   /** last rendered vnode, for memoization */
   lastChild: VNode | null;
 };

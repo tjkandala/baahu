@@ -47,10 +47,7 @@ export function baahu<
     });
 
     // rerender
-    const vNode: VNode | null =
-      typeof currentRootComponent === 'object'
-        ? b(currentRootComponent, {})
-        : currentRootComponent({}, []);
+    const vNode: VNode | null = b(currentRootComponent, {});
 
     if (vNode) {
       diff(currentVRoot, vNode)($root);
@@ -318,10 +315,7 @@ export function baahu<
      * the render will reflect the new state. leaf machines that are not in the map (benchmark it vs set)
      * will return their lastVNode. if the instance did update, render a newVNode, append it lo lastVNode, and return that!
      */
-    const vNode: VNode | null =
-      typeof currentRootComponent === 'object'
-        ? b(currentRootComponent, {})
-        : currentRootComponent({}, []);
+    const vNode: VNode | null = b(currentRootComponent, {});
 
     if (vNode) {
       diff(currentVRoot, vNode)($root);
@@ -335,10 +329,7 @@ export function baahu<
       rootComponent: MachineComponent | SFC,
       $target: HTMLElement
     ): HTMLElement | Text {
-      const vNode: VNode | null =
-        typeof rootComponent === 'object'
-          ? b(rootComponent, {})
-          : rootComponent({}, []);
+      const vNode: VNode | null = b(rootComponent, {});
 
       if (vNode) {
         $root = renderDOM(vNode);
