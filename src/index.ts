@@ -1,4 +1,4 @@
-import { baahu } from './main';
+import { baahu, RouterSchema, RouterCallback } from './main';
 import { b, ChildArg } from './createElement';
 import {
   memoInstance,
@@ -19,6 +19,8 @@ export {
   Effect,
   BaahuEvent,
   SFC,
+  RouterSchema,
+  RouterCallback,
 };
 export default baahu;
 
@@ -214,7 +216,6 @@ declare global {
       challenge?: string;
       checked?: boolean;
       class?: string;
-      className?: string;
       cols?: number;
       colSpan?: number;
       content?: string;

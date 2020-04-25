@@ -118,6 +118,7 @@ export function b<Props extends PropsArg>(
     case 'function':
       // if the function has an id property, its a machine component
       if ('id' in type) {
+        // asserting props here because it doesn't matter if props are null/undefined here
         const mProps = props as Props;
         const instanceId =
           typeof type.id === 'function' ? type.id(mProps) : type.id;

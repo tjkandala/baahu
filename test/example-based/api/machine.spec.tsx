@@ -1,8 +1,8 @@
 // TODO: computed id + targeted events (this can be combined into one good test!)
 // TOOD: initial context? may just combine it with first test
 
-import { SFC, createMachine } from '../../src/component';
-import baahu, { b } from '../../src';
+import { SFC, createMachine } from '../../../src/component';
+import baahu, { b } from '../../../src';
 
 describe('machine components', () => {
   let $root = document.body;
@@ -76,13 +76,6 @@ describe('machine components', () => {
         b(ReusableAnimalMachine, { species: 'bear' })
       );
 
-    // const RootComp: SFC = () => (
-    //   <div>
-    //     <p>wtf</p>
-    //     <ReusableAnimalMachine />
-    //   </div>
-    // );
-
     $root = mount(RootComponent, $root) as HTMLElement;
 
     /** wolf */
@@ -119,4 +112,7 @@ describe('machine components', () => {
     // this is working, but i should test it to prevent regressions
     expect(true).toBe(true);
   });
+
+  // TODO: make the most convoluted machine possible to test the limits of baahu. no
+  // machine that passes the typechecks should be logically wrong/broken
 });

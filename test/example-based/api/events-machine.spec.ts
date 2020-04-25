@@ -1,5 +1,5 @@
-import { createMachine } from '../../src/component';
-import baahu, { b } from '../../src';
+import { createMachine } from '../../../src/component';
+import baahu, { b } from '../../../src';
 
 describe('real world events', () => {
   type MyState = 'loading' | 'ready' | 'complete';

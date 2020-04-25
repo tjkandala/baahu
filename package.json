@@ -1,5 +1,5 @@
 {
-  "version": "0.7.3",
+  "version": "0.7.4",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -34,6 +34,7 @@
   "author": "TJ Kandala",
   "module": "dist/baahu.esm.js",
   "devDependencies": {
+    "fast-check": "^1.24.1",
     "husky": "^4.2.5",
     "tsdx": "^0.13.2",
     "tslib": "^1.11.1",

@@ -23,7 +23,7 @@ export function baahu<
 
   let currentRootComponent: MachineComponent | SFC;
   let currentVRoot: VNode;
-  let $root: HTMLElement | Text;
+  let $root: HTMLElement;
 
   /**
    *
@@ -329,11 +329,11 @@ export function baahu<
     mount(
       rootComponent: MachineComponent | SFC,
       $target: HTMLElement
-    ): HTMLElement | Text {
+    ): HTMLElement {
       const vNode: VNode | null = b(rootComponent, {});
 
       if (vNode) {
-        $root = renderDOM(vNode);
+        $root = renderDOM(vNode) as HTMLElement;
         $target.replaceWith($root);
 
         currentRootComponent = rootComponent;
@@ -355,9 +355,7 @@ export function baahu<
         : link(path, state);
     },
     createRouter<Props extends PropsArg = any>(
-      routerSchema: {
-        [path: string]: RouterCallback<Props>;
-      },
+      routerSchema: RouterSchema<Props>,
       prefix = ''
     ): SFC<Props> {
       if (process.env.NODE_ENV !== 'production') {
@@ -404,7 +402,7 @@ interface AppInstance<
   mount: (
     rootComponent: MachineComponent | SFC,
     $target: HTMLElement
-  ) => HTMLElement | Text;
+  ) => HTMLElement;
   /**
    *
    * @param event The event you want to
@@ -416,9 +414,7 @@ interface AppInstance<
   emit: (event: AppEvent, target?: LiteralUnion<MachineList>) => void;
   linkTo: (path: string, state?: any) => void;
   createRouter: <Props extends PropsArg = any>(
-    routerSchema: {
-      [path: string]: RouterCallback<Props>;
-    },
+    routerSchema: RouterSchema<Props>,
     prefix?: string
   ) => SFC<Props>;
 }
@@ -432,7 +428,11 @@ interface AppInstance<
  */
 type LiteralUnion<T extends U, U = string> = T | (U & { zz_IGNORE_ME?: never });
 
-type RouterCallback<Props extends PropsArg = any> = (
+export type RouterSchema<Props extends PropsArg = any> = {
+  [path: string]: RouterCallback<Props>;
+};
+
+export type RouterCallback<Props extends PropsArg = any> = (
   params: Params,
   props: Props
 ) => VNode;

@@ -1,5 +1,5 @@
-import baahu, { b } from '../src';
-import { SFC, createMachine } from '../src/component';
+import baahu, { b } from '../../src';
+import { SFC, createMachine } from '../../src/component';
 
 describe('mounting', () => {
   const { mount } = baahu();

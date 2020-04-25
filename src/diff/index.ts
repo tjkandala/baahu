@@ -67,10 +67,11 @@ export function diff(
               );
             }
 
-            return ($element: HTMLElement | Text): HTMLElement => {
+            return ($element: HTMLElement | Text) => {
+              // asserting as HTMLElement because we know it can't be text here
               patchProps && patchProps($element as HTMLElement);
               patchChildren($element);
-              return $element as HTMLElement;
+              return $element;
             };
           }
 
@@ -86,7 +87,7 @@ export function diff(
           } else {
             return $text => {
               $text.nodeValue = newVNode.props.nodeValue;
-              return $text as Text;
+              return $text;
             };
           }
 
@@ -97,9 +98,9 @@ export function diff(
 }
 
 function createReplacePatch(newVNode: VNode) {
-  return ($element: HTMLElement | Text): HTMLElement => {
+  return ($element: HTMLElement | Text) => {
     const $newElement = renderDOM(newVNode);
     $element.replaceWith($newElement);
-    return $element as HTMLElement;
+    return $element;
   };
 }

@@ -105,6 +105,8 @@ export interface MachineComponent<
 /**
  * Creates a machine based on behavior specification
  *
+ * Type argument order: Props, State, Events, Context
+ *
  * @param machineSpec Specification for how the machine should behave
  */
 export function createMachine<

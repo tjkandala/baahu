@@ -1,10 +1,16 @@
-import baahu, { b } from '../src';
-import { SFC, createMachine, MachineComponent } from '../src/component';
+import baahu, { b } from '../../src';
+import { SFC, createMachine, MachineComponent } from '../../src/component';
 import {
   machineRegistry,
   machinesThatStillExist,
   machinesThatTransitioned,
-} from '../src/machineRegistry';
+} from '../../src/machineRegistry';
+
+/**
+ * The first test generates 14 tests (7 unkeyed, 7 keyed)
+ * for the diffing algorithms. Feel free to add
+ * crazier lists to test accuracy
+ */
 
 type BadVideoEvent = { type: 'LOADED' };
 type BadVideoState = 'loading';
@@ -309,6 +315,7 @@ const listMap: ListMap = {
         });
       });
 
+      // have to clear bc its the same app instance
       machineRegistry.clear();
       machinesThatStillExist.clear();
       machinesThatTransitioned.clear();
@@ -316,118 +323,118 @@ const listMap: ListMap = {
   });
 });
 
-// describe('basic events', () => {
-//   const { mount, emit } = baahu<MyEvent>();
+describe('basic events', () => {
+  const { mount, emit } = baahu<MyEvent>();
 
-//   type MyState = 'running' | 'complete';
-//   type MyEvent = { type: 'CHANGE_TEXT' } | { type: 'COMPLETED' };
-//   type MyContext = { text: string };
+  type MyState = 'running' | 'complete';
+  type MyEvent = { type: 'CHANGE_TEXT' } | { type: 'COMPLETED' };
+  type MyContext = { text: string };
 
-//   function updateText(ctx: MyContext): void {
-//     ctx.text = ctx.text + '!';
-//   }
+  function updateText(ctx: MyContext): void {
+    ctx.text = ctx.text + '!';
+  }
 
-//   const testMach: MachineSpec<{}, MyState, MyEvent, MyContext> = {
-//     isLeaf: true,
-//     id: 'testMach',
-//     initialContext: () => ({
-//       text: 'initial text',
-//     }),
-//     initialState: 'running',
-//     states: {
-//       running: {
-//         on: {
-//           CHANGE_TEXT: {
-//             effects: [updateText],
-//           },
-//           COMPLETED: {
-//             target: 'complete',
-//           },
-//         },
-//       },
-//       complete: {},
-//     },
-//     render: (s, ctx) => b('div', {}, b('h1', {}, ctx.text), b('p', {}, s)),
-//   };
+  const testMach = createMachine<{}, MyState, MyEvent, MyContext>({
+    isLeaf: true,
+    id: 'testMach',
+    initialContext: () => ({
+      text: 'initial text',
+    }),
+    initialState: 'running',
+    states: {
+      running: {
+        on: {
+          CHANGE_TEXT: {
+            effects: [updateText],
+          },
+          COMPLETED: {
+            target: 'complete',
+          },
+        },
+      },
+      complete: {},
+    },
+    render: (s, ctx) => b('div', {}, b('h1', {}, ctx.text), b('p', {}, s)),
+  });
 
-//   let $root = document.body;
+  let $root = document.body;
 
-//   test('context changes, reflected in render', () => {
-//     $root = mount(testMach, $root) as HTMLElement;
-//     expect($root.firstChild?.firstChild?.nodeValue).toBe('initial text');
+  test('context changes, reflected in render', () => {
+    $root = mount(testMach, $root) as HTMLElement;
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('initial text');
 
-//     // wrong target, shouldn't change it
-//     emit({ type: 'CHANGE_TEXT' }, 'wrongID');
-//     expect($root.firstChild?.firstChild?.nodeValue).toBe('initial text');
-//     // correct target, should work
-//     emit({ type: 'CHANGE_TEXT' }, 'testMach');
-//     expect($root.firstChild?.firstChild?.nodeValue).toBe('initial text!');
-//     // wild card events should work too
-//     emit({ type: 'CHANGE_TEXT' });
-//     expect($root.firstChild?.firstChild?.nodeValue).toBe('initial text!!');
-//   });
+    // wrong target, shouldn't change it
+    emit({ type: 'CHANGE_TEXT' }, 'wrongID');
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('initial text');
+    // correct target, should work
+    emit({ type: 'CHANGE_TEXT' }, 'testMach');
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('initial text!');
+    // wild card events should work too
+    emit({ type: 'CHANGE_TEXT' });
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('initial text!!');
+  });
 
-//   test('state changes, reflected in render', () => {
-//     expect(true).toBe(true);
+  test('state changes, reflected in render', () => {
+    expect(true).toBe(true);
 
-//     $root = mount(testMach, $root) as HTMLElement;
-//     expect($root.childNodes[1].firstChild?.nodeValue).toBe('running');
-//     emit({ type: 'COMPLETED' }, 'testMach');
-//     expect($root.childNodes[1].firstChild?.nodeValue).toBe('complete');
-//   });
-// });
+    $root = mount(testMach, $root) as HTMLElement;
+    expect($root.childNodes[1].firstChild?.nodeValue).toBe('running');
+    emit({ type: 'COMPLETED' }, 'testMach');
+    expect($root.childNodes[1].firstChild?.nodeValue).toBe('complete');
+  });
+});
 
-// describe('can replace nodes of different types', () => {
-//   let $root = document.body;
+describe('can replace nodes of different types', () => {
+  let $root = document.body;
 
-//   test('works', () => {
-//     type State = 'one' | 'two';
-//     type MyEvent = { type: 'TOGGLE' };
+  test('works', () => {
+    type State = 'one' | 'two';
+    type MyEvent = { type: 'TOGGLE' };
 
-//     const { mount, emit } = baahu<MyEvent>();
+    const { mount, emit } = baahu<MyEvent>();
 
-//     const ToggleMachine: MachineSpec<{}, State, MyEvent> = {
-//       isLeaf: true,
-//       id: 'toggle',
-//       initialContext: () => ({}),
-//       initialState: 'one',
-//       states: {
-//         one: {
-//           on: {
-//             TOGGLE: {
-//               target: 'two',
-//             },
-//           },
-//         },
-//         two: {
-//           on: {
-//             TOGGLE: {
-//               target: 'one',
-//             },
-//           },
-//         },
-//       },
-//       render: state => {
-//         switch (state) {
-//           case 'one':
-//             return b('div', {}, b('input', { type: 'text', value: 'one' }));
+    const ToggleMachine = createMachine<{}, State, MyEvent>({
+      isLeaf: true,
+      id: 'toggle',
+      initialContext: () => ({}),
+      initialState: 'one',
+      states: {
+        one: {
+          on: {
+            TOGGLE: {
+              target: 'two',
+            },
+          },
+        },
+        two: {
+          on: {
+            TOGGLE: {
+              target: 'one',
+            },
+          },
+        },
+      },
+      render: state => {
+        switch (state) {
+          case 'one':
+            return b('div', {}, b('input', { type: 'text', value: 'one' }));
 
-//           case 'two':
-//             return b('div', {}, 'two');
-//         }
-//       },
-//     };
+          case 'two':
+            return b('div', {}, 'two');
+        }
+      },
+    });
 
-//     $root = mount(ToggleMachine, $root) as HTMLElement;
+    $root = mount(ToggleMachine, $root) as HTMLElement;
 
-//     expect($root.firstChild?.nodeName).toBe('INPUT');
+    expect($root.firstChild?.nodeName).toBe('INPUT');
 
-//     emit({ type: 'TOGGLE' });
+    emit({ type: 'TOGGLE' });
 
-//     expect($root.firstChild?.nodeName).toBe('#text');
+    expect($root.firstChild?.nodeName).toBe('#text');
 
-//     emit({ type: 'TOGGLE' });
+    emit({ type: 'TOGGLE' });
 
-//     expect($root.firstChild?.nodeName).toBe('INPUT');
-//   });
-// });
+    expect($root.firstChild?.nodeName).toBe('INPUT');
+  });
+});

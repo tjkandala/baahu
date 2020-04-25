@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-import { RouTrie } from '../../src/router';
-import { baahu } from '../../src/main';
-import { SFC, createMachine } from '../../src/component';
-import { b } from '../../src/index';
-import { machineRegistry } from '../../src/machineRegistry';
+import { RouTrie } from '../../../src/router';
+import { baahu } from '../../../src/main';
+import { SFC, createMachine } from '../../../src/component';
+import { b } from '../../../src/index';
+import { machineRegistry } from '../../../src/machineRegistry';
 
 /**
  * TODO: Make an easy decoupled+nested router system!

@@ -1,6 +1,6 @@
-import { SFC } from '../../src/component';
-import createBaahuApp, { b } from '../../src';
-import { VNode } from '../../src/createElement';
+import { SFC } from '../../../src/component';
+import createBaahuApp, { b } from '../../../src';
+import { VNode } from '../../../src/createElement';
 
 describe('functional component patterns', () => {
   let $root = document.body;
