@@ -1,9 +1,7 @@
-import baahu, { b } from '../../src';
+import { b, mount } from '../../src';
 import { SFC, createMachine } from '../../src/component';
 
 describe('mounting', () => {
-  const { mount } = baahu();
-
   const TestMach = createMachine({
     isLeaf: true,
     id: 'testRoot',

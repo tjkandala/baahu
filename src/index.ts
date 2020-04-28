@@ -1,5 +1,12 @@
-import { baahu, RouterSchema, RouterCallback } from './main';
-import { b, ChildArg } from './createElement';
+import {
+  mount,
+  createRouter,
+  linkTo,
+  RouterSchema,
+  RouterCallback,
+  emit,
+} from './main';
+import { b, ChildArg, VNode } from './createElement';
 import {
   memoInstance,
   createMachine,
@@ -8,12 +15,20 @@ import {
   Effect,
   BaahuEvent,
   SFC,
+  DeriveIdFunction,
+  DeriveContextFunction,
+  DeriveInitialStateFunction,
 } from './component';
 
 export {
+  mount,
   b,
   memoInstance,
   createMachine,
+  createRouter,
+  emit,
+  linkTo,
+  VNode,
   MachineComponent,
   MachineSpec,
   Effect,
@@ -21,11 +36,17 @@ export {
   SFC,
   RouterSchema,
   RouterCallback,
+  DeriveIdFunction,
+  DeriveContextFunction,
+  DeriveInitialStateFunction,
 };
-export default baahu;
 
 declare global {
   module JSX {
+    interface IntrinsicAttributes {
+      key?: string | number;
+    }
+
     // HTML types from preact
     interface IntrinsicElements {
       // HTML
@@ -192,6 +213,8 @@ declare global {
 
     interface HTMLAttributes<RefType extends EventTarget = EventTarget>
       extends DOMAttributes<RefType> {
+      key?: string | number;
+
       // Standard HTML Attributes
       accept?: string;
       acceptCharset?: string;

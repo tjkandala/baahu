@@ -20,7 +20,7 @@ export function diffProps(
   // setting new attrs
   if (newProps) {
     for (const [k, v] of newProps) {
-      if (k.slice(0, 2) === 'on') {
+      if (k[0] === 'o' && k[1] === 'n') {
         // event handlers
         const eventType = k.slice(2);
         // just add the event if there aren't old props, or if old props doesn't have the event
@@ -44,16 +44,34 @@ export function diffProps(
           }
         }
       } else {
-        // don't need to check if attr is already there, unlike events, bc they're unique
         if (k !== 'key' && k !== 'ref') {
-          patches.push($el => {
-            if (k === 'value' && 'value' in $el) {
-              // for inputs
-              $el.value = v;
-            }
-            $el.setAttribute(k, v);
-            return $el;
-          });
+          // only push patch if new attr didn't exist or not equal to old attr
+          if (v !== oldProps?.get(k)) {
+            patches.push($el => {
+              if (
+                ('value' in $el || 'disabled' in $el) &&
+                (k === 'checked' || k === 'disabled' || k === 'value')
+              ) {
+                // for inputs/buttons
+                switch (k) {
+                  case 'checked':
+                    $el.checked = v;
+                    break;
+
+                  case 'disabled':
+                    $el.disabled = v;
+                    break;
+
+                  case 'value':
+                    $el.value = v;
+                }
+              } else {
+                $el.removeAttribute(k);
+                $el.setAttribute(k, v);
+              }
+              return $el;
+            });
+          }
         } else {
           if (k === 'ref' && typeof v === 'function') {
             // ref should be a function
@@ -72,7 +90,7 @@ export function diffProps(
     for (const [k, v] of oldProps) {
       // remove prop if there are no new props, or if prop isn't in new props
       if (!newProps || !newProps.has(k)) {
-        if (k.slice(0, 2) === 'on') {
+        if (k[0] === 'o' && k[1] === 'n') {
           // event handlers
           patches.push($el => {
             $el.removeEventListener(k.slice(2), v);

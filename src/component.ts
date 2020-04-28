@@ -128,14 +128,14 @@ export function createMachine<
 
 export interface MachineSpec<
   Props extends PropsArg = any,
-  StateSchema extends string = any,
+  StateSchema extends string = string,
   EventSchema extends Event = any,
   ContextSchema extends object = any
 > {
   // config
   id: DeriveIdFunction<Props> | string;
   initialContext: DeriveContextFunction<Props, ContextSchema>;
-  initialState: StateSchema;
+  initialState: StateSchema | DeriveInitialStateFunction<Props, StateSchema>;
   // defaulting isLeaf to false is good
   isLeaf?: boolean;
   // behavior
@@ -177,11 +177,19 @@ export interface MachineSpec<
   ): VNode | null;
 }
 
-type DeriveIdFunction<Props extends PropsArg = any> = (props: Props) => string;
-type DeriveContextFunction<
+export type DeriveIdFunction<Props extends PropsArg = any> = (
+  props: Props
+) => string;
+
+export type DeriveContextFunction<
   Props extends PropsArg = any,
   ContextSchema extends object = any
 > = (props: Props) => ContextSchema;
+
+export type DeriveInitialStateFunction<
+  Props extends PropsArg = any,
+  StateSchema extends string = string
+> = (props: Props) => StateSchema;
 
 type Event = {
   type: string;
@@ -190,7 +198,7 @@ type Event = {
 export type Effect<ContextSchema = any, E extends Event = any> = (
   context: ContextSchema,
   event: E,
-  instanceID: string
+  self: string
 ) => void;
 
 /** All events, including events not defined by user and user-defined events */

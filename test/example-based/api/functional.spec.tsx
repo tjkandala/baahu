@@ -1,13 +1,11 @@
 import { SFC } from '../../../src/component';
-import createBaahuApp, { b } from '../../../src';
+import { b, mount } from '../../../src';
 import { VNode } from '../../../src/createElement';
 
 describe('functional component patterns', () => {
   let $root = document.body;
 
   test("array 'fragment' children", () => {
-    const { mount } = createBaahuApp();
-
     const RootComponent: SFC = () =>
       b('div', {}, b('h1', null, 'title'), [
         b('p', null, 'first array kid'),
@@ -22,8 +20,6 @@ describe('functional component patterns', () => {
   });
 
   test('render props', () => {
-    const { mount } = createBaahuApp();
-
     type Props = {
       aRenderProp: () => VNode | null;
     };
@@ -48,8 +44,6 @@ describe('functional component patterns', () => {
   });
 
   test('children, for layout components', () => {
-    const { mount } = createBaahuApp();
-
     const Layout: SFC = ({}, children) =>
       b('div', {}, b('h3', {}, 'Layout Header'), children);
 

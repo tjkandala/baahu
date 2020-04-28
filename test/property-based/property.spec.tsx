@@ -1,4 +1,13 @@
-import baahu, { SFC, b, createMachine, RouterSchema } from '../../src';
+import {
+  SFC,
+  b,
+  emit,
+  createMachine,
+  createRouter,
+  RouterSchema,
+  mount,
+  linkTo,
+} from '../../src';
 import * as fc from 'fast-check';
 import {
   machineRegistry,
@@ -6,6 +15,7 @@ import {
   machinesThatTransitioned,
 } from '../../src/machineRegistry';
 import { VNode } from '../../src/createElement';
+import { markLIS } from '../../src/diff/children';
 
 /**
  * Think of properties to test:
@@ -85,8 +95,6 @@ describe('machine property-based tests', () => {
             render: s => <p>{s}</p>,
           });
 
-          const { mount, emit } = baahu();
-
           $root = mount(Mach, $root);
 
           // is initial state (states[0])
@@ -135,8 +143,6 @@ describe('machine property-based tests', () => {
           },
           render: (_, _ctx, self) => <p>{self}</p>,
         });
-
-        const { mount } = baahu();
 
         $root = mount(App, $root);
 
@@ -200,8 +206,6 @@ describe('machine property-based tests', () => {
             ))}
           </div>
         );
-
-        const { mount, emit } = baahu();
 
         $root = mount(App, $root);
 
@@ -284,8 +288,6 @@ describe('machine property-based tests', () => {
           render: (_s, _c, self) => <p>{self}</p>,
         });
 
-        const { mount, linkTo, createRouter } = baahu();
-
         const MyRouter = createRouter(routeSchema);
 
         const App: SFC = () => (
@@ -315,8 +317,6 @@ describe('machine property-based tests', () => {
   });
 
   test('dom count', () => {
-    const { mount } = baahu();
-
     const length = 10;
 
     const MyApp: SFC = () => (
@@ -343,8 +343,26 @@ describe('machine property-based tests', () => {
  * - length of before and after must be equal
  * - no negative numbers (other than -1/-2), and number >=0 must be unique
  */
+test('markLIS property', () => {
+  fc.assert(
+    fc.property(fc.set(fc.integer(0, 3000), 2, 100), arr => {
+      const lisMarked = markLIS(Int32Array.from(arr));
+      expect(lisMarked.length).toBe(arr.length);
 
-/**
- * properties for RouTrie:
- *
- */
+      let smallest = -2;
+
+      // 0+. represents moves (position in old array)
+      let nonNegative = [];
+
+      for (let i = 0; i < lisMarked.length; i++) {
+        lisMarked[i] < smallest && (smallest = lisMarked[i]);
+        lisMarked[i] >= 0 && nonNegative.push(lisMarked[i]);
+      }
+
+      const nonNegativeSet = [...new Set(nonNegative)];
+
+      expect(smallest >= -2).toBe(true);
+      expect(nonNegative).toStrictEqual(nonNegativeSet);
+    })
+  );
+});

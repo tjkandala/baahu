@@ -100,7 +100,7 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
 export function b<Props extends PropsArg>(
   type: SFC<Props> | MachineComponent<Props> | TagName,
   /** I call them props for everything, but they are really attributes for ELEMENT_NODEs */
-  props: Props | null | undefined,
+  props: (Props & { key?: string | number }) | null | undefined,
   ...children: ChildrenArg
 ): VNode | null {
   switch (typeof type) {
@@ -136,14 +136,19 @@ export function b<Props extends PropsArg>(
             ? spec.initialContext(mProps)
             : {};
 
+          const initialState =
+            typeof spec.initialState === 'function'
+              ? spec.initialState(mProps)
+              : spec.initialState;
+
           spec.onMount && spec.onMount(initialContext);
 
-          const stateHandler = spec.states[spec.initialState];
+          const stateHandler = spec.states[initialState];
 
           if (process.env.NODE_ENV !== 'production') {
             if (!stateHandler) {
               throw new TypeError(
-                `Machine ${instanceId} does not specify behavior for state: ${spec.initialState}`
+                `Machine ${instanceId} does not specify behavior for state: ${initialState}`
               );
             }
           }
@@ -153,7 +158,7 @@ export function b<Props extends PropsArg>(
             stateHandler.onEntry(initialContext, { type: 'MOUNT' }, instanceId);
 
           const child = spec.render(
-            spec.initialState,
+            initialState,
             initialContext,
             instanceId,
             processChildren(children)
@@ -164,7 +169,7 @@ export function b<Props extends PropsArg>(
 
           const newInstance = {
             id: instanceId,
-            state: spec.initialState,
+            state: initialState,
             ctx: initialContext,
             spec: spec,
             isLeaf: spec.isLeaf ? spec.isLeaf : false,
@@ -227,15 +232,14 @@ export function b<Props extends PropsArg>(
 }
 
 export interface PropsArg {
-  ref?: RefCallback;
   key?: string | number;
   /** arbitrary keys */
-  [key: string]: string | RefCallback | undefined | EventHandler | number;
+  [key: string]: any;
 }
 
 // TODO: work on prop + attr types. the current interface works like this:
 // if the component has specified its prop types (they should), it overrides
 // PropsArg. an element can't speficy props, so it uses the default PropsArg
 
-type RefCallback = (ref: HTMLElement) => void;
-type EventHandler = (e: Event) => void;
+// type RefCallback = (ref: HTMLElement) => void;
+// type EventHandler = (e: Event) => void;

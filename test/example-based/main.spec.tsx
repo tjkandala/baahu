@@ -1,4 +1,4 @@
-import baahu, { b } from '../../src';
+import { b, emit, mount } from '../../src';
 import { SFC, createMachine, MachineComponent } from '../../src/component';
 import {
   machineRegistry,
@@ -18,8 +18,6 @@ type BadVideoState = 'loading';
 type ListItem = { key: string; todo: string };
 type ListEvent = { type: 'TOGGLE' };
 type ListState = 'first' | 'second';
-
-type AppEvent = BadVideoEvent | ListEvent;
 
 const failures = [];
 
@@ -78,26 +76,22 @@ function createListDiffComponent(
           return b(
             'div',
             {},
-            ...listOne.map(item =>
-              b(
-                'p',
-                { key: diffType === 'keyed' ? item.key : undefined },
-                item.todo
-              )
-            )
+            ...listOne.map(item => (
+              <p key={diffType === 'keyed' ? item.key : undefined}>
+                {item.todo}
+              </p>
+            ))
           );
 
         case 'second':
           return b(
             'div',
             {},
-            ...listTwo.map(item =>
-              b(
-                'p',
-                { key: diffType === 'keyed' ? item.key : undefined },
-                item.todo
-              )
-            )
+            ...listTwo.map(item => (
+              <p key={diffType === 'keyed' ? item.key : undefined}>
+                {item.todo}
+              </p>
+            ))
           );
       }
     },
@@ -268,8 +262,6 @@ const listMap: ListMap = {
       test(testCase, () => {
         const { listOne, listTwo } = listMap[testCase];
 
-        const { mount, emit } = baahu<AppEvent>();
-
         const ListMach = createListDiffComponent(
           listOne,
           listTwo,
@@ -324,8 +316,6 @@ const listMap: ListMap = {
 });
 
 describe('basic events', () => {
-  const { mount, emit } = baahu<MyEvent>();
-
   type MyState = 'running' | 'complete';
   type MyEvent = { type: 'CHANGE_TEXT' } | { type: 'COMPLETED' };
   type MyContext = { text: string };
@@ -390,8 +380,6 @@ describe('can replace nodes of different types', () => {
   test('works', () => {
     type State = 'one' | 'two';
     type MyEvent = { type: 'TOGGLE' };
-
-    const { mount, emit } = baahu<MyEvent>();
 
     const ToggleMachine = createMachine<{}, State, MyEvent>({
       isLeaf: true,

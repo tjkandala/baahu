@@ -1,4 +1,13 @@
-import baahu, { SFC, b, createMachine, memoInstance } from '../../src';
+import {
+  SFC,
+  b,
+  emit,
+  createMachine,
+  createRouter,
+  memoInstance,
+  mount,
+  linkTo,
+} from '../../src';
 import { machineRegistry } from '../../src/machineRegistry';
 
 describe('basic apps', () => {
@@ -17,10 +26,6 @@ describe('basic apps', () => {
      * - include both reusable machines and singleton machines (like home)
      *
      */
-    const { mount, emit, createRouter, linkTo } = baahu<
-      AppEvent,
-      MachineList
-    >();
 
     const MyRouter = createRouter({
       '/': () => <Home />,
@@ -44,9 +49,6 @@ describe('basic apps', () => {
 
     // using arrays to define machines and states
     //  so we can iterate through them for tests
-    const machineList = ['Home', 'VideoList', 'Video', 'Profile'] as const;
-
-    type MachineList = typeof machineList[number];
 
     const Home = createMachine<{}, HomeState, HomeEvent, {}>({
       isLeaf: true,
@@ -366,8 +368,6 @@ describe('basic apps', () => {
     );
   });
 });
-
-type AppEvent = HomeEvent | VideoListEvent | VideoEvent;
 
 const homeState = ['loading', 'loaded'] as const;
 type HomeState = typeof homeState[number];

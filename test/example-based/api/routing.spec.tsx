@@ -1,20 +1,12 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { RouTrie } from '../../../src/router';
-import { baahu } from '../../../src/main';
 import { SFC, createMachine } from '../../../src/component';
-import { b } from '../../../src/index';
+import { b, createRouter, linkTo, mount } from '../../../src/index';
 import { machineRegistry } from '../../../src/machineRegistry';
-
-/**
- * TODO: Make an easy decoupled+nested router system!
- *
- * The idea: set a string for the root!  */
 
 describe('router', () => {
   let $root = document.body;
   test('machine unmount on route change', () => {
-    const { linkTo, mount, createRouter } = baahu();
-
     const HomeMachine = createMachine({
       id: 'home',
       initialContext: () => ({}),
@@ -40,44 +32,83 @@ describe('router', () => {
 
     const MyRouter = createRouter({
       '/': () => <Home />,
-      '/:roomid': ({ roomid }) => <Room roomid={roomid} />,
+      '/room/:roomid': ({ roomid }) => <Room roomid={roomid} />,
     });
 
-    const App: SFC = () => <MyRouter />;
+    const App: SFC = () => (
+      <div>
+        <MyRouter />
+      </div>
+    );
 
     $root = mount(App, $root) as HTMLElement;
 
-    expect($root.firstChild?.nodeName).toBe('P');
-    expect($root.firstChild?.firstChild?.nodeValue).toBe('home page');
-    expect($root.childNodes[1]?.nodeName).toBe('P');
-    expect($root.childNodes[1]?.firstChild?.nodeValue).toBe('the home machine');
+    expect($root.firstChild?.firstChild?.nodeName).toBe('P');
+    expect($root.firstChild?.firstChild?.firstChild?.nodeValue).toBe(
+      'home page'
+    );
+    expect($root.firstChild?.childNodes[1]?.nodeName).toBe('P');
+    expect($root.firstChild?.childNodes[1]?.firstChild?.nodeValue).toBe(
+      'the home machine'
+    );
 
     // home machine should be in the registry after mount
     expect([...machineRegistry.keys()]).toStrictEqual(['home']);
 
     // navigate away from home. home machine should be unmounted
-    linkTo('/cool');
+    linkTo('/room/cool');
 
     expect([...machineRegistry.keys()]).toStrictEqual([]);
 
-    expect($root.firstChild?.nodeName).toBe('P');
-    expect($root.firstChild?.firstChild?.nodeValue).toBe('cool');
+    expect($root.firstChild?.firstChild?.nodeName).toBe('P');
+    expect($root.firstChild?.firstChild?.firstChild?.nodeValue).toBe('cool');
 
     // go back home. home machine should be mounted
     linkTo('/');
 
     expect([...machineRegistry.keys()]).toStrictEqual(['home']);
 
-    expect($root.firstChild?.nodeName).toBe('P');
-    expect($root.firstChild?.firstChild?.nodeValue).toBe('home page');
-    expect($root.childNodes[1]?.nodeName).toBe('P');
-    expect($root.childNodes[1]?.firstChild?.nodeValue).toBe('the home machine');
+    expect($root.firstChild?.firstChild?.nodeName).toBe('P');
+    expect($root.firstChild?.firstChild?.firstChild?.nodeValue).toBe(
+      'home page'
+    );
+    expect($root.firstChild?.childNodes[1]?.nodeName).toBe('P');
+    expect($root.firstChild?.childNodes[1]?.firstChild?.nodeValue).toBe(
+      'the home machine'
+    );
+
+    // bad route returns undefined. should unmount home machine
+    linkTo('/bad/route');
+
+    expect([...machineRegistry.keys()]).toStrictEqual([]);
+
+    expect($root.childNodes.length).toBe(0);
+
+    // can recover from bad route
+    linkTo('/room/bar');
+
+    expect([...machineRegistry.keys()]).toStrictEqual([]);
+
+    expect($root.firstChild?.firstChild?.nodeName).toBe('P');
+    expect($root.firstChild?.firstChild?.firstChild?.nodeValue).toBe('bar');
+
+    // go back home (test caching, machine mounting)
+    linkTo('/');
+
+    expect([...machineRegistry.keys()]).toStrictEqual(['home']);
+
+    expect($root.firstChild?.firstChild?.nodeName).toBe('P');
+    expect($root.firstChild?.firstChild?.firstChild?.nodeValue).toBe(
+      'home page'
+    );
+    expect($root.firstChild?.childNodes[1]?.nodeName).toBe('P');
+    expect($root.firstChild?.childNodes[1]?.firstChild?.nodeValue).toBe(
+      'the home machine'
+    );
   });
 
-  test('route changes update dom', () => {
-    // console.log(location.pathname);
-    expect(true).toBe(true);
-  });
+  // TODO: emitting route changes from machines event! not encouraged but see what happens. setting timeout, after all
+  // this will have to be an async test
 
   test('nested routers', () => {
     expect(true).toBe(true);
@@ -87,7 +118,7 @@ describe('router', () => {
     const myTrie = new RouTrie();
 
     /**
-     * These routes demonstrate that regular routes are finded first,
+     * These routes demonstrate that regular routes are found first,
      * then parameterized routes or wildcard routes
      */
 

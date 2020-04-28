@@ -1,5 +1,5 @@
 import { createMachine } from '../../../src/component';
-import baahu, { b } from '../../../src';
+import { b, emit, mount } from '../../../src';
 
 describe('real world events', () => {
   type MyState = 'loading' | 'ready' | 'complete';
@@ -11,7 +11,6 @@ describe('real world events', () => {
     /** this is not a really a good pattern (why not just do the work in one
      * transition, intermediate state would never be rendered anyways), but
      * I want to test that the framework works in predictable ways */
-    const { mount, emit } = baahu<MyEvent>();
 
     function processData(): void {
       // do some work (synchronously), then emit event
@@ -53,8 +52,6 @@ describe('real world events', () => {
   });
 
   test('async events', () => {
-    const { mount, emit } = baahu<MyEvent>();
-
     function processData(): void {
       // do some work (async), then emit event
       new Promise(res => {
