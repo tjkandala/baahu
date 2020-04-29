@@ -2,12 +2,12 @@ import { VNode, VNodeKind } from './createElement';
 
 /** call this function with a VNode. it will recursively append DOM children until it reaches leaves */
 export function renderDOM(node: VNode): HTMLElement | Text {
-  switch (node.kind) {
-    case VNodeKind.E:
-      const $el = document.createElement(node.tag);
+  switch (node.x) {
+    case VNodeKind.Element:
+      const $el = document.createElement(node.t);
 
-      if (node.props) {
-        for (const [prop, value] of node.props) {
+      if (node.a) {
+        for (const [prop, value] of node.a) {
           if (prop.startsWith('on')) {
             $el.addEventListener(prop.substring(2).toLowerCase(), value);
           } else {
@@ -27,20 +27,20 @@ export function renderDOM(node: VNode): HTMLElement | Text {
       }
 
       let child: HTMLElement | Text;
-      for (let i = 0, len = node.children.length; i < len; i++) {
-        child = renderDOM(node.children[i]);
+      for (let i = 0, len = node.c.length; i < len; i++) {
+        child = renderDOM(node.c[i]);
         $el.appendChild(child);
       }
 
-      node.dom = $el;
+      node.d = $el;
 
       return $el;
 
-    case VNodeKind.T:
-      node.dom = document.createTextNode(node.props.nodeValue);
-      return node.dom;
+    case VNodeKind.Text:
+      node.d = document.createTextNode(node.a.n);
+      return node.d;
 
-    case VNodeKind.M:
-      return renderDOM(node.children);
+    case VNodeKind.Machine:
+      return renderDOM(node.c);
   }
 }

@@ -16,30 +16,26 @@ export function diff(
   /** there is no node in the new tree corresponding
    * to the old tree, so remove node */
   if (!newVNode) {
-    if (oldVNode.kind === VNodeKind.M) {
-      oldVNode.children.dom && oldVNode.children.dom.remove();
+    if (oldVNode.x === VNodeKind.Machine) {
+      oldVNode.c.d && oldVNode.c.d.remove();
     } else {
-      oldVNode.dom && oldVNode.dom.remove();
+      oldVNode.d && oldVNode.d.remove();
     }
     return;
   }
 
-  switch (oldVNode.kind) {
-    case VNodeKind.E:
-      switch (newVNode.kind) {
-        case VNodeKind.E:
-          if (oldVNode.tag !== newVNode.tag) {
+  switch (oldVNode.x) {
+    case VNodeKind.Element:
+      switch (newVNode.x) {
+        case VNodeKind.Element:
+          if (oldVNode.t !== newVNode.t) {
             /** different tags can't represent the same node */
             return replace(oldVNode, newVNode, parentDom);
           } else {
             /** most computation is done here. Both VNodes are ELEMENT_NODES and
              * have the same tag,  so we must diff props (attributes) and children */
 
-            diffProps(
-              oldVNode.props,
-              newVNode.props,
-              oldVNode.dom as HTMLElement
-            );
+            diffProps(oldVNode.a, newVNode.a, oldVNode.d as HTMLElement);
 
             /** only call diffKeyedChildren if the first nodes of both lists are keyed.
              * users should be aware of this behavior, and be sure to either key all
@@ -47,31 +43,27 @@ export function diff(
              *
              * most of the time, call diffChildren */
 
-            const firstOldChild = oldVNode.children[0];
-            const firstNewChild = newVNode.children[0];
+            const firstOldChild = oldVNode.c[0];
+            const firstNewChild = newVNode.c[0];
 
             if (
               firstOldChild &&
-              firstOldChild.key &&
+              firstOldChild.k &&
               firstNewChild &&
-              firstNewChild.key
+              firstNewChild.k
             ) {
               keyedDiffChildren(
-                oldVNode.children,
-                newVNode.children,
+                oldVNode.c,
+                newVNode.c,
                 // asserting the type bc it'll only be null after createElement and before renderDOM
-                oldVNode.dom as HTMLElement
+                oldVNode.d as HTMLElement
               );
             } else {
-              diffChildren(
-                oldVNode.children,
-                newVNode.children,
-                oldVNode.dom as HTMLElement
-              );
+              diffChildren(oldVNode.c, newVNode.c, oldVNode.d as HTMLElement);
             }
 
             // pass on the dom node since they are the same element
-            newVNode.dom = oldVNode.dom;
+            newVNode.d = oldVNode.d;
 
             return;
           }
@@ -80,15 +72,15 @@ export function diff(
           return replace(oldVNode, newVNode, parentDom);
       }
 
-    case VNodeKind.T:
-      switch (newVNode.kind) {
-        case VNodeKind.T:
-          if (oldVNode.props.nodeValue === newVNode.props.nodeValue) {
-            newVNode.dom = oldVNode.dom;
+    case VNodeKind.Text:
+      switch (newVNode.x) {
+        case VNodeKind.Text:
+          if (oldVNode.a.n === newVNode.a.n) {
+            newVNode.d = oldVNode.d;
             return;
           } else {
-            oldVNode.dom && (oldVNode.dom.nodeValue = newVNode.props.nodeValue);
-            newVNode.dom = oldVNode.dom;
+            oldVNode.d && (oldVNode.d.nodeValue = newVNode.a.n);
+            newVNode.d = oldVNode.d;
             return;
           }
 
@@ -96,15 +88,15 @@ export function diff(
           return replace(oldVNode, newVNode, parentDom);
       }
 
-    case VNodeKind.M:
-      switch (newVNode.kind) {
-        case VNodeKind.M:
+    case VNodeKind.Machine:
+      switch (newVNode.x) {
+        case VNodeKind.Machine:
           // "children" of a machineVNode is one child
-          diff(oldVNode.children, newVNode.children, parentDom);
+          diff(oldVNode.c, newVNode.c, parentDom);
           return;
 
         default:
-          return replace(oldVNode.children, newVNode, parentDom);
+          return replace(oldVNode.c, newVNode, parentDom);
       }
   }
 }
@@ -117,8 +109,8 @@ function replace(
   // replaceWith isn't supported on old browsers
   const $new = renderDOM(newVNode);
   if (parentDom) {
-    parentDom.replaceChild($new, oldVNode.dom as HTMLElement);
+    parentDom.replaceChild($new, oldVNode.d as HTMLElement);
   } else {
-    oldVNode.dom && oldVNode.dom.replaceWith($new);
+    oldVNode.d && oldVNode.d.replaceWith($new);
   }
 }

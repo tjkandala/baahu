@@ -37,12 +37,12 @@ export function keyedDiffChildren(
     let oldEndNode = oldVChildren[oldEnd];
     let newEndNode = newVChildren[newEnd];
 
-    while (oldEndNode.key === newEndNode.key) {
+    while (oldEndNode.k === newEndNode.k) {
       // this part is important: if the last node not part of the
       // common suffix is new, it needs a reference to the leftmost
       // member of the common suffix so it can be appended before it
 
-      $nextNode = oldEndNode.dom;
+      $nextNode = oldEndNode.d;
 
       diff(oldEndNode, newEndNode, parentDom);
 
@@ -60,7 +60,7 @@ export function keyedDiffChildren(
     let oldStartNode = oldVChildren[oldStart];
     let newStartNode = newVChildren[newStart];
 
-    while (oldStartNode.key === newStartNode.key) {
+    while (oldStartNode.k === newStartNode.k) {
       diff(oldStartNode, newStartNode, parentDom);
 
       oldStart++;
@@ -94,7 +94,7 @@ export function keyedDiffChildren(
     while (newStart <= newEnd) {
       parentDom.insertBefore(
         renderDOM(newVChildren[newStart]),
-        oldVChildren[oldStart].dom
+        oldVChildren[oldStart].d
       );
       newStart++;
     }
@@ -111,7 +111,7 @@ export function keyedDiffChildren(
      */
 
     while (oldStart <= oldEnd) {
-      oldVChildren[oldStart].dom?.remove();
+      oldVChildren[oldStart].d?.remove();
       oldStart++;
     }
 
@@ -134,7 +134,7 @@ export function keyedDiffChildren(
     // newStart is offset between 'sources' and actual new children array
     const indexInNewChildren = i + newStart;
     sources[i] = -1;
-    keyIndex.set(newVChildren[indexInNewChildren].key, indexInNewChildren);
+    keyIndex.set(newVChildren[indexInNewChildren].k, indexInNewChildren);
   }
 
   let indexInOldChildren: number;
@@ -154,8 +154,8 @@ export function keyedDiffChildren(
    */
   for (let i = oldStart; i <= oldEnd; i++) {
     oldVNode = oldVChildren[i];
-    indexInNewChildren = keyIndex.get(oldVNode.key);
-    ogNode = oldVNode.dom;
+    indexInNewChildren = keyIndex.get(oldVNode.k);
+    ogNode = oldVNode.d;
     if (typeof indexInNewChildren !== 'undefined') {
       /** 99999999 indicates that at least one node has moved,
        * so we should mark nodes that are part of the longest increasing
@@ -210,8 +210,8 @@ export function keyedDiffChildren(
 
           diff(oldVNode, newVNode, parentDom);
 
-          if (newVNode.dom) {
-            $nextNode = newVNode.dom;
+          if (newVNode.d) {
+            $nextNode = newVNode.d;
           }
 
           continue;
@@ -235,12 +235,12 @@ export function keyedDiffChildren(
 
           diff(oldVNode, newVNode, parentDom);
 
-          if (newVNode.dom) {
+          if (newVNode.d) {
             $nextNode
-              ? parentDom.insertBefore(newVNode.dom, $nextNode)
-              : parentDom.appendChild(newVNode.dom);
+              ? parentDom.insertBefore(newVNode.d, $nextNode)
+              : parentDom.appendChild(newVNode.d);
 
-            $nextNode = newVNode.dom;
+            $nextNode = newVNode.d;
           }
 
           continue;
@@ -280,8 +280,8 @@ export function keyedDiffChildren(
 
           diff(oldVNode, newVNode, parentDom);
 
-          if (newVNode.dom) {
-            $nextNode = newVNode.dom;
+          if (newVNode.d) {
+            $nextNode = newVNode.d;
           }
 
           continue;

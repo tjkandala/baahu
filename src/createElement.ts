@@ -25,47 +25,57 @@ export type Props = Map<string, any>;
 // DO NOT add optional keys to VNodes! more info: https://mrale.ph/blog/2015/01/11/whats-up-with-monomorphism.html
 // make them all have the same shape, but some values will have different meaning/nulled based on the
 // discriminant, "kind"
+// Also, had to make the property names super short because they can't be minified.
+// Hover over the properties to see their full names
 
 type TextVNode = {
-  kind: VNodeKind.T;
-  tag: null;
-  key: string | number | null;
-  props: {
-    nodeValue: string;
+  /** Kind of vNode */
+  x: VNodeKind.Text;
+  /** tag. used for element nodes */
+  t: null;
+  /** key */
+  k: string | number | null;
+  /** attributes */
+  a: {
+    /** nodeValue */
+    n: string;
   };
-  children: null;
-  dom: Text | null;
+  /** children */
+  c: null;
+  /** dom */
+  d: Text | null;
 };
 
-// TODO: change children to kids
-
 type ElementVNode = {
-  kind: VNodeKind.E;
-  tag: string;
-  key: string | number | null;
-  props: Props | null;
-  children: Array<VNode>;
-  dom: HTMLElement | null;
+  x: VNodeKind.Element;
+  t: string;
+  k: string | number | null;
+  /** attributes */
+  a: Props | null;
+  /** children */
+  c: Array<VNode>;
+  d: HTMLElement | null;
 };
 
 export type MachineVNode = {
-  kind: VNodeKind.M;
-  tag: null;
-  key: string | number | null;
-  props: null;
-  children: VNode;
-  dom: null;
+  x: VNodeKind.Machine;
+  t: null;
+  k: string | number | null;
+  a: null;
+  /** one child */
+  c: VNode;
+  d: null;
 };
 
 /** unfortunately, i had to make this enum less readable bc the minifier wasn't doing the trick */
 export enum VNodeKind {
   /** ELEMENT_NODE */
-  E,
+  Element,
   /** TEXT_NODE */
-  T,
+  Text,
 
   /** MACHINE_NODE */
-  M,
+  Machine,
   // /** FUNCTION_NODE */
   // F,
 }
@@ -75,14 +85,14 @@ export type VNode = ElementVNode | TextVNode | MachineVNode;
 
 function createTextVNode(text: string): TextVNode {
   return {
-    kind: VNodeKind.T,
-    tag: null,
-    key: null,
-    props: {
-      nodeValue: text,
+    x: VNodeKind.Text,
+    t: null,
+    k: null,
+    a: {
+      n: text,
     },
-    children: null,
-    dom: null,
+    c: null,
+    d: null,
   };
 }
 
@@ -117,14 +127,14 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
 }
 
 const nullVNode: TextVNode = {
-  kind: VNodeKind.T,
-  tag: null,
-  key: null,
-  props: {
-    nodeValue: '',
+  x: VNodeKind.Text,
+  t: null,
+  k: null,
+  a: {
+    n: '',
   },
-  children: null,
-  dom: null,
+  c: null,
+  d: null,
 };
 
 /** createElement */
@@ -138,12 +148,12 @@ export function b<Props extends PropsArg>(
     /** HTML element */
     case 'string':
       return {
-        kind: VNodeKind.E,
-        key: props && props.key ? props.key : null,
-        tag: type,
-        props: props ? new Map(Object.entries(props)) : null,
-        children: processChildren(children),
-        dom: null,
+        x: VNodeKind.Element,
+        k: props && props.key ? props.key : null,
+        t: type,
+        a: props ? new Map(Object.entries(props)) : null,
+        c: processChildren(children),
+        d: null,
       };
 
     /** machine components or SFCs */
@@ -197,12 +207,12 @@ export function b<Props extends PropsArg>(
           );
 
           const vNode: MachineVNode = {
-            kind: VNodeKind.M,
-            tag: null,
-            key: props && props.key ? props.key : null,
-            props: null,
-            children: child ? child : nullVNode,
-            dom: null,
+            x: VNodeKind.Machine,
+            t: null,
+            k: props && props.key ? props.key : null,
+            a: null,
+            c: child ? child : nullVNode,
+            d: null,
           };
 
           const newInstance = {
@@ -245,12 +255,12 @@ export function b<Props extends PropsArg>(
             );
 
             const vNode: MachineVNode = {
-              kind: VNodeKind.M,
-              tag: null,
-              key: props && props.key ? props.key : null,
-              props: null,
-              children: child ? child : nullVNode,
-              dom: null,
+              x: VNodeKind.Machine,
+              t: null,
+              k: props && props.key ? props.key : null,
+              a: null,
+              c: child ? child : nullVNode,
+              d: null,
             };
 
             existingInstance.vNode = vNode;
@@ -266,7 +276,7 @@ export function b<Props extends PropsArg>(
         );
 
         // assign given key to vnode
-        props && props.key && vNode && (vNode.key = props.key);
+        props && props.key && vNode && (vNode.k = props.key);
 
         return vNode ? vNode : null;
       }
