@@ -290,7 +290,7 @@ const listMap: ListMap = {
         // now, emit toggle event. should change to represent second list
         emit({ type: 'TOGGLE' }, `listMach-${diffType}-${testCase}`);
 
-        // check if DOM correctly represents VDom (values)
+        // check if DOM correctly represents VDom (values) after 1 toggle
         $root.firstChild?.childNodes.forEach((child, i) => {
           expect(child.firstChild?.nodeValue).toBe(listTwo[i].todo);
         });
@@ -301,7 +301,7 @@ const listMap: ListMap = {
         // now, render the first list again
         emit({ type: 'TOGGLE' }, `listMach-${diffType}-${testCase}`);
 
-        // check if DOM correctly represents VDom (values)
+        // check if DOM correctly represents VDom (values) after 2 toggles
         $root.firstChild?.childNodes.forEach((child, i) => {
           expect(child.firstChild?.nodeValue).toBe(listOne[i].todo);
         });

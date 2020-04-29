@@ -1,5 +1,5 @@
 import { MachineSpec } from './component';
-import { VNode } from './createElement';
+import { MachineVNode } from './createElement';
 
 export type MachineInstance = {
   id: string;
@@ -10,8 +10,9 @@ export type MachineInstance = {
   /** the spec is the object created by developers. it describes how the machine instance,
    * which created by Baahu, should behave */
   spec: MachineSpec;
-  /** last rendered vnode, for memoization */
-  lastChild: VNode | null;
+
+  /** last rendered vnode, for memoization + component-level rendering */
+  vNode: MachineVNode;
 };
 
 export type MachineRegistry = Map<string, MachineInstance>;

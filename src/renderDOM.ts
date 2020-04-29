@@ -32,9 +32,15 @@ export function renderDOM(node: VNode): HTMLElement | Text {
         $el.appendChild(child);
       }
 
+      node.dom = $el;
+
       return $el;
 
     case VNodeKind.T:
-      return document.createTextNode(node.props.nodeValue);
+      node.dom = document.createTextNode(node.props.nodeValue);
+      return node.dom;
+
+    case VNodeKind.M:
+      return renderDOM(node.children);
   }
 }

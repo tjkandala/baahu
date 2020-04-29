@@ -3,28 +3,26 @@ import { renderDOM } from '../renderDOM';
 import { diffProps } from './props';
 import { diffChildren, keyedDiffChildren } from './children';
 
-export type PatchFunction = (
-  element: HTMLElement | Text
-) => HTMLElement | Text | undefined;
-
-/**
- * ELI5: this function returns a patch function for a $dom node represented
- * by oldVNode to make it look like newVNode.
- * */
 export function diff(
   oldVNode: VNode,
-  newVNode: VNode | undefined
-): PatchFunction {
-  /** for isLeaf, memo, or static elements! */
-  if (oldVNode === newVNode) return $element => $element;
+  newVNode: VNode | undefined | null,
+  parentDom: HTMLElement | null
+): void {
+  /** for isLeaf, memo, or static elements!
+   * don't need to pass on dom (test it), same vnode
+   */
+  if (oldVNode === newVNode) return;
 
   /** there is no node in the new tree corresponding
    * to the old tree, so remove node */
-  if (!newVNode)
-    return $element => {
-      $element.remove();
-      return void 0;
-    };
+  if (!newVNode) {
+    if (oldVNode.kind === VNodeKind.M) {
+      oldVNode.children.dom && oldVNode.children.dom.remove();
+    } else {
+      oldVNode.dom && oldVNode.dom.remove();
+    }
+    return;
+  }
 
   switch (oldVNode.kind) {
     case VNodeKind.E:
@@ -32,14 +30,16 @@ export function diff(
         case VNodeKind.E:
           if (oldVNode.tag !== newVNode.tag) {
             /** different tags can't represent the same node */
-            return createReplacePatch(newVNode);
+            return replace(oldVNode, newVNode, parentDom);
           } else {
             /** most computation is done here. Both VNodes are ELEMENT_NODES and
              * have the same tag,  so we must diff props (attributes) and children */
 
-            const patchProps = diffProps(oldVNode.props, newVNode.props);
-
-            let patchChildren: PatchFunction;
+            diffProps(
+              oldVNode.props,
+              newVNode.props,
+              oldVNode.dom as HTMLElement
+            );
 
             /** only call diffKeyedChildren if the first nodes of both lists are keyed.
              * users should be aware of this behavior, and be sure to either key all
@@ -56,51 +56,69 @@ export function diff(
               firstNewChild &&
               firstNewChild.key
             ) {
-              patchChildren = keyedDiffChildren(
+              keyedDiffChildren(
                 oldVNode.children,
-                newVNode.children
+                newVNode.children,
+                // asserting the type bc it'll only be null after createElement and before renderDOM
+                oldVNode.dom as HTMLElement
               );
             } else {
-              patchChildren = diffChildren(
+              diffChildren(
                 oldVNode.children,
-                newVNode.children
+                newVNode.children,
+                oldVNode.dom as HTMLElement
               );
             }
 
-            return ($element: HTMLElement | Text) => {
-              // asserting as HTMLElement because we know it can't be text here
-              patchProps && patchProps($element as HTMLElement);
-              patchChildren($element);
-              return $element;
-            };
+            // pass on the dom node since they are the same element
+            newVNode.dom = oldVNode.dom;
+
+            return;
           }
 
         default:
-          return createReplacePatch(newVNode);
+          return replace(oldVNode, newVNode, parentDom);
       }
 
     case VNodeKind.T:
       switch (newVNode.kind) {
         case VNodeKind.T:
           if (oldVNode.props.nodeValue === newVNode.props.nodeValue) {
-            return $text => $text;
+            newVNode.dom = oldVNode.dom;
+            return;
           } else {
-            return $text => {
-              $text.nodeValue = newVNode.props.nodeValue;
-              return $text;
-            };
+            oldVNode.dom && (oldVNode.dom.nodeValue = newVNode.props.nodeValue);
+            newVNode.dom = oldVNode.dom;
+            return;
           }
 
         default:
-          return createReplacePatch(newVNode);
+          return replace(oldVNode, newVNode, parentDom);
+      }
+
+    case VNodeKind.M:
+      switch (newVNode.kind) {
+        case VNodeKind.M:
+          // "children" of a machineVNode is one child
+          diff(oldVNode.children, newVNode.children, parentDom);
+          return;
+
+        default:
+          return replace(oldVNode.children, newVNode, parentDom);
       }
   }
 }
 
-function createReplacePatch(newVNode: VNode) {
-  return ($element: HTMLElement | Text) => {
-    const $newElement = renderDOM(newVNode);
-    $element.replaceWith($newElement);
-    return $element;
-  };
+function replace(
+  oldVNode: VNode,
+  newVNode: VNode,
+  parentDom: HTMLElement | null
+): void {
+  // replaceWith isn't supported on old browsers
+  const $new = renderDOM(newVNode);
+  if (parentDom) {
+    parentDom.replaceChild($new, oldVNode.dom as HTMLElement);
+  } else {
+    oldVNode.dom && oldVNode.dom.replaceWith($new);
+  }
 }

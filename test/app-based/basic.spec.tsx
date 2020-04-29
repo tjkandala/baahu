@@ -213,6 +213,8 @@ describe('basic apps', () => {
     expect($root.childNodes[1]?.firstChild?.nodeName).toBe('BUTTON');
     expect($root.childNodes[1]?.firstChild?.firstChild?.nodeValue).toBe('load');
 
+    expect(machineRegistry.size).toBe(1);
+
     // don't respond to this
     emit({ type: 'LOADED_VIDEOS' }, 'Home');
 
@@ -234,14 +236,20 @@ describe('basic apps', () => {
 
     expect(footerRenders.length).toBe(2);
 
+    expect($root.childNodes[1].childNodes.length).toBe(1);
+
     expect($root.childNodes[1]?.firstChild?.nodeName).toBe('P');
     expect($root.childNodes[1]?.firstChild?.firstChild?.nodeValue).toBe(
       'loading videos'
     );
 
+    expect(machineRegistry.size).toBe(1);
+
     emit({ type: 'LOADED_VIDEOS' });
 
     expect(footerRenders.length).toBe(2);
+
+    expect($root.childNodes[1].childNodes.length).toBe(6);
 
     expect($root.childNodes[1]?.firstChild?.nodeName).toBe('H2');
     expect($root.childNodes[1]?.firstChild?.firstChild?.nodeValue).toBe(
@@ -250,7 +258,7 @@ describe('basic apps', () => {
     expect($root.childNodes[1]?.firstChild?.childNodes[1]?.nodeValue).toBe(
       `sports`
     );
-    // first video node
+    // first video node (1)
     expect($root.childNodes[1]?.childNodes[1]?.nodeName).toBe(`P`);
     expect($root.childNodes[1]?.childNodes[1]?.firstChild?.nodeValue).toBe(
       `buffering`
@@ -260,11 +268,13 @@ describe('basic apps', () => {
     expect($root.childNodes[1]?.childNodes[2]?.firstChild?.nodeValue).toBe(
       `buffering`
     );
+
+    expect(machineRegistry.size).toBe(4);
 
     // should't change anything
     emit({ type: 'CHANGE_CATEGORY', category: 'sports' });
 
-    // first video node
+    // first video node (2)
     expect($root.childNodes[1]?.childNodes[1]?.nodeName).toBe(`P`);
     expect($root.childNodes[1]?.childNodes[1]?.firstChild?.nodeValue).toBe(
       `buffering`
@@ -275,10 +285,10 @@ describe('basic apps', () => {
       `buffering`
     );
 
-    const firstLeafNodeBefore = machineRegistry.get('video-sports-1')
-      ?.lastChild;
-    const secondLeafNodeBefore = machineRegistry.get('video-sports-2')
-      ?.lastChild;
+    const firstLeafNodeBefore = machineRegistry.get('video-sports-1')?.vNode;
+    const secondLeafNodeBefore = machineRegistry.get('video-sports-2')?.vNode;
+
+    expect(machineRegistry.size).toBe(4);
 
     /**
      *
@@ -293,13 +303,15 @@ describe('basic apps', () => {
     );
     // second video node
     expect($root.childNodes[1]?.childNodes[2]?.nodeName).toBe(`P`);
-    expect($root.childNodes[1]?.childNodes[2]?.firstChild?.nodeValue).toBe(
-      `playing`
-    );
 
-    const firstLeafNodeAfter = machineRegistry.get('video-sports-1')?.lastChild;
-    const secondLeafNodeAfter = machineRegistry.get('video-sports-2')
-      ?.lastChild;
+    // this tests removing a machine vnode (as opposed to swapping it)
+    const problematicNode = $root.childNodes[1]?.childNodes[2]?.firstChild;
+    expect(problematicNode?.nodeValue).toBe(`playing`);
+
+    expect(machineRegistry.size).toBe(4);
+
+    const firstLeafNodeAfter = machineRegistry.get('video-sports-1')?.vNode;
+    const secondLeafNodeAfter = machineRegistry.get('video-sports-2')?.vNode;
 
     // we don't want this to rerender, so reference to child should be the same
     expect(firstLeafNodeBefore === firstLeafNodeAfter).toBe(true);
@@ -313,14 +325,20 @@ describe('basic apps', () => {
      * */
     emit({ type: 'CHANGE_CATEGORY', category: 'tech' });
 
+    expect($root.childNodes[1].childNodes.length).toBe(1);
+
     expect($root.childNodes[1]?.firstChild?.nodeName).toBe('P');
     expect($root.childNodes[1]?.firstChild?.firstChild?.nodeValue).toBe(
       'loading videos'
     );
 
+    expect(machineRegistry.size).toBe(1);
+
     emit({ type: 'LOADED_VIDEOS' });
 
     expect(footerRenders.length).toBe(2);
+
+    expect($root.childNodes[1].childNodes.length).toBe(6);
 
     expect($root.childNodes[1]?.firstChild?.nodeName).toBe('H2');
     expect($root.childNodes[1]?.firstChild?.firstChild?.nodeValue).toBe(
@@ -329,16 +347,24 @@ describe('basic apps', () => {
     expect($root.childNodes[1]?.firstChild?.childNodes[1]?.nodeValue).toBe(
       `tech`
     );
-    // first video node
+    // first video node (3)
     expect($root.childNodes[1]?.childNodes[1]?.nodeName).toBe(`P`);
     expect($root.childNodes[1]?.childNodes[1]?.firstChild?.nodeValue).toBe(
       `buffering`
     );
     // second video node. should come back to buffering (new instance)
     expect($root.childNodes[1]?.childNodes[2]?.nodeName).toBe(`P`);
+    expect(machineRegistry.get('video-tech-2')?.state).toBe('buffering');
+
+    expect(
+      problematicNode !== $root.childNodes[1]?.childNodes[2]?.firstChild
+    ).toBe(true);
+
     expect($root.childNodes[1]?.childNodes[2]?.firstChild?.nodeValue).toBe(
       `buffering`
     );
+
+    expect(machineRegistry.size).toBe(4);
 
     /**
      *

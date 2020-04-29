@@ -23,14 +23,21 @@ export type ChildrenArg = Array<ChildArg>;
 export type Props = Map<string, any>;
 
 // DO NOT add optional keys to VNodes! more info: https://mrale.ph/blog/2015/01/11/whats-up-with-monomorphism.html
+// make them all have the same shape, but some values will have different meaning/nulled based on the
+// discriminant, "kind"
 
 type TextVNode = {
   kind: VNodeKind.T;
+  tag: null;
+  key: string | number | null;
   props: {
     nodeValue: string;
   };
-  key: string | number | null;
+  children: null;
+  dom: Text | null;
 };
+
+// TODO: change children to kids
 
 type ElementVNode = {
   kind: VNodeKind.E;
@@ -38,6 +45,16 @@ type ElementVNode = {
   key: string | number | null;
   props: Props | null;
   children: Array<VNode>;
+  dom: HTMLElement | null;
+};
+
+export type MachineVNode = {
+  kind: VNodeKind.M;
+  tag: null;
+  key: string | number | null;
+  props: null;
+  children: VNode;
+  dom: null;
 };
 
 /** unfortunately, i had to make this enum less readable bc the minifier wasn't doing the trick */
@@ -47,22 +64,25 @@ export enum VNodeKind {
   /** TEXT_NODE */
   T,
 
-  // /** MACHINE_NODE */
-  // M,
+  /** MACHINE_NODE */
+  M,
   // /** FUNCTION_NODE */
   // F,
 }
 
 // export type VNode = ElementVNode | TextVNode | MachineVNode | FunctionVNode;
-export type VNode = ElementVNode | TextVNode;
+export type VNode = ElementVNode | TextVNode | MachineVNode;
 
 function createTextVNode(text: string): TextVNode {
   return {
     kind: VNodeKind.T,
+    tag: null,
+    key: null,
     props: {
       nodeValue: text,
     },
-    key: null,
+    children: null,
+    dom: null,
   };
 }
 
@@ -96,6 +116,17 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
   return children;
 }
 
+const nullVNode: TextVNode = {
+  kind: VNodeKind.T,
+  tag: null,
+  key: null,
+  props: {
+    nodeValue: '',
+  },
+  children: null,
+  dom: null,
+};
+
 /** createElement */
 export function b<Props extends PropsArg>(
   type: SFC<Props> | MachineComponent<Props> | TagName,
@@ -112,6 +143,7 @@ export function b<Props extends PropsArg>(
         tag: type,
         props: props ? new Map(Object.entries(props)) : null,
         children: processChildren(children),
+        dom: null,
       };
 
     /** machine components or SFCs */
@@ -164,8 +196,14 @@ export function b<Props extends PropsArg>(
             processChildren(children)
           );
 
-          // assign given key to vnode
-          props && props.key && child && (child.key = props.key);
+          const vNode: MachineVNode = {
+            kind: VNodeKind.M,
+            tag: null,
+            key: props && props.key ? props.key : null,
+            props: null,
+            children: child ? child : nullVNode,
+            dom: null,
+          };
 
           const newInstance = {
             id: instanceId,
@@ -173,11 +211,11 @@ export function b<Props extends PropsArg>(
             ctx: initialContext,
             spec: spec,
             isLeaf: spec.isLeaf ? spec.isLeaf : false,
-            lastChild: child,
+            vNode: vNode,
           };
           machineRegistry.set(instanceId, newInstance);
 
-          return child;
+          return vNode;
         } else {
           /**
            * existing instance logic:
@@ -196,7 +234,7 @@ export function b<Props extends PropsArg>(
             !machinesThatTransitioned.has(existingInstance.id)
           ) {
             // yay, optimization! (leaf that hasn't transitioned)
-            return existingInstance.lastChild;
+            return existingInstance.vNode;
           } else {
             // not a leaf, or it is a leaf that has changed! rerender
             const child = spec.render(
@@ -206,11 +244,18 @@ export function b<Props extends PropsArg>(
               processChildren(children)
             );
 
-            // assign given key to vnode
-            props && props.key && child && (child.key = props.key);
+            const vNode: MachineVNode = {
+              kind: VNodeKind.M,
+              tag: null,
+              key: props && props.key ? props.key : null,
+              props: null,
+              children: child ? child : nullVNode,
+              dom: null,
+            };
 
-            spec.isLeaf && (existingInstance.lastChild = child);
-            return child;
+            existingInstance.vNode = vNode;
+
+            return vNode;
           }
         }
       } else {

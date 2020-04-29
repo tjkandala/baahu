@@ -267,7 +267,8 @@ export function emit(
   const vNode: VNode | null = b(currentRootComponent, {});
 
   if (vNode) {
-    diff(currentVRoot, vNode)($root);
+    // diff(currentVRoot, vNode)($root);
+    diff(currentVRoot, vNode, null);
     diffMachines();
     currentVRoot = vNode;
   }
@@ -335,7 +336,8 @@ function newRoute(): void {
   const vNode: VNode | null = b(currentRootComponent, {});
 
   if (vNode) {
-    diff(currentVRoot, vNode)($root);
+    // diff(currentVRoot, vNode)($root);
+    diff(currentVRoot, vNode, null);
     diffMachines();
     currentVRoot = vNode;
   }
@@ -369,7 +371,12 @@ export function mount(
 
   if (vNode) {
     $root = renderDOM(vNode) as HTMLElement;
-    $target.replaceWith($root);
+    /**
+     * used to be $target.replaceWith($root), but that isn't supported on some broswers released
+     * as recently as 2016, so this method is good for now. just be sure to inform users to provide
+     * a nice empty div for baahu to append to!
+     */
+    $target.appendChild($root);
 
     currentRootComponent = rootComponent;
     currentVRoot = vNode;

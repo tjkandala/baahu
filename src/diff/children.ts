@@ -1,5 +1,5 @@
 import { VNode } from '../createElement';
-import { PatchFunction, diff } from '.';
+import { diff } from '.';
 import { renderDOM } from '../renderDOM';
 
 /**
@@ -16,287 +16,279 @@ import { renderDOM } from '../renderDOM';
  */
 export function keyedDiffChildren(
   oldVChildren: VNode[],
-  newVChildren: VNode[]
-): PatchFunction {
-  return ($parent: HTMLElement | Text): HTMLElement | Text => {
-    const childNodes = Array.from($parent.childNodes);
+  newVChildren: VNode[],
+  parentDom: HTMLElement
+): undefined {
+  /**
+   * Common prefix and suffix optimization.
+   * Iterate over old children and new children simultaneously from both sides,
+   * patching nodes in place when keys are equal.
+   */
+  let oldStart = 0;
+  let newStart = 0;
+  let oldEnd = oldVChildren.length - 1;
+  let newEnd = newVChildren.length - 1;
 
-    /**
-     * Common prefix and suffix optimization.
-     * Iterate over old children and new children simultaneously from both sides,
-     * patching nodes in place when keys are equal.
-     */
-    let oldStart = 0;
-    let newStart = 0;
-    let oldEnd = oldVChildren.length - 1;
-    let newEnd = newVChildren.length - 1;
+  let $node: HTMLElement | Text | ChildNode | undefined;
+  let $nextNode: HTMLElement | Text | ChildNode | null | undefined = undefined;
 
-    let $node: HTMLElement | Text | ChildNode | undefined;
-    let $nextNode: HTMLElement | Text | ChildNode | undefined = undefined;
+  outer: while (true) {
+    // check common suffix
+    let oldEndNode = oldVChildren[oldEnd];
+    let newEndNode = newVChildren[newEnd];
 
-    outer: while (true) {
-      // check common suffix
-      let oldEndNode = oldVChildren[oldEnd];
-      let newEndNode = newVChildren[newEnd];
+    while (oldEndNode.key === newEndNode.key) {
+      // this part is important: if the last node not part of the
+      // common suffix is new, it needs a reference to the leftmost
+      // member of the common suffix so it can be appended before it
 
-      while (oldEndNode.key === newEndNode.key) {
-        // this part is important: if the last node not part of the
-        // common suffix is new, it needs a reference to the leftmost
-        // member of the common suffix so it can be appended before it
-        $nextNode = childNodes[oldEnd];
+      $nextNode = oldEndNode.dom;
 
-        diff(oldEndNode, newEndNode)($nextNode as HTMLElement | Text);
+      diff(oldEndNode, newEndNode, parentDom);
 
-        oldEnd--;
-        newEnd--;
-        oldEndNode = oldVChildren[oldEnd];
-        newEndNode = newVChildren[newEnd];
+      oldEnd--;
+      newEnd--;
+      oldEndNode = oldVChildren[oldEnd];
+      newEndNode = newVChildren[newEnd];
 
-        if (oldStart > oldEnd || newStart > newEnd) break outer;
-      }
-
-      // exhausted common suffix
-
-      // check common prefix
-      let oldStartNode = oldVChildren[oldStart];
-      let newStartNode = newVChildren[newStart];
-
-      while (oldStartNode.key === newStartNode.key) {
-        diff(
-          oldStartNode,
-          newStartNode
-        )(childNodes[oldStart] as HTMLElement | Text);
-
-        oldStart++;
-        newStart++;
-        oldStartNode = oldVChildren[oldStart];
-        newStartNode = newVChildren[newStart];
-
-        if (oldStart > oldEnd || newStart > newEnd) break outer;
-      }
-
-      // exhausted common prefix
-
-      break outer;
+      if (oldStart > oldEnd || newStart > newEnd) break outer;
     }
 
-    /** if either the old children list or new children list
-     * is empty after common prefix/suffix diffing, then either
-     * delete the remaining nodes (if new list is empty), or
-     * add the remaining nodes (if old list is empty)
-     */
-    if (oldStart > oldEnd) {
-      /** if the start pointer is greater than the oldEnd pointer,
-       * then all of the nodes in the old children list have been patched.
-       * Iterate through the new list and mount the leftovers in between
-       * the nodes at oldStart and oldEnd.
-       *
-       * RenderDOM all nodes from newStart to newEnd, insert them before node
-       * at oldStart
-       */
+    // exhausted common suffix
 
-      while (newStart <= newEnd) {
-        $parent.insertBefore(
-          renderDOM(newVChildren[newStart]),
-          childNodes[oldStart]
-        );
-        newStart++;
-      }
-      return $parent;
+    // check common prefix
+    let oldStartNode = oldVChildren[oldStart];
+    let newStartNode = newVChildren[newStart];
+
+    while (oldStartNode.key === newStartNode.key) {
+      diff(oldStartNode, newStartNode, parentDom);
+
+      oldStart++;
+      newStart++;
+      oldStartNode = oldVChildren[oldStart];
+      newStartNode = newVChildren[newStart];
+
+      if (oldStart > oldEnd || newStart > newEnd) break outer;
     }
 
-    if (newStart > newEnd) {
-      /**
-       * if the start pointer is greater than the newEnd pointer,
-       * then all of the nodes in the new children list have been patched.
-       * Iterate through the old list and delete the leftovers.
-       *
-       * Delete all nodes from oldStart to oldEnd
-       */
+    // exhausted common prefix
 
-      while (oldStart <= oldEnd) {
-        childNodes[oldStart].remove();
-        oldStart++;
-      }
+    break outer;
+  }
 
-      return $parent;
-    }
-
-    let newChildrenLeft = newEnd - newStart + 1;
-    const sources = new Int32Array(newChildrenLeft);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const keyIndex = new Map<any, number>();
-
-    /** Iterate over remaining newChildren (left to right),
-     * storing each child's pos/index (in the new array) by its key
-     * in the 'keyIndex' map. At the same time, fill the 'sources' array
-     * with '-1', meaning new node that needs to be mounted. If the node
-     * existed in the oldChildren list, '-1' will be replaced with its position
-     * in the oldChildren list!
-     */
-    for (let i = 0; i < newChildrenLeft; i++) {
-      // newStart is offset between 'sources' and actual new children array
-      const indexInNewChildren = i + newStart;
-      sources[i] = -1;
-      keyIndex.set(newVChildren[indexInNewChildren].key, indexInNewChildren);
-    }
-
-    let indexInOldChildren: number;
-    let indexInNewChildren: number | undefined;
-    let ogNode: ChildNode;
-    let pos = -1;
-
-    let oldVNode: VNode;
-    let newVNode: VNode;
-
-    /** -2 for patch in place, -1 for mount, any other value for move */
-    let actionAtIndex: number;
-
-    /**
-     * Check if old children (that weren't part of common
-     * prefix/suffix) are in the new list (using key index)
-     */
-    for (let i = oldStart; i <= oldEnd; i++) {
-      oldVNode = oldVChildren[i];
-      indexInNewChildren = keyIndex.get(oldVNode.key);
-      ogNode = childNodes[i];
-      if (typeof indexInNewChildren !== 'undefined') {
-        /** 99999999 indicates that at least one node has moved,
-         * so we should mark nodes that are part of the longest increasing
-         * subsequence to minimize DOM moves.
-         *
-         * Set pos to 99999999 when the new position of a node is less
-         * than the new position of the node that used to precede it */
-
-        pos = pos < indexInNewChildren ? indexInNewChildren : 99999999;
-        sources[indexInNewChildren - newStart] = i;
-      } else {
-        if (ogNode !== null) {
-          ogNode.remove();
-        }
-      }
-    }
-
-    /**
-     * Iterate over the remaining newChildren (right to left),
-     * and perform the action corresponding to the value
-     * in the array at index
+  /** if either the old children list or new children list
+   * is empty after common prefix/suffix diffing, then either
+   * delete the remaining nodes (if new list is empty), or
+   * add the remaining nodes (if old list is empty)
+   */
+  if (oldStart > oldEnd) {
+    /** if the start pointer is greater than the oldEnd pointer,
+     * then all of the nodes in the old children list have been patched.
+     * Iterate through the new list and mount the leftovers in between
+     * the nodes at oldStart and oldEnd.
      *
-     * $nextNode should be the last node (from the right)
-     * in the common suffix. If there is no $nextNode yet, this is
-     * the next last child!
+     * RenderDOM all nodes from newStart to newEnd, insert them before node
+     * at oldStart
      */
 
-    let sourcesActions: Int32Array;
+    while (newStart <= newEnd) {
+      parentDom.insertBefore(
+        renderDOM(newVChildren[newStart]),
+        oldVChildren[oldStart].dom
+      );
+      newStart++;
+    }
+    return void 0;
+  }
 
-    // slightly different logic if nodes have moved
-    if (pos === 99999999) {
-      // at least one node has moved
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      sourcesActions = markLIS(sources);
+  if (newStart > newEnd) {
+    /**
+     * if the start pointer is greater than the newEnd pointer,
+     * then all of the nodes in the new children list have been patched.
+     * Iterate through the old list and delete the leftovers.
+     *
+     * Delete all nodes from oldStart to oldEnd
+     */
 
-      while (newChildrenLeft > 0) {
-        newChildrenLeft--;
+    while (oldStart <= oldEnd) {
+      oldVChildren[oldStart].dom?.remove();
+      oldStart++;
+    }
 
-        newEnd = newChildrenLeft + newStart;
-        newVNode = newVChildren[newEnd];
-        /** will have to use the LIS marked array to find
-         * actionAtIndex to preserve indexInOldChildren
-         * (using OG sources array)! */
-        actionAtIndex = sourcesActions[newChildrenLeft];
-        switch (actionAtIndex) {
-          case -2:
-            // existing node, but not moved. that's why you should
-            // check sources (sourcesActions obv has -2 here)
-            indexInOldChildren = sources[newChildrenLeft];
+    return void 0;
+  }
 
-            oldVNode = oldVChildren[indexInOldChildren];
-            $node = childNodes[indexInOldChildren];
+  let newChildrenLeft = newEnd - newStart + 1;
+  const sources = new Int32Array(newChildrenLeft);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const keyIndex = new Map<any, number>();
 
-            $node = diff(oldVNode, newVNode)($node as HTMLElement | Text);
+  /** Iterate over remaining newChildren (left to right),
+   * storing each child's pos/index (in the new array) by its key
+   * in the 'keyIndex' map. At the same time, fill the 'sources' array
+   * with '-1', meaning new node that needs to be mounted. If the node
+   * existed in the oldChildren list, '-1' will be replaced with its position
+   * in the oldChildren list!
+   */
+  for (let i = 0; i < newChildrenLeft; i++) {
+    // newStart is offset between 'sources' and actual new children array
+    const indexInNewChildren = i + newStart;
+    sources[i] = -1;
+    keyIndex.set(newVChildren[indexInNewChildren].key, indexInNewChildren);
+  }
 
-            if ($node) {
-              $nextNode = $node;
-            }
+  let indexInOldChildren: number;
+  let indexInNewChildren: number | undefined;
+  let ogNode: ChildNode | HTMLElement | Text | null;
+  let pos = -1;
 
-            continue;
+  let oldVNode: VNode;
+  let newVNode: VNode;
 
-          case -1:
-            // new node
-            $node = renderDOM(newVNode);
+  /** -2 for patch in place, -1 for mount, any other value for move */
+  let actionAtIndex: number;
 
-            $nextNode
-              ? $parent.insertBefore($node, $nextNode)
-              : $parent.appendChild($node);
+  /**
+   * Check if old children (that weren't part of common
+   * prefix/suffix) are in the new list (using key index)
+   */
+  for (let i = oldStart; i <= oldEnd; i++) {
+    oldVNode = oldVChildren[i];
+    indexInNewChildren = keyIndex.get(oldVNode.key);
+    ogNode = oldVNode.dom;
+    if (typeof indexInNewChildren !== 'undefined') {
+      /** 99999999 indicates that at least one node has moved,
+       * so we should mark nodes that are part of the longest increasing
+       * subsequence to minimize DOM moves.
+       *
+       * Set pos to 99999999 when the new position of a node is less
+       * than the new position of the node that used to precede it */
 
-            $nextNode = $node;
-            continue;
-
-          default:
-            // diff, patch, then move node before $nextNode
-            indexInOldChildren = sources[newChildrenLeft];
-
-            oldVNode = oldVChildren[indexInOldChildren];
-            $node = childNodes[indexInOldChildren];
-
-            $node = diff(oldVNode, newVNode)($node as HTMLElement | Text);
-
-            if ($node) {
-              $nextNode
-                ? $parent.insertBefore($node, $nextNode)
-                : $parent.appendChild($node);
-
-              $nextNode = $node;
-            }
-
-            continue;
-        }
-      }
+      pos = pos < indexInNewChildren ? indexInNewChildren : 99999999;
+      sources[indexInNewChildren - newStart] = i;
     } else {
-      while (newChildrenLeft > 0) {
-        newChildrenLeft--;
-
-        newEnd = newChildrenLeft + newStart;
-        newVNode = newVChildren[newEnd];
-
-        /** will have to use the LIS marked array to find
-         * actionAtIndex to preserve indexInOldChildren
-         * (using OG sources array)! */
-
-        actionAtIndex = sources[newChildrenLeft];
-        switch (actionAtIndex) {
-          case -1:
-            // new node
-            $node = renderDOM(newVNode);
-
-            $nextNode
-              ? $parent.insertBefore($node, $nextNode)
-              : $parent.appendChild($node);
-
-            $nextNode = $node;
-            continue;
-
-          default:
-            /** diff, patch. no need to move in this branch, but
-             * still set as $nextNode for the sake of new nodes */
-
-            indexInOldChildren = sources[newChildrenLeft];
-
-            oldVNode = oldVChildren[indexInOldChildren];
-            $node = childNodes[indexInOldChildren];
-
-            $node = diff(oldVNode, newVNode)($node as HTMLElement | Text);
-
-            if ($node) {
-              $nextNode = $node;
-            }
-
-            continue;
-        }
+      if (ogNode !== null) {
+        ogNode.remove();
       }
     }
-    return $parent;
-  };
+  }
+
+  /**
+   * Iterate over the remaining newChildren (right to left),
+   * and perform the action corresponding to the value
+   * in the array at index
+   *
+   * $nextNode should be the last node (from the right)
+   * in the common suffix. If there is no $nextNode yet, this is
+   * the next last child!
+   */
+
+  let sourcesActions: Int32Array;
+
+  // slightly different logic if nodes have moved
+  if (pos === 99999999) {
+    // at least one node has moved
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    sourcesActions = markLIS(sources);
+
+    while (newChildrenLeft > 0) {
+      newChildrenLeft--;
+
+      newEnd = newChildrenLeft + newStart;
+      newVNode = newVChildren[newEnd];
+      /** will have to use the LIS marked array to find
+       * actionAtIndex to preserve indexInOldChildren
+       * (using OG sources array)! */
+      actionAtIndex = sourcesActions[newChildrenLeft];
+      switch (actionAtIndex) {
+        case -2:
+          // existing node, but not moved. that's why you should
+          // check sources (sourcesActions obv has -2 here)
+          indexInOldChildren = sources[newChildrenLeft];
+
+          oldVNode = oldVChildren[indexInOldChildren];
+
+          diff(oldVNode, newVNode, parentDom);
+
+          if (newVNode.dom) {
+            $nextNode = newVNode.dom;
+          }
+
+          continue;
+
+        case -1:
+          // new node
+          $node = renderDOM(newVNode);
+
+          $nextNode
+            ? parentDom.insertBefore($node, $nextNode)
+            : parentDom.appendChild($node);
+
+          $nextNode = $node;
+          continue;
+
+        default:
+          // diff, patch, then move node before $nextNode
+          indexInOldChildren = sources[newChildrenLeft];
+
+          oldVNode = oldVChildren[indexInOldChildren];
+
+          diff(oldVNode, newVNode, parentDom);
+
+          if (newVNode.dom) {
+            $nextNode
+              ? parentDom.insertBefore(newVNode.dom, $nextNode)
+              : parentDom.appendChild(newVNode.dom);
+
+            $nextNode = newVNode.dom;
+          }
+
+          continue;
+      }
+    }
+  } else {
+    while (newChildrenLeft > 0) {
+      newChildrenLeft--;
+
+      newEnd = newChildrenLeft + newStart;
+      newVNode = newVChildren[newEnd];
+
+      /** will have to use the LIS marked array to find
+       * actionAtIndex to preserve indexInOldChildren
+       * (using OG sources array)! */
+
+      actionAtIndex = sources[newChildrenLeft];
+      switch (actionAtIndex) {
+        case -1:
+          // new node
+          $node = renderDOM(newVNode);
+
+          $nextNode
+            ? parentDom.insertBefore($node, $nextNode)
+            : parentDom.appendChild($node);
+
+          $nextNode = $node;
+          continue;
+
+        default:
+          /** diff, patch. no need to move in this branch, but
+           * still set as $nextNode for the sake of new nodes */
+
+          indexInOldChildren = sources[newChildrenLeft];
+
+          oldVNode = oldVChildren[indexInOldChildren];
+
+          diff(oldVNode, newVNode, parentDom);
+
+          if (newVNode.dom) {
+            $nextNode = newVNode.dom;
+          }
+
+          continue;
+      }
+    }
+  }
+  return void 0;
 }
 
 /**
@@ -372,15 +364,11 @@ export function markLIS(sources: Int32Array): Int32Array {
 }
 
 /**
- * Diffing algorithm for non-keyed children. Call this when the first
+ * Diffing "algorithm" for non-keyed children. Call this when the first
  * index of oldVChildren and newVChildren are not both keyed.
  *
  * The indices of the children act as 'implicit keys.' Compare nodes
  * in oldVChildren to nodes in newVChildren and diff/patch in place.
- *
- * Keep track of machine instance ids in maps so as to not unmount
- * them in case of reordering. New instances have already been mounted
- * in 'createElement,' so only take care of unmounting here.
  *
  * This algorithm is slightly faster than the keyed diff, but it may lead
  * to unexpected CSS behavior if you are reordering lists.
@@ -390,49 +378,20 @@ export function markLIS(sources: Int32Array): Int32Array {
  * */
 export function diffChildren(
   oldVChildren: VNode[],
-  newVChildren: VNode[]
-): PatchFunction {
-  return ($parent: HTMLElement | Text): HTMLElement | Text => {
-    /** These patches will be applied to existing children */
-    const childPatches: Array<PatchFunction> = [];
-    /** These patches will be applied to new/additional children */
-    const additionalPatches: Array<PatchFunction> = [];
+  newVChildren: VNode[],
+  parentDom: HTMLElement
+): void {
+  let i = 0;
+  const len = oldVChildren.length;
+  let newLen = newVChildren.length;
 
-    let i = 0;
-    const len = oldVChildren.length;
-    let newLen = newVChildren.length;
+  /** This will automatically delete removed children, bc newVChildren[i] will be undefined */
+  for (; i < len; i++) {
+    diff(oldVChildren[i], newVChildren[i], parentDom);
+  }
 
-    /** PUSH PATCHES */
-    /** This will automatically delete removed children, bc newVChildren[i] will be undefined */
-    for (; i < len; i++) {
-      childPatches.push(diff(oldVChildren[i], newVChildren[i]));
-    }
-
-    /** This will only be executed if newVChildren is longer than oldVChildren */
-    for (; i < newLen; i++) {
-      // this variable has to be here (closure problem with i if code golfing it in patch)
-      const $new = renderDOM(newVChildren[i]);
-
-      additionalPatches.push($el => {
-        $el.appendChild($new);
-        return $el;
-      });
-    }
-
-    /** EXECUTE PATCHES */
-    // use Array.from() to convert from a live collection of child node to a static array.
-    const childNodes = Array.from($parent.childNodes);
-
-    for (i = 0; i < len; i++) {
-      // not checking for existence, bc for each node of childNodes, there has to be a patch
-      childPatches[i](childNodes[i] as HTMLElement | Text);
-    }
-
-    // for additional children, you are appending them to the parent, so you can apply the patch directly to parent
-    for (i = 0; i < additionalPatches.length; i++) {
-      additionalPatches[i]($parent);
-    }
-
-    return $parent;
-  };
+  /** This will only be executed if newVChildren is longer than oldVChildren */
+  for (; i < newLen; i++) {
+    parentDom.appendChild(renderDOM(newVChildren[i]));
+  }
 }
