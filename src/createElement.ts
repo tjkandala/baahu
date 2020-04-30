@@ -235,18 +235,18 @@ export function b<Props extends PropsArg>(
 
           const newInstance = {
             id: instanceId,
-            state: initialState,
+            st: initialState,
             ctx: initialContext,
-            spec: spec,
-            isLeaf: spec.isLeaf ? spec.isLeaf : false,
-            vNode: vNode,
+            s: spec,
+            l: spec.isLeaf ? spec.isLeaf : false,
+            v: vNode,
             c: kids,
           };
           machineRegistry.set(instanceId, newInstance);
 
           return vNode;
         } else {
-          const spec = existingInstance.spec;
+          const spec = existingInstance.s;
           // if (!spec.render) return null;
 
           /**
@@ -261,16 +261,16 @@ export function b<Props extends PropsArg>(
            * 3) renderType is 'global' or 'routing' (NOT 'tg')
            */
           if (
-            (renderType.t === 'tg' || spec.isLeaf) &&
+            (renderType.t === 't' || spec.isLeaf) &&
             !machinesThatTransitioned.has(existingInstance.id)
           ) {
             // yay, optimization! (leaf that hasn't transitioned)
-            return existingInstance.vNode;
+            return existingInstance.v;
           } else {
             // not a leaf, or it is a leaf that has changed! rerender
             const kids = processChildren(children);
             const child = spec.render(
-              existingInstance.state,
+              existingInstance.st,
               existingInstance.ctx,
               existingInstance.id,
               kids
@@ -287,7 +287,7 @@ export function b<Props extends PropsArg>(
               i: instanceId,
             };
 
-            existingInstance.vNode = vNode;
+            existingInstance.v = vNode;
             // children are cached for granular re-renders on events
             existingInstance.c = kids;
 

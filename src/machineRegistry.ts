@@ -4,16 +4,20 @@ import { VNode } from '.';
 
 export type MachineInstance = {
   id: string;
-  state: string;
+  /** state */
+  st: string;
+  /** context */
   ctx: object;
-
-  isLeaf: boolean;
-  /** the spec is the object created by developers. it describes how the machine instance,
+  /** spec.isLeaf */
+  l: boolean;
+  /**
+   * spec:
+   * the spec is the object created by developers. it describes how the machine instance,
    * which created by Baahu, should behave */
-  spec: MachineSpec;
+  s: MachineSpec;
 
   /** last rendered vnode, for memoization + component-level rendering */
-  vNode: MachineVNode;
+  v: MachineVNode;
 
   /** children for rerendering (children don't rerender) */
   c: VNode[];
@@ -31,13 +35,13 @@ export const machinesThatTransitioned: Map<string, true> = new Map();
 /**
  * before rendering, set this variable to the type of event
  *
- * tg: targeted,
- * gb: global,
- * rt: routing
+ * t: targeted,
+ * g: global,
+ * r: routing
  */
 
-export let renderType: {
-  t: 'tg' | 'gb' | 'rt';
+export const renderType: {
+  t: 't' | 'g' | 'r';
 } = {
-  t: 'gb',
+  t: 'g',
 };

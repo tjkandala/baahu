@@ -50,13 +50,13 @@ function transitionMachines(
     if (machineInstance) {
       /** check if the machine has a handler/behavior spec
        * for its current state (it has to if written in TS) */
-      const stateHandler = machineInstance.spec.states[machineInstance.state];
+      const stateHandler = machineInstance.s.states[machineInstance.st];
 
       /** for js users who may specify invalid states */
       if (process.env.NODE_ENV !== 'production') {
         if (!stateHandler) {
           throw TypeError(
-            `The specified state handler for '${machineInstance.state}' does not exist on ${machineInstance.id}`
+            `The specified state handler for '${machineInstance.st}' does not exist on ${machineInstance.id}`
           );
         }
       }
@@ -69,7 +69,7 @@ function transitionMachines(
           const cond = transitionHandler.cond;
 
           if (!cond || cond(machineInstance.ctx, event) === true) {
-            const target = transitionHandler.target;
+            const targetState = transitionHandler.target;
             const effects = transitionHandler.effects;
 
             if (effects) {
@@ -79,12 +79,14 @@ function transitionMachines(
               machinesThatTransitioned.set(machineInstance.id, true);
             }
 
-            if (target && target !== machineInstance.state) {
+            // takeToNextState(machineInstance, targetState)
+
+            if (targetState && targetState !== machineInstance.st) {
               /** make sure the machine can even go to the next state */
-              const nextStateHandler = machineInstance.spec.states[target];
+              const nextStateHandler = machineInstance.s.states[targetState];
 
               if (nextStateHandler) {
-                machineInstance.state = target;
+                machineInstance.st = targetState;
 
                 /**
                  *
@@ -114,7 +116,7 @@ function transitionMachines(
                 /** for js users who may specify invalid targets */
                 if (process.env.NODE_ENV !== 'production') {
                   throw TypeError(
-                    `The specified target (${target}) for this transition (${machineInstance.state} => ${target}) does not exist on ${machineInstance.id}`
+                    `The specified target (${target}) for this transition (${machineInstance.st} => ${target}) does not exist on ${machineInstance.id}`
                   );
                 }
               }
@@ -134,13 +136,13 @@ function transitionMachines(
 
     for (const [, machineInstance] of machineRegistry) {
       /** check if this machine listens to this eventType */
-      const stateHandler = machineInstance.spec.states[machineInstance.state];
+      const stateHandler = machineInstance.s.states[machineInstance.st];
 
       /** for js users who may specify invalid states */
       if (process.env.NODE_ENV !== 'production') {
         if (!stateHandler) {
           throw TypeError(
-            `The specified state handler for '${machineInstance.state}' does not exist on ${machineInstance.id}`
+            `The specified state handler for '${machineInstance.st}' does not exist on ${machineInstance.id}`
           );
         }
       }
@@ -153,7 +155,7 @@ function transitionMachines(
           const cond = transitionHandler.cond;
 
           if (!cond || cond(machineInstance.ctx, event) === true) {
-            const target = stateHandler.on[eventType]?.target;
+            const targetState = stateHandler.on[eventType]?.target;
 
             /**
              * onMount and onUnmount are handled in createElement and diff. handle the
@@ -168,12 +170,12 @@ function transitionMachines(
               // machinesThatTransitioned.set(machineInstance.id, true);
             });
 
-            if (target && target !== machineInstance.state) {
+            if (targetState && targetState !== machineInstance.st) {
               /** make sure the machine can even go to the next state */
-              const nextStateHandler = machineInstance.spec.states[target];
+              const nextStateHandler = machineInstance.s.states[targetState];
 
               if (nextStateHandler) {
-                machineInstance.state = target;
+                machineInstance.st = targetState;
 
                 /**
                  *
@@ -203,7 +205,7 @@ function transitionMachines(
                 /** for js users who may specify invalid targets */
                 if (process.env.NODE_ENV !== 'production') {
                   throw TypeError(
-                    `The specified target (${target}) for this transition (${machineInstance.state} => ${target}) does not exist on your ${machineInstance.id}`
+                    `The specified target (${target}) for this transition (${machineInstance.st} => ${target}) does not exist on your ${machineInstance.id}`
                   );
                 }
               }
@@ -221,6 +223,7 @@ function transitionMachines(
       machineInstance = effects[i][1];
       effect(machineInstance.ctx, event, machineInstance.id);
 
+      // don't delete, this is here for leaf node optimizations
       machinesThatTransitioned.set(machineInstance.id, true);
     }
 
@@ -238,16 +241,22 @@ function transitionMachines(
   }
 }
 
+// // trying to reuse logic for targeted and global events
+// function takeToNextState(
+//   machineInstance: MachineInstance,
+//   targetState: string
+// ): void {}
+
 export function emit(
   event: { type: string; [key: string]: any },
   target: string = '*'
 ): void {
-  target === '*' ? (renderType.t = 'gb') : (renderType.t = 'tg');
+  target === '*' ? (renderType.t = 'g') : (renderType.t = 't');
 
-  // if already transitioning, transition machines, but don't start render process
-  // change renderType to global, as we can no longer be sure (TODO)
+  // if already transitioning, transition machines, but don't start render process.
+  // change renderType to global, as we can no longer be sure (description TODO)
   if (isTransitioning) {
-    renderType.t = 'gb';
+    renderType.t = 'g';
     transitionMachines(event, target);
     return;
   }
@@ -267,7 +276,7 @@ export function emit(
    */
   if (machinesThatTransitioned.size === 0) return;
 
-  if (renderType.t === 'tg') {
+  if (renderType.t === 't') {
     /**
      * no need to iterate, thru mTT; if we reached this point,
      * we are pretty sure that the target was the only machine
@@ -279,16 +288,16 @@ export function emit(
     if (machine) {
       // the product of the render function is the child 'machineVNode.c',
       //  not the machineVNode itself
-      const vNode: VNode | null = machine.spec.render(
-        machine.state,
+      const vNode: VNode | null = machine.s.render(
+        machine.st,
         machine.ctx,
         machine.id,
         machine.c
       );
 
-      diff(machine.vNode.c, vNode, null);
+      diff(machine.v.c, vNode, null);
       machinesThatTransitioned.clear();
-      machine.vNode.c = vNode as VNode;
+      machine.v.c = vNode as VNode;
     }
     // }
   } else {
@@ -323,16 +332,13 @@ export function createRouter<Props extends PropsArg = any>(
       if (key[0] !== '/') throw SyntaxError('routes should begin with /');
     }
 
-    myTrieRouter.insert(
-      `${prefix}${key === '/' ? '' : key}`,
-      routerSchema[key]
-    );
+    myTrieRouter.i(`${prefix}${key === '/' ? '' : key}`, routerSchema[key]);
   }
 
   function routerComp(props: Props): VNode | null {
-    const match = myTrieRouter.find(location.pathname);
-    // checking for handler for js users
-    return match && match.handler ? match.handler(match.params, props) : null;
+    const match = myTrieRouter.f(location.pathname);
+    // checking for handler for js users. (h = handler, p = params/route params)
+    return match && match.h ? match.h(match.p, props) : null;
   }
 
   return routerComp;
@@ -360,7 +366,7 @@ function newRoute(): void {
     },
   });
 
-  renderType.t = 'rt';
+  renderType.t = 'r';
 
   // rerender
   const vNode: VNode | null = b(currentRootComponent, {});
@@ -398,7 +404,7 @@ export function mount(
   $target: HTMLElement
 ): HTMLElement {
   machineRegistry.clear();
-  renderType.t = 'gb';
+  renderType.t = 'g';
   const vNode: VNode | null = b(rootComponent, {});
 
   if (vNode) {

@@ -286,13 +286,11 @@ describe('basic apps', () => {
       `buffering`
     );
 
-    const firstLeafMachVNodeBefore = machineRegistry.get('video-sports-1')
-      ?.vNode;
+    const firstLeafMachVNodeBefore = machineRegistry.get('video-sports-1')?.v;
 
     const firstLeafChildBefore = firstLeafMachVNodeBefore?.c;
 
-    const secondLeafMachVNodeBefore = machineRegistry.get('video-sports-2')
-      ?.vNode;
+    const secondLeafMachVNodeBefore = machineRegistry.get('video-sports-2')?.v;
 
     const secondLeafChildBefore = secondLeafMachVNodeBefore?.c;
 
@@ -321,12 +319,10 @@ describe('basic apps', () => {
 
     expect(machineRegistry.size).toBe(4);
 
-    const firstLeafMachVNodeAfter = machineRegistry.get('video-sports-1')
-      ?.vNode;
+    const firstLeafMachVNodeAfter = machineRegistry.get('video-sports-1')?.v;
     const firstLeafChildAfter = firstLeafMachVNodeAfter?.c;
 
-    const secondLeafMachVNodeAfter = machineRegistry.get('video-sports-2')
-      ?.vNode;
+    const secondLeafMachVNodeAfter = machineRegistry.get('video-sports-2')?.v;
     const secondLeafChildAfter = secondLeafMachVNodeAfter?.c;
 
     /** The machine nodes themselves should be the same, but the child should change for the
@@ -375,7 +371,7 @@ describe('basic apps', () => {
     );
     // second video node. should come back to buffering (new instance)
     expect($root.childNodes[1]?.childNodes[2]?.nodeName).toBe(`P`);
-    expect(machineRegistry.get('video-tech-2')?.state).toBe('buffering');
+    expect(machineRegistry.get('video-tech-2')?.st).toBe('buffering');
 
     expect(
       problematicNode !== $root.childNodes[1]?.childNodes[2]?.firstChild

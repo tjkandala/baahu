@@ -37,7 +37,7 @@ function unmountMachine(idToDelete: string) {
   const mInst = machineRegistry.get(idToDelete);
 
   if (mInst) {
-    mInst.spec.onUnmount && mInst.spec.onUnmount(mInst.ctx, mInst.state);
+    mInst.s.onUnmount && mInst.s.onUnmount(mInst.ctx, mInst.st);
 
     machineRegistry.delete(idToDelete);
   }
@@ -476,9 +476,9 @@ export function diffChildren(
     if (!newMachines.has(oldId)) {
       const mInst = machineRegistry.get(oldId);
 
-      const hi = mInst?.vNode;
+      const vNode = mInst?.v;
 
-      hi && safelyRemoveVNode(hi);
+      vNode && safelyRemoveVNode(vNode);
     }
   }
 }

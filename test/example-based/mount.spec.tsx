@@ -1,6 +1,6 @@
 import { b, mount, emit, SFC } from '../../src';
 import { createMachine } from '../../src/component';
-import { machineRegistry } from '../../src/machineRegistry';
+// import { machineRegistry } from '../../src/machineRegistry';
 
 describe('mounting', () => {
   const TestMach = createMachine({

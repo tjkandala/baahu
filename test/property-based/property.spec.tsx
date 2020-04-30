@@ -212,7 +212,7 @@ describe('machine property-based tests', () => {
         const oldVNodes = new Map<string, VNode | null>();
 
         machineRegistry.forEach(machine => {
-          oldVNodes.set(machine.id, machine.vNode.c);
+          oldVNodes.set(machine.id, machine.v.c);
         });
 
         emit({ type: 'LOADED' });
@@ -220,7 +220,7 @@ describe('machine property-based tests', () => {
         const newVNodes = new Map<string, VNode | null>();
 
         machineRegistry.forEach(machine => {
-          newVNodes.set(machine.id, machine.vNode.c);
+          newVNodes.set(machine.id, machine.v.c);
         });
 
         // don't really have to count both but why not

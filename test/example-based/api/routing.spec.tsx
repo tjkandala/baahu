@@ -133,82 +133,82 @@ describe('router', () => {
     const gameWildcardHandler = () => "this game doesn't exist yet";
     const catchallHandler = () => '404 catchall';
 
-    myTrie.insert('/', homeHandler);
-    myTrie.insert('/users', usersHandler);
-    myTrie.insert('/users/top', topUsersHandler);
-    myTrie.insert('/users/:name', namedUserHandler);
-    myTrie.insert('/users/:name/likes', userLikesHandler);
-    myTrie.insert('/users/:name/followers', userFollowersHandler);
-    myTrie.insert('/games', gamesHandler);
-    myTrie.insert('/games/sushigo', sushigoHandler);
-    myTrie.insert('/games/*', gameWildcardHandler);
-    myTrie.insert('*', catchallHandler);
+    myTrie.i('/', homeHandler);
+    myTrie.i('/users', usersHandler);
+    myTrie.i('/users/top', topUsersHandler);
+    myTrie.i('/users/:name', namedUserHandler);
+    myTrie.i('/users/:name/likes', userLikesHandler);
+    myTrie.i('/users/:name/followers', userFollowersHandler);
+    myTrie.i('/games', gamesHandler);
+    myTrie.i('/games/sushigo', sushigoHandler);
+    myTrie.i('/games/*', gameWildcardHandler);
+    myTrie.i('*', catchallHandler);
 
-    expect(myTrie.find('/')).toStrictEqual({
-      handler: homeHandler,
-      params: {},
+    expect(myTrie.f('/')).toStrictEqual({
+      h: homeHandler,
+      p: {},
     });
 
-    expect(myTrie.find('/users')).toStrictEqual({
-      handler: usersHandler,
-      params: {},
+    expect(myTrie.f('/users')).toStrictEqual({
+      h: usersHandler,
+      p: {},
     });
 
-    expect(myTrie.find('/users/top')).toStrictEqual({
-      handler: topUsersHandler,
-      params: {},
+    expect(myTrie.f('/users/top')).toStrictEqual({
+      h: topUsersHandler,
+      p: {},
     });
 
-    expect(myTrie.find('/users/tjkandala')).toStrictEqual({
-      handler: namedUserHandler,
-      params: {
+    expect(myTrie.f('/users/tjkandala')).toStrictEqual({
+      h: namedUserHandler,
+      p: {
         name: 'tjkandala',
       },
     });
 
-    expect(myTrie.find('/users/tjkandala/likes')).toStrictEqual({
-      handler: userLikesHandler,
-      params: {
+    expect(myTrie.f('/users/tjkandala/likes')).toStrictEqual({
+      h: userLikesHandler,
+      p: {
         name: 'tjkandala',
       },
     });
 
-    expect(myTrie.find('/users/tjk/followers')).toStrictEqual({
-      handler: userFollowersHandler,
-      params: {
+    expect(myTrie.f('/users/tjk/followers')).toStrictEqual({
+      h: userFollowersHandler,
+      p: {
         name: 'tjk',
       },
     });
 
-    expect(myTrie.find('/games')).toStrictEqual({
-      handler: gamesHandler,
-      params: {},
+    expect(myTrie.f('/games')).toStrictEqual({
+      h: gamesHandler,
+      p: {},
     });
 
-    expect(myTrie.find('/games/sushigo')).toStrictEqual({
-      handler: sushigoHandler,
-      params: {},
+    expect(myTrie.f('/games/sushigo')).toStrictEqual({
+      h: sushigoHandler,
+      p: {},
     });
 
     // wildcard tests
 
-    expect(myTrie.find('/games/boggle')).toStrictEqual({
-      handler: gameWildcardHandler,
-      params: {
+    expect(myTrie.f('/games/boggle')).toStrictEqual({
+      h: gameWildcardHandler,
+      p: {
         wildcard: 'boggle',
       },
     });
 
-    expect(myTrie.find('/games/boggle/doggle')).toStrictEqual({
-      handler: gameWildcardHandler,
-      params: {
+    expect(myTrie.f('/games/boggle/doggle')).toStrictEqual({
+      h: gameWildcardHandler,
+      p: {
         wildcard: 'boggle/doggle',
       },
     });
 
-    expect(myTrie.find('/lol')).toStrictEqual({
-      handler: catchallHandler,
-      params: {
+    expect(myTrie.f('/lol')).toStrictEqual({
+      h: catchallHandler,
+      p: {
         wildcard: 'lol',
       },
     });
