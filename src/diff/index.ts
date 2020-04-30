@@ -111,10 +111,11 @@ function replace(
   if (parentDom) {
     parentDom.replaceChild($new, oldVNode.d as HTMLElement);
   } else {
-    // this is convoluted, make some targeted tests!
-    const $parent = oldVNode.d?.parentElement;
-    $parent && oldVNode.d && $parent.replaceChild($new, oldVNode.d);
-    // oldVNode.d?.parentElement?.replaceChild;
-    // oldVNode.d && oldVNode.d.replaceWith($new);
+    // this is convoluted try to golf it
+    const $d = oldVNode.d;
+    if ($d) {
+      const $parent = $d.parentElement;
+      $parent && $parent.replaceChild($new, $d);
+    }
   }
 }

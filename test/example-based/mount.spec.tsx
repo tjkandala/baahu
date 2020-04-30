@@ -1,38 +1,38 @@
-import { b, mount, emit } from '../../src';
+import { b, mount, emit, SFC } from '../../src';
 import { createMachine } from '../../src/component';
 import { machineRegistry } from '../../src/machineRegistry';
 
 describe('mounting', () => {
-  // const TestMach = createMachine({
-  //   isLeaf: true,
-  //   id: 'testRoot',
-  //   initialContext: () => ({}),
-  //   initialState: 'ready',
-  //   states: {
-  //     ready: {},
-  //   },
-  //   render: () => b('div', {}, b('h1', {}, 'mach test')),
-  // });
+  const TestMach = createMachine({
+    isLeaf: true,
+    id: 'testRoot',
+    initialContext: () => ({}),
+    initialState: 'ready',
+    states: {
+      ready: {},
+    },
+    render: () => b('div', {}, b('h1', {}, 'mach test')),
+  });
 
   let $root = document.body;
 
-  // test('mount simple machine', () => {
-  //   $root = mount(TestMach, $root) as HTMLElement;
+  test('mount simple machine', () => {
+    $root = mount(TestMach, $root) as HTMLElement;
 
-  //   expect($root.nodeName).toBe('DIV');
-  //   expect($root.firstChild?.nodeName).toBe('H1');
-  //   expect($root.firstChild?.firstChild?.nodeValue).toBe('mach test');
-  // });
+    expect($root.nodeName).toBe('DIV');
+    expect($root.firstChild?.nodeName).toBe('H1');
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('mach test');
+  });
 
-  // const TestFun: SFC = () => b('div', {}, b('h3', {}, 'sfc test'));
+  const TestFun: SFC = () => b('div', {}, b('h3', {}, 'sfc test'));
 
-  // test('mount simple function', () => {
-  //   $root = mount(TestFun, $root) as HTMLElement;
+  test('mount simple function', () => {
+    $root = mount(TestFun, $root) as HTMLElement;
 
-  //   expect($root.nodeName).toBe('DIV');
-  //   expect($root.firstChild?.nodeName).toBe('H3');
-  //   expect($root.firstChild?.firstChild?.nodeValue).toBe('sfc test');
-  // });
+    expect($root.nodeName).toBe('DIV');
+    expect($root.firstChild?.nodeName).toBe('H3');
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('sfc test');
+  });
 
   /**
    * important
@@ -110,7 +110,7 @@ describe('mounting', () => {
     expect($root.nodeName).toBe('DIV');
     expect($root.firstChild?.nodeName).toBe('DIV');
 
-    console.log(machineRegistry.size);
+    // console.log(machineRegistry.size);
 
     emit({ type: 'WAKE_UP' });
 
@@ -118,7 +118,7 @@ describe('mounting', () => {
 
     emit({ type: 'TOGGLE' });
 
-    console.log(machineRegistry.size);
+    // console.log(machineRegistry.size);
 
     expect($root.firstChild?.firstChild?.firstChild?.nodeValue).toBe('awake');
 
@@ -157,43 +157,54 @@ describe('mounting', () => {
         },
       },
       render: s => {
-        switch (s) {
-          case 'even':
-            return (
-              <div>
-                <p>even</p>
-                <div>
-                  <Foo num={1} />
-                  <Foo num={2} />
-                </div>
-              </div>
-            );
+        return (
+          <div>
+            {s === 'even' && <p>even</p>}
+            <div>
+              <Foo num={1} />
+              <Foo num={2} />
+            </div>
+          </div>
+        );
 
-          case 'odd':
-            return (
-              <div>
-                <div>
-                  <Foo num={1} />
-                  <Foo num={2} />
-                </div>
-              </div>
-            );
-        }
+        // this version shouldn't work. you should
+        // conditionally render with logical operators if most
+        // of the view is the same!
+        // switch (s) {
+        //   case 'even':
+        //     return (
+        //       <div>
+        //         <p>even</p>
+        //         <div>
+        //           <Foo num={1} />
+        //           <Foo num={2} />
+        //         </div>
+        //       </div>
+        //     );
+
+        //   case 'odd':
+        //     return (
+        //       <div>
+        //         <div>
+        //           <Foo num={1} />
+        //           <Foo num={2} />
+        //         </div>
+        //       </div>
+        //     );
+        // }
       },
     });
-
-    // brainstorming.. the solution seems to be going from right to left instead? (for unkeyed diff)
 
     $root = mount(AppMachine, $root);
 
     expect($root.nodeName).toBe('DIV');
     expect($root.firstChild?.nodeName).toBe('P');
 
-    console.log(machineRegistry.size);
+    // console.log(machineRegistry.size);
 
-    machineRegistry.forEach(machine => {
-      console.log(machine.vNode?.k);
-    });
+    // machineRegistry.forEach(machine => {
+    //   console.log(machine.vNode?.k);
+    // });
 
     emit({ type: 'WAKE_UP' });
 
@@ -203,13 +214,15 @@ describe('mounting', () => {
 
     emit({ type: 'TOGGLE' });
 
-    console.log(machineRegistry.size);
+    // console.log(machineRegistry.size);
 
-    expect($root.firstChild?.firstChild?.firstChild?.nodeValue).toBe('awake');
+    expect($root.childNodes[1]?.firstChild?.firstChild?.nodeValue).toBe(
+      'awake'
+    );
 
     expect($root.nodeName).toBe('DIV');
-    expect($root.firstChild?.nodeName).toBe('DIV');
+    expect($root.childNodes[1]?.nodeName).toBe('DIV');
 
-    expect($root.firstChild?.childNodes?.length).toBe(2);
+    expect($root.childNodes[1]?.childNodes?.length).toBe(2);
   });
 });

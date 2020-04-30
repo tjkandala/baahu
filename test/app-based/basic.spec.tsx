@@ -273,7 +273,7 @@ describe('basic apps', () => {
     expect(machineRegistry.size).toBe(4);
 
     // should't change anything
-    emit({ type: 'CHANGE_CATEGORY', category: 'sports' });
+    emit({ type: 'CHANGE_CATEGORY', category: 'sports' }, 'VideoList');
 
     // first video node (2)
     expect($root.childNodes[1]?.childNodes[1]?.nodeName).toBe(`P`);

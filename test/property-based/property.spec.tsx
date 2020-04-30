@@ -11,7 +11,6 @@ import {
 import * as fc from 'fast-check';
 import {
   machineRegistry,
-  machinesThatStillExist,
   machinesThatTransitioned,
 } from '../../src/machineRegistry';
 import { VNode } from '../../src/createElement';
@@ -112,7 +111,6 @@ describe('machine property-based tests', () => {
 
           // have to clear bc its the same app instance
           machineRegistry.clear();
-          machinesThatStillExist.clear();
           machinesThatTransitioned.clear();
         }
       )
@@ -267,7 +265,11 @@ describe('machine property-based tests', () => {
         // nothing that starts with '*' or ':,
         // those are special cases for RouTrie. '.' doesn't work either for some reason
         const validNames = names.filter(
-          name => name[0] !== '.' && name[0] !== '*' && name[0] !== ':'
+          name =>
+            name.length > 0 &&
+            name[0] !== '.' &&
+            name[0] !== '*' &&
+            name[0] !== ':'
         );
 
         const routeSchema: RouterSchema = {
@@ -275,8 +277,10 @@ describe('machine property-based tests', () => {
         };
 
         for (let i = 0; i < validNames.length; i++) {
-          routeSchema[`/${validNames[i]}`] = () => (
-            <PageMachine routeName={validNames[i]} />
+          routeSchema[`/page/${validNames[i]}`] = () => (
+            <div>
+              <PageMachine routeName={validNames[i]} />
+            </div>
           );
         }
 
@@ -301,9 +305,11 @@ describe('machine property-based tests', () => {
         expect($root.nodeName).toBe('DIV');
 
         for (let i = 0; i < validNames.length; i++) {
-          linkTo(validNames[i]);
-          expect($root.firstChild?.nodeName).toBe('P');
-          expect($root.firstChild?.firstChild?.nodeValue).toBe(validNames[i]);
+          linkTo(`/page/${validNames[i]}`);
+          expect($root.firstChild?.nodeName).toBe('DIV');
+          expect($root.firstChild?.firstChild?.firstChild?.nodeValue).toBe(
+            validNames[i]
+          );
 
           expect(machineRegistry.get(validNames[i])).toBeDefined();
           expect(machineRegistry.size).toBe(1);

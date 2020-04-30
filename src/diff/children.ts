@@ -7,8 +7,7 @@ import { machineRegistry } from '../machineRegistry';
  * remove any machine instances that may be a descendant
  * of this node
  *
- * TODO: make this iterative after it works
- */
+ * possible change: make this iterative? benchmark it first */
 function safelyRemoveVNode(node: VNode) {
   switch (node.x) {
     case VNodeKind.Machine: {
@@ -153,7 +152,9 @@ export function keyedDiffChildren(
      */
 
     while (oldStart <= oldEnd) {
-      oldVChildren[oldStart].d?.remove();
+      // add tests to make sure asserting existence is safe
+      // oldVChildren[oldStart].d?.remove();
+      oldVChildren[oldStart].d!.remove();
 
       safelyRemoveVNode(oldVChildren[oldStart]);
 
@@ -442,7 +443,8 @@ export function diffChildren(
   for (; i < len; i++) {
     oldVChild = oldVChildren[i];
     newVChild = newVChildren[i];
-    diff(oldVChildren[i], newVChildren[i], parentDom);
+    // this will remove dom node if no newVChild
+    diff(oldVChild, newVChild, parentDom);
 
     oldVChild.x === VNodeKind.Machine && oldMachines.push(oldVChild.i);
 
@@ -450,6 +452,7 @@ export function diffChildren(
       newVChild.x === VNodeKind.Machine &&
       newMachines.add(newVChild.i);
 
+    // this will properly unmount all machine instances that are descendants of oldVChild
     if (!newVChild) safelyRemoveVNode(oldVChild);
   }
 
@@ -462,6 +465,11 @@ export function diffChildren(
   }
 
   // loop thru old, checking if it exists in new!. if it doesn't exist anymore, unmount!
+  // this MIGHT involve some redundant work, but the results are correct (for the current test suite)
+  // write even more tests for this if this proves problematic. MOST reordering of machines will
+  // involve conditional rendering (the nullVNode will ensure that they are diffed in the same position),
+  // and KEYS, so the behavior of the unkeyed diff algorithm with nested-moving-machine-removal
+  // (beyond what is already tested) may not be important
   for (let j = 0; j < oldMachines.length; j++) {
     const oldId = oldMachines[j];
 
@@ -472,7 +480,5 @@ export function diffChildren(
 
       hi && safelyRemoveVNode(hi);
     }
-
-    // NEW: find the vNode of the machine to unmount (thru mInst), then "safely remove vnode" on that!
   }
 }

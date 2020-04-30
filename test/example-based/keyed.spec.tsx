@@ -2,7 +2,6 @@ import { b, emit, mount } from '../../src';
 import { SFC, createMachine, MachineComponent } from '../../src/component';
 import {
   machineRegistry,
-  machinesThatStillExist,
   machinesThatTransitioned,
 } from '../../src/machineRegistry';
 
@@ -309,7 +308,6 @@ const listMap: ListMap = {
 
       // have to clear bc its the same app instance
       machineRegistry.clear();
-      machinesThatStillExist.clear();
       machinesThatTransitioned.clear();
     });
   });

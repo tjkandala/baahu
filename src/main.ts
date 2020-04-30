@@ -8,7 +8,7 @@ import {
   machineRegistry,
   MachineInstance,
   machinesThatTransitioned,
-  machinesThatStillExist,
+  renderType,
 } from './machineRegistry';
 
 let isTransitioning = false;
@@ -22,22 +22,17 @@ let $root: HTMLElement;
  * @param event
  * @param target
  *
- * @returns transitions: the amount of state changes + effects caused by the event
- *
  * INTERNAL, do not export!
  *
- * TODO: use "machinesThatTransitioned" instead of counting transitions!
- * if only one machine transitioned, you can just render that component
+ * TOOD: try to extract common logic btwn targeted and global events
+ * into a function to save bytes!
+ *
  */
 
 function transitionMachines(
   event: { type: string; [key: string]: any },
   target = '*'
-): number {
-  /** count of state transitions and effects triggered by the event.
-   * if this variable stays at 0, we know we don't need to rerender! */
-  let transitions = 0;
-
+): void {
   const eventType = event.type;
 
   /**
@@ -80,8 +75,6 @@ function transitionMachines(
             if (effects) {
               for (let i = 0; i < effects.length; i++) {
                 effects[i](machineInstance.ctx, event, machineInstance.id);
-
-                transitions++;
               }
               machinesThatTransitioned.set(machineInstance.id, true);
             }
@@ -116,7 +109,6 @@ function transitionMachines(
                     machineInstance.id
                   );
 
-                transitions++;
                 machinesThatTransitioned.set(machineInstance.id, true);
               } else {
                 /** for js users who may specify invalid targets */
@@ -206,7 +198,6 @@ function transitionMachines(
                     machineInstance.id
                   );
 
-                transitions++;
                 machinesThatTransitioned.set(machineInstance.id, true);
               } else {
                 /** for js users who may specify invalid targets */
@@ -230,20 +221,33 @@ function transitionMachines(
       machineInstance = effects[i][1];
       effect(machineInstance.ctx, event, machineInstance.id);
 
-      transitions++;
       machinesThatTransitioned.set(machineInstance.id, true);
     }
-  }
 
-  return transitions;
+    /**
+     * check if machines have transitioned. if so, rerender.
+     *
+     * decision: can make the optimization of only rendering 1 machine if only 1 machine
+     * transitioned, but i'm choosing to make global events rerender from the root.
+     *
+     * after all, if the event has a target in mind, users should specify it.
+     * globally emitted events should have predictable behavior
+     * (useful for POJO global stores, because you know that
+     * everything referencing the global store will be accurate)
+     */
+  }
 }
 
 export function emit(
   event: { type: string; [key: string]: any },
   target: string = '*'
 ): void {
+  target === '*' ? (renderType.t = 'gb') : (renderType.t = 'tg');
+
   // if already transitioning, transition machines, but don't start render process
+  // change renderType to global, as we can no longer be sure (TODO)
   if (isTransitioning) {
+    renderType.t = 'gb';
     transitionMachines(event, target);
     return;
   }
@@ -253,68 +257,49 @@ export function emit(
   transitionMachines(event, target);
 
   isTransitioning = false;
-  // if (transitions === 0) return;
 
-  /** Check how many machines have transitioned. If one, just rerender that machine. If multiple,
-   * rerender the whole app (think of better ways)
+  /**
+   * check how many machines have transitioned/performed effects.
+   * if one, just rerender that machine. If multiple,
+   * rerender the whole app (think of better ways).
+   *
+   * no-op if the event(s) led to no transitions/effects
    */
-  const machTransCount = machinesThatTransitioned.size;
-  if (machTransCount === 0) return;
-  if (machTransCount === 1) {
-    for (const [k] of machinesThatTransitioned) {
-      const machine = machineRegistry.get(k);
-      if (machine) {
-        // not creating another machine node, but the child
-        const vNode: VNode | null = machine.spec.render(
-          machine.state,
-          machine.ctx,
-          machine.id,
-          machine.c
-        );
+  if (machinesThatTransitioned.size === 0) return;
 
-        diff(machine.vNode.c, vNode, null);
-        machinesThatTransitioned.clear();
-        machine.vNode.c = vNode as VNode;
-      }
+  if (renderType.t === 'tg') {
+    /**
+     * no need to iterate, thru mTT; if we reached this point,
+     * we are pretty sure that the target was the only machine
+     * that transitioned (no nested events, obv wasn't a global)
+     */
+
+    // for (const [k] of machinesThatTransitioned) {
+    const machine = machineRegistry.get(target);
+    if (machine) {
+      // the product of the render function is the child 'machineVNode.c',
+      //  not the machineVNode itself
+      const vNode: VNode | null = machine.spec.render(
+        machine.state,
+        machine.ctx,
+        machine.id,
+        machine.c
+      );
+
+      diff(machine.vNode.c, vNode, null);
+      machinesThatTransitioned.clear();
+      machine.vNode.c = vNode as VNode;
     }
-
-    // const vNode: VNode | null = b(currentRootComponent, {});
-    // if (vNode) {
-    //   // diff(currentVRoot, vNode)($root);
-    //   diff(currentVRoot, vNode, null);
-    //   diffMachines();
-    //   currentVRoot = vNode;
     // }
   } else {
-    const vNode: VNode | null = b(currentRootComponent, {});
+    const vNode = b(currentRootComponent, {});
 
-    if (vNode) {
-      // diff(currentVRoot, vNode)($root);
+    if (vNode !== null) {
       diff(currentVRoot, vNode, null);
-      // diffMachines();
       machinesThatTransitioned.clear();
       currentVRoot = vNode;
     }
   }
-
-  /** Construct a new Virtual Dom Tree based on the new state of machines
-   * in the registry. If this point has been reached, that means some state
-   * has (likely) changed since the last render.
-   */
-
-  /**
-   * this is the call to createElement. at this point, machinesThatTransitioned has been populated.
-   * the render will reflect the new state. leaf machines that are not in the map (benchmark it vs set)
-   * will return their lastVNode. if the instance did update, render a newVNode, append it lo lastVNode, and return that!
-   */
-  // const vNode: VNode | null = b(currentRootComponent, {});
-
-  // if (vNode) {
-  //   // diff(currentVRoot, vNode)($root);
-  //   diff(currentVRoot, vNode, null);
-  //   diffMachines();
-  //   currentVRoot = vNode;
-  // }
 }
 
 export function createRouter<Props extends PropsArg = any>(
@@ -375,6 +360,8 @@ function newRoute(): void {
     },
   });
 
+  renderType.t = 'rt';
+
   // rerender
   const vNode: VNode | null = b(currentRootComponent, {});
 
@@ -411,7 +398,7 @@ export function mount(
   $target: HTMLElement
 ): HTMLElement {
   machineRegistry.clear();
-
+  renderType.t = 'gb';
   const vNode: VNode | null = b(rootComponent, {});
 
   if (vNode) {
@@ -425,9 +412,6 @@ export function mount(
 
     currentRootComponent = rootComponent;
     currentVRoot = vNode;
-    machinesThatStillExist.clear();
-    // have to clear after first render
-    // this happens during diffMachines() on subsequent renders
   }
 
   return $root;

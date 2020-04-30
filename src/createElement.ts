@@ -2,8 +2,8 @@
 import { MachineComponent, SFC } from './component';
 import {
   machineRegistry,
-  machinesThatStillExist,
   machinesThatTransitioned,
+  renderType,
 } from './machineRegistry';
 
 export type TagName = keyof HTMLElementTagNameMap;
@@ -16,7 +16,7 @@ export type ChildArg =
   | number
   | null
   | undefined
-  | false;
+  | boolean;
 
 export type ChildrenArg = Array<ChildArg>;
 
@@ -117,8 +117,8 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
           }
           break;
         } else {
-          /** typeof null is object in js, so check for truthiness */
-          child && children.push(child);
+          /** typeof null is object in js, so check (truthiness check is expensive) */
+          child !== null && children.push(child);
           break;
         }
       case 'string':
@@ -126,6 +126,16 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
         break;
       case 'number':
         children.push(createTextVNode(child.toString()));
+        break;
+      /** to maintain vdom structure for short-circuiting,
+       * e.g. 'condition && <div>{stuff}</div>' could return false
+       *  OR
+       * e.g. 'condition || <div>{stuff}</div>' could return true
+       *
+       * might add a 'nullVNode' VNode type later, as opposed to empty text node
+       */
+      case 'boolean':
+        children.push(nullVNode);
         break;
     }
   }
@@ -174,9 +184,6 @@ export function b<Props extends PropsArg>(
           typeof type.id === 'function' ? type.id(mProps) : type.id;
 
         const existingInstance = machineRegistry.get(instanceId);
-
-        /** add to "machinesThatStillExist" whether it is new or old */
-        machinesThatStillExist.set(instanceId, true);
 
         /** initializing instance */
         if (!existingInstance) {
@@ -239,20 +246,22 @@ export function b<Props extends PropsArg>(
 
           return vNode;
         } else {
-          /**
-           * existing instance logic:
-           * - check if UI-less machine; if so, return null (no UI-less machines yet)
-           * - check if leaf
-           * - if not leaf, render with latest info from instance. set lastChild (idk what to do for TS..) return
-           * - if leaf, check if transitioned
-           * - if not, return lastChild.
-           * - if it has transitioned, render with latest info from instance. set lastChild, return
-           */
           const spec = existingInstance.spec;
           // if (!spec.render) return null;
 
+          /**
+           * all the reasons that a machine can return its old value/vNode:
+           * 1) it is a leaf that didnt transition
+           * 2) renderType is 'tg' and it didn't transition
+           *
+           * reasons to rerender
+           * 1) it is a leaf that transitioned
+           * 2) renderType is 'targeted', but it transitioned (it is the targeted machine. in practice, this won't
+           *    happen, as targeted machine render fn is called directly)
+           * 3) renderType is 'global' or 'routing' (NOT 'tg')
+           */
           if (
-            spec.isLeaf &&
+            (renderType.t === 'tg' || spec.isLeaf) &&
             !machinesThatTransitioned.has(existingInstance.id)
           ) {
             // yay, optimization! (leaf that hasn't transitioned)
@@ -279,7 +288,7 @@ export function b<Props extends PropsArg>(
             };
 
             existingInstance.vNode = vNode;
-            // children are used for 'in-place' re-renders on events
+            // children are cached for granular re-renders on events
             existingInstance.c = kids;
 
             return vNode;
