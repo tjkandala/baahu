@@ -1,5 +1,6 @@
 import { MachineSpec } from './component';
 import { MachineVNode } from './createElement';
+import { VNode } from '.';
 
 export type MachineInstance = {
   id: string;
@@ -13,6 +14,9 @@ export type MachineInstance = {
 
   /** last rendered vnode, for memoization + component-level rendering */
   vNode: MachineVNode;
+
+  /** children for rerendering (children don't rerender) */
+  c: VNode[];
 };
 
 export type MachineRegistry = Map<string, MachineInstance>;

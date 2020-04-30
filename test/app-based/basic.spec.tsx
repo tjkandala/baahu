@@ -157,7 +157,8 @@ describe('basic apps', () => {
     });
 
     const Video = createMachine<VideoProps, VideoState, VideoEvent, {}>({
-      isLeaf: true,
+      // with new optimizations, even non-leaf nodes will not rerender when they don't transition!
+      isLeaf: false,
       id: props => `video-${props.category}-${props.listPosition}`,
       initialContext: () => ({}),
       initialState: 'buffering',
@@ -285,10 +286,21 @@ describe('basic apps', () => {
       `buffering`
     );
 
-    const firstLeafNodeBefore = machineRegistry.get('video-sports-1')?.vNode;
-    const secondLeafNodeBefore = machineRegistry.get('video-sports-2')?.vNode;
+    const firstLeafMachVNodeBefore = machineRegistry.get('video-sports-1')
+      ?.vNode;
+
+    const firstLeafChildBefore = firstLeafMachVNodeBefore?.c;
+
+    const secondLeafMachVNodeBefore = machineRegistry.get('video-sports-2')
+      ?.vNode;
+
+    const secondLeafChildBefore = secondLeafMachVNodeBefore?.c;
 
     expect(machineRegistry.size).toBe(4);
+
+    // let beforeChildren = secondLeafNodeBefore?.c.c as VNode[];
+    // console.log(beforeChildren[0]);
+    // console.log('above is first time');
 
     /**
      *
@@ -304,19 +316,28 @@ describe('basic apps', () => {
     // second video node
     expect($root.childNodes[1]?.childNodes[2]?.nodeName).toBe(`P`);
 
-    // this tests removing a machine vnode (as opposed to swapping it)
     const problematicNode = $root.childNodes[1]?.childNodes[2]?.firstChild;
     expect(problematicNode?.nodeValue).toBe(`playing`);
 
     expect(machineRegistry.size).toBe(4);
 
-    const firstLeafNodeAfter = machineRegistry.get('video-sports-1')?.vNode;
-    const secondLeafNodeAfter = machineRegistry.get('video-sports-2')?.vNode;
+    const firstLeafMachVNodeAfter = machineRegistry.get('video-sports-1')
+      ?.vNode;
+    const firstLeafChildAfter = firstLeafMachVNodeAfter?.c;
 
-    // we don't want this to rerender, so reference to child should be the same
-    expect(firstLeafNodeBefore === firstLeafNodeAfter).toBe(true);
-    // we want this to rerender, so reference to child should NOT be the same
-    expect(secondLeafNodeBefore === secondLeafNodeAfter).toBe(false);
+    const secondLeafMachVNodeAfter = machineRegistry.get('video-sports-2')
+      ?.vNode;
+    const secondLeafChildAfter = secondLeafMachVNodeAfter?.c;
+
+    /** The machine nodes themselves should be the same, but the child should change for the
+     * second leaf (as it went thru a transition), and should be the same for the first leaf (no transition)
+     * */
+
+    expect(firstLeafMachVNodeBefore === firstLeafMachVNodeAfter).toBe(true);
+    expect(firstLeafChildBefore === firstLeafChildAfter).toBe(true);
+
+    expect(secondLeafMachVNodeBefore === secondLeafMachVNodeBefore).toBe(true);
+    expect(secondLeafChildBefore === secondLeafChildAfter).toBe(false);
 
     /**
      *

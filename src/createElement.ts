@@ -44,9 +44,10 @@ type TextVNode = {
   c: null;
   /** dom */
   d: Text | null;
+  i: null;
 };
 
-type ElementVNode = {
+export type ElementVNode = {
   x: VNodeKind.Element;
   t: string;
   k: string | number | null;
@@ -55,6 +56,8 @@ type ElementVNode = {
   /** children */
   c: Array<VNode>;
   d: HTMLElement | null;
+  /** id (for machine node lookup in registry) */
+  i: null;
 };
 
 export type MachineVNode = {
@@ -65,6 +68,8 @@ export type MachineVNode = {
   /** one child */
   c: VNode;
   d: null;
+  /** id (for machine node lookup in registry) */
+  i: string;
 };
 
 /** unfortunately, i had to make this enum less readable bc the minifier wasn't doing the trick */
@@ -93,6 +98,7 @@ function createTextVNode(text: string): TextVNode {
     },
     c: null,
     d: null,
+    i: null,
   };
 }
 
@@ -135,6 +141,7 @@ const nullVNode: TextVNode = {
   },
   c: null,
   d: null,
+  i: null,
 };
 
 /** createElement */
@@ -154,6 +161,7 @@ export function b<Props extends PropsArg>(
         a: props ? new Map(Object.entries(props)) : null,
         c: processChildren(children),
         d: null,
+        i: null,
       };
 
     /** machine components or SFCs */
@@ -199,20 +207,23 @@ export function b<Props extends PropsArg>(
           stateHandler.onEntry &&
             stateHandler.onEntry(initialContext, { type: 'MOUNT' }, instanceId);
 
+          const kids = processChildren(children);
           const child = spec.render(
             initialState,
             initialContext,
             instanceId,
-            processChildren(children)
+            kids
           );
 
           const vNode: MachineVNode = {
             x: VNodeKind.Machine,
             t: null,
             k: props && props.key ? props.key : null,
+            // k: instanceId,
             a: null,
             c: child ? child : nullVNode,
             d: null,
+            i: instanceId,
           };
 
           const newInstance = {
@@ -222,6 +233,7 @@ export function b<Props extends PropsArg>(
             spec: spec,
             isLeaf: spec.isLeaf ? spec.isLeaf : false,
             vNode: vNode,
+            c: kids,
           };
           machineRegistry.set(instanceId, newInstance);
 
@@ -247,23 +259,28 @@ export function b<Props extends PropsArg>(
             return existingInstance.vNode;
           } else {
             // not a leaf, or it is a leaf that has changed! rerender
+            const kids = processChildren(children);
             const child = spec.render(
               existingInstance.state,
               existingInstance.ctx,
               existingInstance.id,
-              processChildren(children)
+              kids
             );
 
             const vNode: MachineVNode = {
               x: VNodeKind.Machine,
               t: null,
               k: props && props.key ? props.key : null,
+              // k: instanceId,
               a: null,
               c: child ? child : nullVNode,
               d: null,
+              i: instanceId,
             };
 
             existingInstance.vNode = vNode;
+            // children are used for 'in-place' re-renders on events
+            existingInstance.c = kids;
 
             return vNode;
           }
@@ -291,10 +308,3 @@ export interface PropsArg {
   /** arbitrary keys */
   [key: string]: any;
 }
-
-// TODO: work on prop + attr types. the current interface works like this:
-// if the component has specified its prop types (they should), it overrides
-// PropsArg. an element can't speficy props, so it uses the default PropsArg
-
-// type RefCallback = (ref: HTMLElement) => void;
-// type EventHandler = (e: Event) => void;

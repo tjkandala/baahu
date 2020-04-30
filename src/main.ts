@@ -7,7 +7,6 @@ import { RouTrie, Params } from './router';
 import {
   machineRegistry,
   MachineInstance,
-  diffMachines,
   machinesThatTransitioned,
   machinesThatStillExist,
 } from './machineRegistry';
@@ -27,6 +26,8 @@ let $root: HTMLElement;
  *
  * INTERNAL, do not export!
  *
+ * TODO: use "machinesThatTransitioned" instead of counting transitions!
+ * if only one machine transitioned, you can just render that component
  */
 
 function transitionMachines(
@@ -249,10 +250,52 @@ export function emit(
 
   isTransitioning = true;
 
-  const transitions = transitionMachines(event, target);
+  transitionMachines(event, target);
 
   isTransitioning = false;
-  if (transitions === 0) return;
+  // if (transitions === 0) return;
+
+  /** Check how many machines have transitioned. If one, just rerender that machine. If multiple,
+   * rerender the whole app (think of better ways)
+   */
+  const machTransCount = machinesThatTransitioned.size;
+  if (machTransCount === 0) return;
+  if (machTransCount === 1) {
+    for (const [k] of machinesThatTransitioned) {
+      const machine = machineRegistry.get(k);
+      if (machine) {
+        // not creating another machine node, but the child
+        const vNode: VNode | null = machine.spec.render(
+          machine.state,
+          machine.ctx,
+          machine.id,
+          machine.c
+        );
+
+        diff(machine.vNode.c, vNode, null);
+        machinesThatTransitioned.clear();
+        machine.vNode.c = vNode as VNode;
+      }
+    }
+
+    // const vNode: VNode | null = b(currentRootComponent, {});
+    // if (vNode) {
+    //   // diff(currentVRoot, vNode)($root);
+    //   diff(currentVRoot, vNode, null);
+    //   diffMachines();
+    //   currentVRoot = vNode;
+    // }
+  } else {
+    const vNode: VNode | null = b(currentRootComponent, {});
+
+    if (vNode) {
+      // diff(currentVRoot, vNode)($root);
+      diff(currentVRoot, vNode, null);
+      // diffMachines();
+      machinesThatTransitioned.clear();
+      currentVRoot = vNode;
+    }
+  }
 
   /** Construct a new Virtual Dom Tree based on the new state of machines
    * in the registry. If this point has been reached, that means some state
@@ -264,14 +307,14 @@ export function emit(
    * the render will reflect the new state. leaf machines that are not in the map (benchmark it vs set)
    * will return their lastVNode. if the instance did update, render a newVNode, append it lo lastVNode, and return that!
    */
-  const vNode: VNode | null = b(currentRootComponent, {});
+  // const vNode: VNode | null = b(currentRootComponent, {});
 
-  if (vNode) {
-    // diff(currentVRoot, vNode)($root);
-    diff(currentVRoot, vNode, null);
-    diffMachines();
-    currentVRoot = vNode;
-  }
+  // if (vNode) {
+  //   // diff(currentVRoot, vNode)($root);
+  //   diff(currentVRoot, vNode, null);
+  //   diffMachines();
+  //   currentVRoot = vNode;
+  // }
 }
 
 export function createRouter<Props extends PropsArg = any>(
@@ -338,7 +381,7 @@ function newRoute(): void {
   if (vNode) {
     // diff(currentVRoot, vNode)($root);
     diff(currentVRoot, vNode, null);
-    diffMachines();
+    // diffMachines();
     currentVRoot = vNode;
   }
 }
@@ -367,6 +410,8 @@ export function mount(
   rootComponent: MachineComponent | SFC,
   $target: HTMLElement
 ): HTMLElement {
+  machineRegistry.clear();
+
   const vNode: VNode | null = b(rootComponent, {});
 
   if (vNode) {

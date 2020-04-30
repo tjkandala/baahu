@@ -1,6 +1,48 @@
-import { VNode } from '../createElement';
+import { VNode, VNodeKind } from '../createElement';
 import { diff } from '.';
 import { renderDOM } from '../renderDOM';
+import { machineRegistry } from '../machineRegistry';
+
+/** traverses the VNode to be removed in order to
+ * remove any machine instances that may be a descendant
+ * of this node
+ *
+ * TODO: make this iterative after it works
+ */
+function safelyRemoveVNode(node: VNode) {
+  switch (node.x) {
+    case VNodeKind.Machine: {
+      // we found a machine to unmount
+      unmountMachine(node.i);
+      // keep looking for machine desc.
+      safelyRemoveVNode(node.c);
+      return;
+    }
+
+    case VNodeKind.Element: {
+      // keep looking for machine desc.
+      let len = node.c.length;
+      for (let i = 0; i < len; i++) {
+        safelyRemoveVNode(node.c[i]);
+      }
+      return;
+    }
+
+    default:
+      // do nothing, text/undefined can't have a machine desc.
+      return;
+  }
+}
+
+function unmountMachine(idToDelete: string) {
+  const mInst = machineRegistry.get(idToDelete);
+
+  if (mInst) {
+    mInst.spec.onUnmount && mInst.spec.onUnmount(mInst.ctx, mInst.state);
+
+    machineRegistry.delete(idToDelete);
+  }
+}
 
 /**
  * Diffing algorithm for keyed children. Call this when the first
@@ -112,6 +154,9 @@ export function keyedDiffChildren(
 
     while (oldStart <= oldEnd) {
       oldVChildren[oldStart].d?.remove();
+
+      safelyRemoveVNode(oldVChildren[oldStart]);
+
       oldStart++;
     }
 
@@ -169,6 +214,8 @@ export function keyedDiffChildren(
     } else {
       if (ogNode !== null) {
         ogNode.remove();
+
+        safelyRemoveVNode(oldVNode);
       }
     }
   }
@@ -385,13 +432,47 @@ export function diffChildren(
   const len = oldVChildren.length;
   let newLen = newVChildren.length;
 
+  const oldMachines: string[] = [];
+  const newMachines: Set<string> = new Set();
+
+  let oldVChild: VNode;
+  let newVChild: VNode;
+
   /** This will automatically delete removed children, bc newVChildren[i] will be undefined */
   for (; i < len; i++) {
+    oldVChild = oldVChildren[i];
+    newVChild = newVChildren[i];
     diff(oldVChildren[i], newVChildren[i], parentDom);
+
+    oldVChild.x === VNodeKind.Machine && oldMachines.push(oldVChild.i);
+
+    newVChild &&
+      newVChild.x === VNodeKind.Machine &&
+      newMachines.add(newVChild.i);
+
+    if (!newVChild) safelyRemoveVNode(oldVChild);
   }
 
   /** This will only be executed if newVChildren is longer than oldVChildren */
   for (; i < newLen; i++) {
-    parentDom.appendChild(renderDOM(newVChildren[i]));
+    newVChild = newVChildren[i];
+    parentDom.appendChild(renderDOM(newVChild));
+    // still need to check for machine ids here. (bc unkeyed, no way to keep track of identity)
+    newVChild.x === VNodeKind.Machine && newMachines.add(newVChild.i);
+  }
+
+  // loop thru old, checking if it exists in new!. if it doesn't exist anymore, unmount!
+  for (let j = 0; j < oldMachines.length; j++) {
+    const oldId = oldMachines[j];
+
+    if (!newMachines.has(oldId)) {
+      const mInst = machineRegistry.get(oldId);
+
+      const hi = mInst?.vNode;
+
+      hi && safelyRemoveVNode(hi);
+    }
+
+    // NEW: find the vNode of the machine to unmount (thru mInst), then "safely remove vnode" on that!
   }
 }
