@@ -4,15 +4,16 @@ import { VNode, VNodeKind } from './createElement';
 export function renderDOM(node: VNode): HTMLElement | Text {
   switch (node.x) {
     case VNodeKind.Element:
-      const $el = document.createElement(node.t);
+      // any saves bytes (useless checking of 'disabled in el')
+      const $el: any = document.createElement(node.t);
 
       if (node.a) {
         for (const [prop, value] of node.a) {
-          if (prop.startsWith('on')) {
+          if (prop[0] === 'o' && prop[1] === 'n') {
             $el.addEventListener(prop.substring(2).toLowerCase(), value);
           } else {
-            if (prop !== 'key' && prop !== 'ref') {
-              $el.setAttribute(prop, value);
+            if (prop === 'disabled') {
+              $el.disabled = value;
             } else if (prop === 'ref') {
               if (process.env.NODE_ENV !== 'production') {
                 if (typeof value !== 'function') {
@@ -21,6 +22,8 @@ export function renderDOM(node: VNode): HTMLElement | Text {
               }
 
               value($el);
+            } else if (prop !== 'key') {
+              $el.setAttribute(prop, value);
             }
           }
         }

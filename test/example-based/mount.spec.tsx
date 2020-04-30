@@ -134,7 +134,7 @@ describe('mounting', () => {
    *
    */
 
-  // this works with keys, but not without keys!
+  // this works with keys, but not without keys! (works now)
   test("doesn't unmount nested machines bc of conditional rendering (left)", () => {
     const AppMachine = createMachine<{}>({
       id: 'app',
