@@ -73,53 +73,23 @@ function transitionMachines(
             const effects = transitionHandler.effects;
 
             if (effects) {
-              for (let i = 0; i < effects.length; i++) {
-                effects[i](machineInstance.ctx, event, machineInstance.id);
+              if (typeof effects === 'function') {
+                effects(machineInstance.ctx, event, machineInstance.id);
+              } else {
+                for (let i = 0; i < effects.length; i++) {
+                  effects[i](machineInstance.ctx, event, machineInstance.id);
+                }
               }
               machinesThatTransitioned.set(machineInstance.id, true);
             }
 
-            // takeToNextState(machineInstance, targetState)
-
             if (targetState && targetState !== machineInstance.st) {
-              /** make sure the machine can even go to the next state */
-              const nextStateHandler = machineInstance.s.states[targetState];
-
-              if (nextStateHandler) {
-                machineInstance.st = targetState;
-
-                /**
-                 *
-                 * the pseudocode for the code below:
-                 *
-                 * machine.spec.states[oldState]?.onExit()
-                 * machine.spec.states[target]?.onEntry()
-                 *
-                 * */
-
-                stateHandler.onExit &&
-                  stateHandler.onExit(
-                    machineInstance.ctx,
-                    event,
-                    machineInstance.id
-                  );
-
-                nextStateHandler.onEntry &&
-                  nextStateHandler.onEntry(
-                    machineInstance.ctx,
-                    event,
-                    machineInstance.id
-                  );
-
-                machinesThatTransitioned.set(machineInstance.id, true);
-              } else {
-                /** for js users who may specify invalid targets */
-                if (process.env.NODE_ENV !== 'production') {
-                  throw TypeError(
-                    `The specified target (${target}) for this transition (${machineInstance.st} => ${target}) does not exist on ${machineInstance.id}`
-                  );
-                }
-              }
+              takeToNextState(
+                targetState,
+                machineInstance,
+                stateHandler,
+                event
+              );
             }
           }
         }
@@ -132,7 +102,7 @@ function transitionMachines(
     /** execute effects after transitions + onEntry + onExit.
      *  using an array of tuples instead of a map so that the
      *  same effect function can be used for multiple machine instances */
-    const effects: Array<[Effect, MachineInstance]> = [];
+    const allEffects: Array<[Effect, MachineInstance]> = [];
 
     for (const [, machineInstance] of machineRegistry) {
       /** check if this machine listens to this eventType */
@@ -155,7 +125,8 @@ function transitionMachines(
           const cond = transitionHandler.cond;
 
           if (!cond || cond(machineInstance.ctx, event) === true) {
-            const targetState = stateHandler.on[eventType]?.target;
+            const targetState = transitionHandler.target;
+            const effects = transitionHandler.effects;
 
             /**
              * onMount and onUnmount are handled in createElement and diff. handle the
@@ -165,63 +136,38 @@ function transitionMachines(
              * then perform effects after all transitions + machines for this event!
              */
 
-            stateHandler.on[eventType]?.effects?.forEach(effect => {
-              effects.push([effect, machineInstance]);
-              // machinesThatTransitioned.set(machineInstance.id, true);
-            });
+            if (effects) {
+              if (typeof effects === 'function') {
+                allEffects.push([effects, machineInstance]);
+              } else {
+                let j = effects.length;
+                while (j--) allEffects.push([effects[j], machineInstance]);
+
+                /** golfed version of this: */
+                // effects.forEach(effect => {
+                //   allEffects.push([effect, machineInstance]);
+                // });
+              }
+            }
 
             if (targetState && targetState !== machineInstance.st) {
-              /** make sure the machine can even go to the next state */
-              const nextStateHandler = machineInstance.s.states[targetState];
-
-              if (nextStateHandler) {
-                machineInstance.st = targetState;
-
-                /**
-                 *
-                 * the pseudocode for the code below:
-                 *
-                 * machine.spec.states[oldState]?.onExit()
-                 * machine.spec.states[target]?.onEntry()
-                 *
-                 * */
-
-                stateHandler.onExit &&
-                  stateHandler.onExit(
-                    machineInstance.ctx,
-                    event,
-                    machineInstance.id
-                  );
-
-                nextStateHandler.onEntry &&
-                  nextStateHandler.onEntry(
-                    machineInstance.ctx,
-                    event,
-                    machineInstance.id
-                  );
-
-                machinesThatTransitioned.set(machineInstance.id, true);
-              } else {
-                /** for js users who may specify invalid targets */
-                if (process.env.NODE_ENV !== 'production') {
-                  throw TypeError(
-                    `The specified target (${target}) for this transition (${machineInstance.st} => ${target}) does not exist on your ${machineInstance.id}`
-                  );
-                }
-              }
+              takeToNextState(
+                targetState,
+                machineInstance,
+                stateHandler,
+                event
+              );
             }
           }
         }
       }
     }
 
-    let i: number;
-    let effect: Effect<any, any>;
+    let i = allEffects.length;
     let machineInstance: MachineInstance;
-    for (i = 0; i < effects.length; i++) {
-      effect = effects[i][0];
-      machineInstance = effects[i][1];
-      effect(machineInstance.ctx, event, machineInstance.id);
+    while (i--) {
+      machineInstance = allEffects[i][1];
+      allEffects[i][0](machineInstance.ctx, event, machineInstance.id);
 
       // don't delete, this is here for leaf node optimizations
       machinesThatTransitioned.set(machineInstance.id, true);
@@ -241,11 +187,42 @@ function transitionMachines(
   }
 }
 
-// // trying to reuse logic for targeted and global events
-// function takeToNextState(
-//   machineInstance: MachineInstance,
-//   targetState: string
-// ): void {}
+function takeToNextState(
+  targetState: string,
+  machineInstance: MachineInstance,
+  stateHandler: any,
+  event: { type: string; [key: string]: any }
+): void {
+  const nextStateHandler = machineInstance.s.states[targetState];
+
+  if (nextStateHandler) {
+    machineInstance.st = targetState;
+
+    /**
+     *
+     * the pseudocode for the code below:
+     *
+     * machine.spec.states[oldState]?.onExit()
+     * machine.spec.states[target]?.onEntry()
+     *
+     * */
+
+    stateHandler.onExit &&
+      stateHandler.onExit(machineInstance.ctx, event, machineInstance.id);
+
+    nextStateHandler.onEntry &&
+      nextStateHandler.onEntry(machineInstance.ctx, event, machineInstance.id);
+
+    machinesThatTransitioned.set(machineInstance.id, true);
+  } else {
+    /** for js users who may specify invalid targets */
+    if (process.env.NODE_ENV !== 'production') {
+      throw TypeError(
+        `The specified target (${targetState}) for this transition (${machineInstance.st} => ${targetState}) does not exist on your ${machineInstance.id}`
+      );
+    }
+  }
+}
 
 export function emit(
   event: { type: string; [key: string]: any },
@@ -372,9 +349,7 @@ function newRoute(): void {
   const vNode: VNode | null = b(currentRootComponent, {});
 
   if (vNode) {
-    // diff(currentVRoot, vNode)($root);
     diff(currentVRoot, vNode, null);
-    // diffMachines();
     currentVRoot = vNode;
   }
 }

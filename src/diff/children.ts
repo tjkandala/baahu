@@ -20,10 +20,8 @@ function safelyRemoveVNode(node: VNode) {
 
     case VNodeKind.Element: {
       // keep looking for machine desc.
-      let len = node.c.length;
-      for (let i = 0; i < len; i++) {
-        safelyRemoveVNode(node.c[i]);
-      }
+      let i = node.c.length;
+      while (i--) safelyRemoveVNode(node.c[i]);
       return;
     }
 
@@ -67,7 +65,10 @@ export function keyedDiffChildren(
    */
   let oldStart = 0;
   let newStart = 0;
-  let oldEnd = oldVChildren.length - 1;
+
+  let oldLen = oldVChildren.length;
+
+  let oldEnd = oldLen - 1;
   let newEnd = newVChildren.length - 1;
 
   let $node: HTMLElement | Text | ChildNode | undefined;
@@ -133,10 +134,12 @@ export function keyedDiffChildren(
      */
 
     while (newStart <= newEnd) {
-      parentDom.insertBefore(
-        renderDOM(newVChildren[newStart]),
-        oldVChildren[oldStart].d
-      );
+      $node = renderDOM(newVChildren[newStart]);
+
+      oldStart >= oldLen
+        ? parentDom.appendChild($node)
+        : parentDom.insertBefore($node, oldVChildren[oldStart].d);
+
       newStart++;
     }
     return void 0;
@@ -468,10 +471,11 @@ export function diffChildren(
   // this MIGHT involve some redundant work, but the results are correct (for the current test suite)
   // write even more tests for this if this proves problematic. MOST reordering of machines will
   // involve conditional rendering (the nullVNode will ensure that they are diffed in the same position),
-  // and KEYS, so the behavior of the unkeyed diff algorithm with nested-moving-machine-removal
+  // or KEYS, so the behavior of the unkeyed diff algorithm with nested-moving-machine-removal
   // (beyond what is already tested) may not be important
-  for (let j = 0; j < oldMachines.length; j++) {
-    const oldId = oldMachines[j];
+  i = oldMachines.length;
+  while (i--) {
+    const oldId = oldMachines[i];
 
     if (!newMachines.has(oldId)) {
       const mInst = machineRegistry.get(oldId);

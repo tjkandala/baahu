@@ -26,11 +26,12 @@ describe('real world events', () => {
           on: {
             FINISHED_LOADING: {
               target: 'ready',
+              effects: processData,
             },
           },
         },
         ready: {
-          onEntry: processData,
+          // onEntry: processData,
           on: {
             PROCESSED_DATA: {
               target: 'complete',

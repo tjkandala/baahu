@@ -247,7 +247,6 @@ export function b<Props extends PropsArg>(
           return vNode;
         } else {
           const spec = existingInstance.s;
-          // if (!spec.render) return null;
 
           /**
            * all the reasons that a machine can return its old value/vNode:

@@ -246,6 +246,69 @@ const listMap: ListMap = {
     ],
     listTwo: [],
   },
+  addOne: {
+    listOne: [
+      { key: 'a', todo: 'a' },
+      { key: 'b', todo: 'b' },
+    ],
+    listTwo: [
+      { key: 'a', todo: 'a' },
+      { key: 'b', todo: 'b' },
+      { key: 'c', todo: 'c' },
+    ],
+  },
+  addThree: {
+    listOne: [
+      { key: 'a', todo: 'a' },
+      { key: 'b', todo: 'b' },
+    ],
+    listTwo: [
+      { key: 'a', todo: 'a' },
+      { key: 'b', todo: 'b' },
+      { key: 'c', todo: 'c' },
+      { key: 'd', todo: 'd' },
+      { key: 'e', todo: 'e' },
+    ],
+  },
+  removeOne: {
+    listOne: [
+      { key: 'a', todo: 'a' },
+      { key: 'b', todo: 'b' },
+      { key: 'c', todo: 'c' },
+    ],
+    listTwo: [
+      { key: 'a', todo: 'a' },
+      { key: 'b', todo: 'b' },
+    ],
+  },
+  removeThree: {
+    listOne: [
+      { key: 'a', todo: 'a' },
+      { key: 'b', todo: 'b' },
+      { key: 'c', todo: 'c' },
+      { key: 'd', todo: 'd' },
+      { key: 'e', todo: 'e' },
+    ],
+    listTwo: [
+      { key: 'a', todo: 'a' },
+      { key: 'b', todo: 'b' },
+    ],
+  },
+  oneNewBeforeEnd: {
+    listOne: [
+      { key: 'a', todo: 'a' },
+      { key: 'b', todo: 'b' },
+      { key: 'c', todo: 'c' },
+      { key: 'd', todo: 'd' },
+    ],
+    listTwo: [
+      { key: 'a', todo: 'a' },
+      { key: 'b', todo: 'b' },
+      { key: 'c', todo: 'c' },
+      { key: 'new', todo: 'new' },
+      { key: 'd', todo: 'd' },
+    ],
+  },
 };
 
 /**
@@ -281,6 +344,9 @@ const listMap: ListMap = {
 
         expect($root.nodeName).toBe('DIV');
 
+        // length should be correct
+        expect($root.firstChild?.childNodes?.length).toBe(listOne.length);
+
         // check if DOM correctly represents VDom (values)
         $root.firstChild?.childNodes.forEach((child, i) => {
           expect(child.firstChild?.nodeValue).toBe(listOne[i].todo);
@@ -288,6 +354,9 @@ const listMap: ListMap = {
 
         // now, emit toggle event. should change to represent second list
         emit({ type: 'TOGGLE' }, `listMach-${diffType}-${testCase}`);
+
+        // length should be correct
+        expect($root.firstChild?.childNodes?.length).toBe(listTwo.length);
 
         // check if DOM correctly represents VDom (values) after 1 toggle
         $root.firstChild?.childNodes.forEach((child, i) => {
@@ -299,6 +368,9 @@ const listMap: ListMap = {
 
         // now, render the first list again
         emit({ type: 'TOGGLE' }, `listMach-${diffType}-${testCase}`);
+
+        // length should be correct
+        expect($root.firstChild?.childNodes?.length).toBe(listOne.length);
 
         // check if DOM correctly represents VDom (values) after 2 toggles
         $root.firstChild?.childNodes.forEach((child, i) => {

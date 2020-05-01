@@ -147,14 +147,21 @@ export interface MachineSpec<
       on?: {
         [K in EventSchema['type']]?: {
           target?: StateSchema;
-          effects?: Array<
-            Effect<
-              ContextSchema,
-              K extends EventSchema['type']
-                ? Extract<EventSchema, { type: K }>
-                : Event
-            >
-          >;
+          effects?:
+            | Effect<
+                ContextSchema,
+                K extends EventSchema['type']
+                  ? Extract<EventSchema, { type: K }>
+                  : Event
+              >
+            | Array<
+                Effect<
+                  ContextSchema,
+                  K extends EventSchema['type']
+                    ? Extract<EventSchema, { type: K }>
+                    : Event
+                >
+              >;
           cond?: (
             context: ContextSchema,
             event: K extends EventSchema['type']

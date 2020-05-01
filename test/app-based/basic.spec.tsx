@@ -116,7 +116,7 @@ describe('basic apps', () => {
           on: {
             CHANGE_CATEGORY: {
               target: 'loading',
-              effects: [(ctx, e) => (ctx.category = e.category)],
+              effects: (ctx, e) => (ctx.category = e.category),
               cond: (ctx, e) => ctx.category !== e.category,
             },
           },

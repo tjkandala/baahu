@@ -5,7 +5,10 @@ import { Props } from '../createElement';
 export function diffProps(
   oldProps: Props | null | undefined,
   newProps: Props | null | undefined,
-  $el: HTMLElement | HTMLInputElement
+  // $el: HTMLElement | HTMLInputElement,
+  // originally wrote the code with the proper types,
+  // but any saves bytes (useless checking of 'disabled in el')
+  $el: any
 ): void {
   // don't waste time creating and executing a function if neither vnodes have attrs
   if (!oldProps && !newProps) return void 0;
@@ -34,25 +37,11 @@ export function diffProps(
         }
       } else {
         if (k !== 'key' && k !== 'ref') {
-          // only push patch if new attr didn't exist or not equal to old attr
+          // only patch if new attr didn't exist or not equal to old attr
           if (v !== oldProps?.get(k)) {
-            if (
-              ('value' in $el || 'disabled' in $el) &&
-              (k === 'checked' || k === 'disabled' || k === 'value')
-            ) {
+            if (k === 'checked' || k === 'disabled' || k === 'value') {
               // for inputs/buttons
-              switch (k) {
-                case 'checked':
-                  $el.checked = v;
-                  break;
-
-                case 'disabled':
-                  $el.disabled = v;
-                  break;
-
-                case 'value':
-                  $el.value = v;
-              }
+              $el[k] = v;
             } else {
               $el.removeAttribute(k);
               $el.setAttribute(k, v);
