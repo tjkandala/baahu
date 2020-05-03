@@ -55,7 +55,7 @@ export function diff(
               keyedDiffChildren(
                 oldVNode.c,
                 newVNode.c,
-                // asserting the type bc it'll only be null after createElement and before renderDOM
+                // asserting the type bc it'll only be null after createElement and before renderDOM. can't be null at diff
                 oldVNode.d as HTMLElement
               );
             } else {

@@ -142,7 +142,7 @@ export function keyedDiffChildren(
 
       newStart++;
     }
-    return void 0;
+    return;
   }
 
   if (newStart > newEnd) {
@@ -164,7 +164,7 @@ export function keyedDiffChildren(
       oldStart++;
     }
 
-    return void 0;
+    return;
   }
 
   let newChildrenLeft = newEnd - newStart + 1;
@@ -339,7 +339,7 @@ export function keyedDiffChildren(
       }
     }
   }
-  return void 0;
+  return;
 }
 
 /**

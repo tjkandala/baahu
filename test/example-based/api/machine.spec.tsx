@@ -7,6 +7,8 @@ import { b, emit, linkTo, mount } from '../../../src';
 describe('machine components', () => {
   let $root = document.body;
 
+  // TODO: recursive machines
+
   test('constructor works', () => {
     const MyMach = createMachine<{ name: string }>({
       id: 'myMach',

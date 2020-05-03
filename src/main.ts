@@ -72,6 +72,15 @@ function transitionMachines(
             const targetState = transitionHandler.target;
             const effects = transitionHandler.effects;
 
+            if (targetState && targetState !== machineInstance.st) {
+              takeToNextState(
+                targetState,
+                machineInstance,
+                stateHandler,
+                event
+              );
+            }
+
             if (effects) {
               if (typeof effects === 'function') {
                 effects(machineInstance.ctx, event, machineInstance.id);
@@ -81,15 +90,6 @@ function transitionMachines(
                 }
               }
               machinesThatTransitioned.set(machineInstance.id, true);
-            }
-
-            if (targetState && targetState !== machineInstance.st) {
-              takeToNextState(
-                targetState,
-                machineInstance,
-                stateHandler,
-                event
-              );
             }
           }
         }
@@ -350,6 +350,7 @@ function newRoute(): void {
 
   if (vNode) {
     diff(currentVRoot, vNode, null);
+    machinesThatTransitioned.clear();
     currentVRoot = vNode;
   }
 }

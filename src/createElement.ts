@@ -20,7 +20,11 @@ export type ChildArg =
 
 export type ChildrenArg = Array<ChildArg>;
 
-export type Props = Map<string, any>;
+// export type Props = Map<string, any>;
+
+export type Props = {
+  [k: string]: any;
+};
 
 // DO NOT add optional keys to VNodes! more info: https://mrale.ph/blog/2015/01/11/whats-up-with-monomorphism.html
 // make them all have the same shape, but some values will have different meaning/nulled based on the
@@ -168,7 +172,7 @@ export function b<Props extends PropsArg>(
         x: VNodeKind.Element,
         k: props && props.key ? props.key : null,
         t: type,
-        a: props ? new Map(Object.entries(props)) : null,
+        a: props || null,
         c: processChildren(children),
         d: null,
         i: null,
