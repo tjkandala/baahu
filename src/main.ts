@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { renderDOM } from './renderDOM';
 import { VNode, b, PropsArg } from './createElement';
-import { MachineComponent, SFC, Effect } from './component';
+import {
+  MachineComponent,
+  SFC,
+  Effect,
+  DeriveTargetFunction,
+} from './component';
 import { diff } from './diff';
 import { RouTrie, Params } from './router';
 import {
@@ -48,6 +53,45 @@ function transitionMachines(
     const machineInstance = machineRegistry.get(target);
 
     if (machineInstance) {
+      // check if there is a catch all listener for this event (root-level "on")
+      const rootOn = machineInstance.s.on;
+
+      if (rootOn) {
+        const rootHandler = rootOn[eventType];
+        if (
+          rootHandler &&
+          (!rootHandler.cond || rootHandler.cond(machineInstance.ctx, event))
+        ) {
+          // add to machinesThatTransitioned.
+          // this will allow machines to rerender on events even
+          // if they don't do anything ("listen" to events)
+          machinesThatTransitioned.set(machineInstance.id, true);
+
+          const effects = rootHandler.effects;
+
+          if (effects) {
+            if (typeof effects === 'function') {
+              effects(machineInstance.ctx, event, machineInstance.id);
+            } else {
+              for (let i = 0; i < effects.length; i++) {
+                effects[i](machineInstance.ctx, event, machineInstance.id);
+              }
+            }
+            // machinesThatTransitioned.set(machineInstance.id, true);
+          }
+
+          // take to next state if target
+          if (rootHandler.target) {
+            takeToNextState(
+              rootHandler.target,
+              machineInstance,
+              rootHandler,
+              event
+            );
+          }
+        }
+      }
+
       /** check if the machine has a handler/behavior spec
        * for its current state (it has to if written in TS) */
       const stateHandler = machineInstance.s.states[machineInstance.st];
@@ -66,13 +110,15 @@ function transitionMachines(
         const transitionHandler = stateHandler.on[eventType];
 
         if (transitionHandler) {
+          machinesThatTransitioned.set(machineInstance.id, true);
+
           const cond = transitionHandler.cond;
 
-          if (!cond || cond(machineInstance.ctx, event) === true) {
+          if (!cond || cond(machineInstance.ctx, event)) {
             const targetState = transitionHandler.target;
             const effects = transitionHandler.effects;
 
-            if (targetState && targetState !== machineInstance.st) {
+            if (targetState) {
               takeToNextState(
                 targetState,
                 machineInstance,
@@ -89,7 +135,7 @@ function transitionMachines(
                   effects[i](machineInstance.ctx, event, machineInstance.id);
                 }
               }
-              machinesThatTransitioned.set(machineInstance.id, true);
+              // machinesThatTransitioned.set(machineInstance.id, true);
             }
           }
         }
@@ -105,6 +151,40 @@ function transitionMachines(
     const allEffects: Array<[Effect, MachineInstance]> = [];
 
     for (const [, machineInstance] of machineRegistry) {
+      // check if there is a catch all listener for this event (root-level "on")
+      const rootOn = machineInstance.s.on;
+
+      if (rootOn) {
+        const rootHandler = rootOn[eventType];
+        if (
+          rootHandler &&
+          (!rootHandler.cond || rootHandler.cond(machineInstance.ctx, event))
+        ) {
+          machinesThatTransitioned.set(machineInstance.id, true);
+
+          const effects = rootHandler.effects;
+
+          if (effects) {
+            if (typeof effects === 'function') {
+              allEffects.push([effects, machineInstance]);
+            } else {
+              let j = effects.length;
+              while (j--) allEffects.push([effects[j], machineInstance]);
+            }
+          }
+
+          // take to next state if target
+          if (rootHandler.target) {
+            takeToNextState(
+              rootHandler.target,
+              machineInstance,
+              rootHandler,
+              event
+            );
+          }
+        }
+      }
+
       /** check if this machine listens to this eventType */
       const stateHandler = machineInstance.s.states[machineInstance.st];
 
@@ -122,9 +202,11 @@ function transitionMachines(
         const transitionHandler = stateHandler.on[eventType];
 
         if (transitionHandler) {
+          machinesThatTransitioned.set(machineInstance.id, true);
+
           const cond = transitionHandler.cond;
 
-          if (!cond || cond(machineInstance.ctx, event) === true) {
+          if (!cond || cond(machineInstance.ctx, event)) {
             const targetState = transitionHandler.target;
             const effects = transitionHandler.effects;
 
@@ -142,15 +224,10 @@ function transitionMachines(
               } else {
                 let j = effects.length;
                 while (j--) allEffects.push([effects[j], machineInstance]);
-
-                /** golfed version of this: */
-                // effects.forEach(effect => {
-                //   allEffects.push([effect, machineInstance]);
-                // });
               }
             }
 
-            if (targetState && targetState !== machineInstance.st) {
+            if (targetState) {
               takeToNextState(
                 targetState,
                 machineInstance,
@@ -170,7 +247,7 @@ function transitionMachines(
       allEffects[i][0](machineInstance.ctx, event, machineInstance.id);
 
       // don't delete, this is here for leaf node optimizations
-      machinesThatTransitioned.set(machineInstance.id, true);
+      // machinesThatTransitioned.set(machineInstance.id, true);
     }
 
     /**
@@ -188,38 +265,55 @@ function transitionMachines(
 }
 
 function takeToNextState(
-  targetState: string,
+  targetState: string | DeriveTargetFunction<any, any>,
   machineInstance: MachineInstance,
   stateHandler: any,
   event: { type: string; [key: string]: any }
 ): void {
-  const nextStateHandler = machineInstance.s.states[targetState];
+  // check for target function. standardized to string
+  let stdTargetState: string;
 
-  if (nextStateHandler) {
-    machineInstance.st = targetState;
-
-    /**
-     *
-     * the pseudocode for the code below:
-     *
-     * machine.spec.states[oldState]?.onExit()
-     * machine.spec.states[target]?.onEntry()
-     *
-     * */
-
-    stateHandler.onExit &&
-      stateHandler.onExit(machineInstance.ctx, event, machineInstance.id);
-
-    nextStateHandler.onEntry &&
-      nextStateHandler.onEntry(machineInstance.ctx, event, machineInstance.id);
-
-    machinesThatTransitioned.set(machineInstance.id, true);
+  if (typeof targetState === 'function') {
+    stdTargetState = targetState(machineInstance.ctx, machineInstance.s);
   } else {
-    /** for js users who may specify invalid targets */
-    if (process.env.NODE_ENV !== 'production') {
-      throw TypeError(
-        `The specified target (${targetState}) for this transition (${machineInstance.st} => ${targetState}) does not exist on your ${machineInstance.id}`
-      );
+    stdTargetState = targetState;
+  }
+
+  if (stdTargetState !== machineInstance.st) {
+    // only do anything if targetState !== current machine instance state
+
+    const nextStateHandler = machineInstance.s.states[stdTargetState];
+
+    if (nextStateHandler) {
+      machineInstance.st = stdTargetState;
+
+      /**
+       *
+       * the pseudocode for the code below:
+       *
+       * machine.spec.states[oldState]?.onExit()
+       * machine.spec.states[target]?.onEntry()
+       *
+       * */
+
+      stateHandler.onExit &&
+        stateHandler.onExit(machineInstance.ctx, event, machineInstance.id);
+
+      nextStateHandler.onEntry &&
+        nextStateHandler.onEntry(
+          machineInstance.ctx,
+          event,
+          machineInstance.id
+        );
+
+      machinesThatTransitioned.set(machineInstance.id, true);
+    } else {
+      /** for js users who may specify invalid targets */
+      if (process.env.NODE_ENV !== 'production') {
+        throw TypeError(
+          `The specified target (${targetState}) for this transition (${machineInstance.st} => ${targetState}) does not exist on your ${machineInstance.id}`
+        );
+      }
     }
   }
 }

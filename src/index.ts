@@ -18,6 +18,7 @@ import {
   DeriveIdFunction,
   DeriveContextFunction,
   DeriveInitialStateFunction,
+  DeriveTargetFunction,
 } from './component';
 
 export {
@@ -39,6 +40,7 @@ export {
   DeriveIdFunction,
   DeriveContextFunction,
   DeriveInitialStateFunction,
+  DeriveTargetFunction,
 };
 
 declare global {

@@ -9,6 +9,8 @@ import {
  * The first test generates 14 tests (7 unkeyed, 7 keyed)
  * for the diffing algorithms. Feel free to add
  * crazier lists to test accuracy
+ *
+ * TODO: test machine (not just element) node keyed diff!
  */
 
 type BadVideoEvent = { type: 'LOADED' };
@@ -44,7 +46,8 @@ function createListDiffComponent(
   listOne: ListItem[],
   listTwo: ListItem[],
   diffType: string,
-  testCase: string
+  testCase: string,
+  machine: boolean
 ): MachineComponent<{}, ListState, ListEvent> {
   const ListMach: MachineComponent<{}, ListState, ListEvent> = createMachine<
     {},
@@ -75,28 +78,52 @@ function createListDiffComponent(
           return b(
             'div',
             {},
-            ...listOne.map(item => (
-              <p key={diffType === 'keyed' ? item.key : undefined}>
-                {item.todo}
-              </p>
-            ))
+            ...listOne.map(item =>
+              machine ? (
+                <ItemMachine
+                  item={item}
+                  key={diffType === 'keyed' ? item.key : undefined}
+                />
+              ) : (
+                <p key={diffType === 'keyed' ? item.key : undefined}>
+                  {item.todo}
+                </p>
+              )
+            )
           );
 
         case 'second':
           return b(
             'div',
             {},
-            ...listTwo.map(item => (
-              <p key={diffType === 'keyed' ? item.key : undefined}>
-                {item.todo}
-              </p>
-            ))
+            ...listTwo.map(item =>
+              machine ? (
+                <ItemMachine
+                  item={item}
+                  key={diffType === 'keyed' ? item.key : undefined}
+                />
+              ) : (
+                <p key={diffType === 'keyed' ? item.key : undefined}>
+                  {item.todo}
+                </p>
+              )
+            )
           );
       }
     },
   });
   return ListMach;
 }
+
+const ItemMachine = createMachine<{ item: ListItem }>({
+  id: ({ item }) => `item-${item.key}`,
+  initialContext: ({ item }) => ({ item }),
+  initialState: 'default',
+  states: {
+    default: {},
+  },
+  render: (_s, ctx) => <p>{ctx.item.todo}</p>,
+});
 
 /** keys represent test cases */
 type ListMap = {
@@ -146,7 +173,7 @@ const listMap: ListMap = {
   },
   commonPrefixAndSuffix: {
     listOne: [
-      { key: 'a', todo: 'arise-one' },
+      { key: 'a', todo: 'arise' },
       {
         key: 'b',
         todo: 'eat',
@@ -155,10 +182,10 @@ const listMap: ListMap = {
       { key: 'd', todo: 'shower' },
       { key: 'e', todo: 'brush' },
       { key: 'f', todo: 'code' },
-      { key: 'z', todo: 'sleep-one' },
+      { key: 'z', todo: 'sleep' },
     ],
     listTwo: [
-      { key: 'a', todo: 'arise-two' },
+      { key: 'a', todo: 'arise' },
       {
         key: 'b',
         todo: 'eat',
@@ -169,12 +196,12 @@ const listMap: ListMap = {
       { key: 'tjk', todo: 'my mla' },
       { key: 'e', todo: 'brush' },
       { key: 'f', todo: 'code' },
-      { key: 'z', todo: 'sleep-two' },
+      { key: 'z', todo: 'sleep' },
     ],
   },
   moves: {
     listOne: [
-      { key: 'a', todo: 'arise-one' },
+      { key: 'a', todo: 'arise' },
       {
         key: 'b',
         todo: 'eat',
@@ -183,10 +210,10 @@ const listMap: ListMap = {
       { key: 'd', todo: 'shower' },
       { key: 'e', todo: 'brush' },
       { key: 'f', todo: 'code' },
-      { key: 'z', todo: 'sleep-one' },
+      { key: 'z', todo: 'sleep' },
     ],
     listTwo: [
-      { key: 'a', todo: 'arise-two' },
+      { key: 'a', todo: 'arise' },
       {
         key: 'c',
         todo: 'lift',
@@ -194,13 +221,13 @@ const listMap: ListMap = {
       { key: 'b', todo: 'eat' },
       { key: 'h', todo: 'read' },
       { key: 'f', todo: 'code' },
-      { key: 'e', todo: 'brushee' },
-      { key: 'z', todo: 'sleep-two' },
+      { key: 'e', todo: 'brush' },
+      { key: 'z', todo: 'sleep' },
     ],
   },
   sameKeys: {
     listOne: [
-      { key: 'a', todo: 'arise-one' },
+      { key: 'a', todo: 'arise' },
       {
         key: 'b',
         todo: 'eat',
@@ -209,10 +236,10 @@ const listMap: ListMap = {
       { key: 'd', todo: 'shower' },
       { key: 'e', todo: 'brush' },
       { key: 'f', todo: 'code' },
-      { key: 'z', todo: 'sleep-one' },
+      { key: 'z', todo: 'sleep' },
     ],
     listTwo: [
-      { key: 'a', todo: 'arise-two' },
+      { key: 'a', todo: 'arise' },
       {
         key: 'b',
         todo: 'eat',
@@ -221,7 +248,7 @@ const listMap: ListMap = {
       { key: 'd', todo: 'shower' },
       { key: 'e', todo: 'brush' },
       { key: 'f', todo: 'code' },
-      { key: 'z', todo: 'sleep-two' },
+      { key: 'z', todo: 'sleep' },
     ],
   },
   oldListEmpty: {
@@ -317,7 +344,7 @@ const listMap: ListMap = {
  * with keys and without keys.
  */
 ['keyed', 'unkeyed'].forEach(diffType => {
-  describe(`${diffType} list diffing`, () => {
+  describe(`${diffType} list diffing (element)`, () => {
     let $root = document.body;
 
     Object.keys(listMap).map(testCase => {
@@ -328,7 +355,85 @@ const listMap: ListMap = {
           listOne,
           listTwo,
           diffType,
-          testCase
+          testCase,
+          false
+        );
+
+        const MyLayout: SFC = () =>
+          b(
+            'div',
+            null,
+            b(ListMach, null),
+            b('h1', null, 'good tests'),
+            b(BadVideoComponent, null)
+          );
+
+        $root = mount(MyLayout, $root) as HTMLElement;
+
+        expect($root.nodeName).toBe('DIV');
+
+        // length should be correct
+        expect($root.firstChild?.childNodes?.length).toBe(listOne.length);
+
+        // check if DOM correctly represents VDom (values)
+        $root.firstChild?.childNodes.forEach((child, i) => {
+          expect(child.firstChild?.nodeValue).toBe(listOne[i].todo);
+        });
+
+        // now, emit toggle event. should change to represent second list
+        emit({ type: 'TOGGLE' }, `listMach-${diffType}-${testCase}`);
+
+        // length should be correct
+        expect($root.firstChild?.childNodes?.length).toBe(listTwo.length);
+
+        // check if DOM correctly represents VDom (values) after 1 toggle
+        $root.firstChild?.childNodes.forEach((child, i) => {
+          expect(child.firstChild?.nodeValue).toBe(listTwo[i].todo);
+        });
+
+        // target a different leaf machine, machine shouldn't rerender
+        emit({ type: 'LOADED' });
+
+        // now, render the first list again
+        emit({ type: 'TOGGLE' }, `listMach-${diffType}-${testCase}`);
+
+        // length should be correct
+        expect($root.firstChild?.childNodes?.length).toBe(listOne.length);
+
+        // check if DOM correctly represents VDom (values) after 2 toggles
+        $root.firstChild?.childNodes.forEach((child, i) => {
+          expect(child.firstChild?.nodeValue).toBe(listOne[i].todo);
+        });
+      });
+
+      // have to clear bc its the same app instance
+      machineRegistry.clear();
+      machinesThatTransitioned.clear();
+    });
+  });
+});
+
+/**
+ * Testing diffing lists. (but with machine nodes)
+ * Only testing keyed diff, as reordering machines
+ * without keys is sure to break them! also, here we
+ * emit global events (the children will have the correct order either way,
+ * but they won't rerender their content without targeted/global events)
+ */
+['keyed'].forEach(diffType => {
+  describe(`${diffType} list diffing (machine)`, () => {
+    let $root = document.body;
+
+    Object.keys(listMap).map(testCase => {
+      test(testCase, () => {
+        const { listOne, listTwo } = listMap[testCase];
+
+        const ListMach = createListDiffComponent(
+          listOne,
+          listTwo,
+          diffType,
+          testCase,
+          true
         );
 
         const MyLayout: SFC = () =>

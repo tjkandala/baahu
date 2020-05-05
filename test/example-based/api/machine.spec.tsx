@@ -106,26 +106,6 @@ describe('machine components', () => {
   });
 
   test('derive initial state based on props', () => {
-    /**
-     *
-     *  TODO: make 'setLocalStorageState' and 'getLocalStorageState'
-     *  helpers based on two commented out functions!
-     *  should probably make it a micro-library or recipe in docs
-     *
-     */
-    // function arrayIncludes<T>(arr: ReadonlyArray<T>, val: any): val is T {
-    //   return arr.indexOf(val) !== -1;
-    // }
-
-    // ({ num }) => {
-    //   const storedState = localStorage.getItem('intState');
-    //   if (arrayIncludes(intState, storedState)) {
-    //     return storedState;
-    //   } else {
-    //     return 'even';
-    //   }
-    // };
-
     const intState = ['even', 'odd'] as const;
     type IntState = typeof intState[number];
 
@@ -156,6 +136,63 @@ describe('machine components', () => {
   test('machines unmount properly', () => {
     // this is working, but i should test it to prevent regressions
     expect(true).toBe(true);
+  });
+
+  test('can replace machine nodes with other nodes (+ vice-versa)', () => {
+    const Item = createMachine({
+      id: 'item',
+      initialContext: ({ todo }) => ({ todo: todo }),
+      initialState: 'default',
+      states: {
+        default: {},
+      },
+      render: (_s, ctx) => <p>{ctx.todo.todo}</p>,
+    });
+
+    const Toggle = createMachine<any, any, any, any>({
+      id: 'toggle',
+      initialState: 'even',
+      initialContext: () => ({}),
+      states: {
+        even: {
+          on: {
+            TOGGLE: {
+              // effects: () => alert("toggled"),
+              target: 'odd',
+            },
+          },
+        },
+        odd: {
+          on: {
+            TOGGLE: {
+              target: 'even',
+            },
+          },
+        },
+      },
+      render: (s, _ctx, self) => (
+        <div>
+          {s === 'odd' ? (
+            <Item todo={{ todo: 'odd', key: 'odd' }} />
+          ) : (
+            <p>even</p>
+          )}
+          <button onClick={() => emit({ type: 'TOGGLE' }, self)}>toggle</button>
+        </div>
+      ),
+    });
+
+    $root = mount(Toggle, $root);
+
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('even');
+
+    emit({ type: 'TOGGLE' });
+
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('odd');
+
+    emit({ type: 'TOGGLE' });
+
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('even');
   });
 
   // TODO: make the most convoluted machine possible to test the limits of baahu. no

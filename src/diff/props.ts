@@ -20,7 +20,7 @@ export function diffProps(
     for (const k in newProps) {
       if (k[0] === 'o' && k[1] === 'n') {
         // event handlers
-        const eventType = k.slice(2);
+        const eventType = k.slice(2).toLowerCase();
         // just add the event if there aren't old props, or if old props doesn't have the event
         if (!oldProps || !oldProps[k]) {
           $el.addEventListener(eventType, newProps[k]);

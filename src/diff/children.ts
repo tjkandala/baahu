@@ -74,6 +74,9 @@ export function keyedDiffChildren(
   let $node: HTMLElement | Text | ChildNode | undefined;
   let $nextNode: HTMLElement | Text | ChildNode | null | undefined = undefined;
 
+  let oldVNode: VNode;
+  let newVNode: VNode;
+
   outer: while (true) {
     // check common suffix
     let oldEndNode = oldVChildren[oldEnd];
@@ -155,9 +158,13 @@ export function keyedDiffChildren(
      */
 
     while (oldStart <= oldEnd) {
-      // add tests to make sure asserting existence is safe
-      // oldVChildren[oldStart].d?.remove();
-      oldVChildren[oldStart].d!.remove();
+      oldVNode = oldVChildren[oldStart];
+
+      oldVNode.x === VNodeKind.Machine
+        ? oldVNode.c.d!.remove()
+        : oldVNode.d!.remove();
+      // we can assert that dom exists because it is only null before "renderDOM",
+      // which surely would have been run before diffing
 
       safelyRemoveVNode(oldVChildren[oldStart]);
 
@@ -188,11 +195,7 @@ export function keyedDiffChildren(
 
   let indexInOldChildren: number;
   let indexInNewChildren: number | undefined;
-  let ogNode: ChildNode | HTMLElement | Text | null;
   let pos = -1;
-
-  let oldVNode: VNode;
-  let newVNode: VNode;
 
   /** -2 for patch in place, -1 for mount, any other value for move */
   let actionAtIndex: number;
@@ -204,7 +207,6 @@ export function keyedDiffChildren(
   for (let i = oldStart; i <= oldEnd; i++) {
     oldVNode = oldVChildren[i];
     indexInNewChildren = keyIndex.get(oldVNode.k);
-    ogNode = oldVNode.d;
     if (typeof indexInNewChildren !== 'undefined') {
       /** 99999999 indicates that at least one node has moved,
        * so we should mark nodes that are part of the longest increasing
@@ -216,11 +218,13 @@ export function keyedDiffChildren(
       pos = pos < indexInNewChildren ? indexInNewChildren : 99999999;
       sources[indexInNewChildren - newStart] = i;
     } else {
-      if (ogNode !== null) {
-        ogNode.remove();
+      oldVNode.x === VNodeKind.Machine
+        ? oldVNode.c.d!.remove()
+        : oldVNode.d!.remove();
+      // we can assert that dom exists because it is only null before "renderDOM",
+      // which surely would have been run before diffing
 
-        safelyRemoveVNode(oldVNode);
-      }
+      safelyRemoveVNode(oldVNode);
     }
   }
 
@@ -261,14 +265,13 @@ export function keyedDiffChildren(
 
           diff(oldVNode, newVNode, parentDom);
 
-          if (newVNode.d) {
-            $nextNode = newVNode.d;
-          }
+          if (newVNode.d) $nextNode = newVNode.d;
 
           continue;
 
         case -1:
-          // new node
+          // new node. this works for machine nodes as
+          // well because renderDOM returns child
           $node = renderDOM(newVNode);
 
           $nextNode
@@ -311,7 +314,8 @@ export function keyedDiffChildren(
       actionAtIndex = sources[newChildrenLeft];
       switch (actionAtIndex) {
         case -1:
-          // new node
+          // new node. this works for machine nodes as
+          // well because renderDOM returns child
           $node = renderDOM(newVNode);
 
           $nextNode
@@ -331,9 +335,7 @@ export function keyedDiffChildren(
 
           diff(oldVNode, newVNode, parentDom);
 
-          if (newVNode.d) {
-            $nextNode = newVNode.d;
-          }
+          if (newVNode.d) $nextNode = newVNode.d;
 
           continue;
       }

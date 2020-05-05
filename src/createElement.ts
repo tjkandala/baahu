@@ -71,7 +71,8 @@ export type MachineVNode = {
   a: null;
   /** one child */
   c: VNode;
-  d: null;
+  /** dom of a machine node is the same as its child (for brevity during diff) */
+  d: HTMLElement | null;
   /** id (for machine node lookup in registry) */
   i: string;
 };
@@ -139,24 +140,26 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
        * might add a 'nullVNode' VNode type later, as opposed to empty text node
        */
       case 'boolean':
-        children.push(nullVNode);
+        // basically nullVNnode, but with accurate .d property
+        // children.push(nullVNode);
+        children.push(createTextVNode(''));
         break;
     }
   }
   return children;
 }
 
-const nullVNode: TextVNode = {
-  x: VNodeKind.Text,
-  t: null,
-  k: null,
-  a: {
-    n: '',
-  },
-  c: null,
-  d: null,
-  i: null,
-};
+// const nullVNode: TextVNode = {
+//   x: VNodeKind.Text,
+//   t: null,
+//   k: null,
+//   a: {
+//     n: '',
+//   },
+//   c: null,
+//   d: null,
+//   i: null,
+// };
 
 /** createElement */
 export function b<Props extends PropsArg>(
@@ -229,10 +232,12 @@ export function b<Props extends PropsArg>(
           const vNode: MachineVNode = {
             x: VNodeKind.Machine,
             t: null,
-            k: props && props.key ? props.key : null,
+            // can't just check for truthiness, or 0
+            // becomes a null key
+            k: props && props.key != null ? props.key : null,
             // k: instanceId,
             a: null,
-            c: child ? child : nullVNode,
+            c: child ? child : createTextVNode(''),
             d: null,
             i: instanceId,
           };
@@ -282,10 +287,12 @@ export function b<Props extends PropsArg>(
             const vNode: MachineVNode = {
               x: VNodeKind.Machine,
               t: null,
-              k: props && props.key ? props.key : null,
+              // can't just check for truthiness, or 0
+              // becomes a null key
+              k: props && props.key != null ? props.key : null,
               // k: instanceId,
               a: null,
-              c: child ? child : nullVNode,
+              c: child ? child : createTextVNode(''),
               d: null,
               i: instanceId,
             };

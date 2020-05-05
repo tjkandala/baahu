@@ -141,12 +141,42 @@ export interface MachineSpec<
   // behavior
   onMount?: (context: ContextSchema) => void;
   onUnmount?: (context: ContextSchema, state: StateSchema) => void;
+  // events for all states
+  on?: {
+    [K in EventSchema['type']]?: {
+      target?: StateSchema | DeriveTargetFunction<ContextSchema, StateSchema>;
+      effects?:
+        | Effect<
+            ContextSchema,
+            K extends EventSchema['type']
+              ? Extract<EventSchema, { type: K }>
+              : Event
+          >
+        | Array<
+            Effect<
+              ContextSchema,
+              K extends EventSchema['type']
+                ? Extract<EventSchema, { type: K }>
+                : Event
+            >
+          >;
+      cond?: (
+        context: ContextSchema,
+        event: K extends EventSchema['type']
+          ? Extract<EventSchema, { type: K }>
+          : Event
+      ) => boolean;
+    };
+  };
+  // state specific behavior
   states: Record<
     StateSchema,
     {
       on?: {
         [K in EventSchema['type']]?: {
-          target?: StateSchema;
+          target?:
+            | StateSchema
+            | DeriveTargetFunction<ContextSchema, StateSchema>;
           effects?:
             | Effect<
                 ContextSchema,
@@ -197,6 +227,11 @@ export type DeriveInitialStateFunction<
   Props extends PropsArg = any,
   StateSchema extends string = string
 > = (props: Props) => StateSchema;
+
+export type DeriveTargetFunction<
+  ContextSchema extends object = any,
+  StateSchema extends string = string
+> = (context: ContextSchema, currentState: StateSchema) => StateSchema;
 
 type Event = {
   type: string;

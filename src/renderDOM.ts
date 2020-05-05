@@ -48,6 +48,7 @@ export function renderDOM(node: VNode): HTMLElement | Text {
       return node.d;
 
     case VNodeKind.Machine:
-      return renderDOM(node.c);
+      node.d = renderDOM(node.c) as HTMLElement;
+      return node.d;
   }
 }

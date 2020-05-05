@@ -48,9 +48,9 @@ export function diff(
 
             if (
               firstOldChild &&
-              firstOldChild.k &&
+              firstOldChild.k != null &&
               firstNewChild &&
-              firstNewChild.k
+              firstNewChild.k != null
             ) {
               keyedDiffChildren(
                 oldVNode.c,
@@ -106,9 +106,21 @@ function replace(
   newVNode: VNode,
   parentDom: HTMLElement | null
 ): void {
-  // replaceWith isn't supported on old browsers
+  /**
+   * what about replacing an element/text node with a machine?
+   *
+   * this works because renderDOM will return the dom node
+   * of the child of the machine node
+   *
+   * what about replacing a machine with an element/text node?
+   *
+   * this works because when the oldVNode is a machine node,
+   * replace is called with the child of oldVNode
+   */
+
   const $new = renderDOM(newVNode);
   if (parentDom) {
+    // replaceWith isn't supported on old browsers
     parentDom.replaceChild($new, oldVNode.d as HTMLElement);
   } else {
     // this is convoluted try to golf it
