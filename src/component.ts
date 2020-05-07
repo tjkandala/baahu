@@ -80,17 +80,20 @@ export function bLazy<Props>(
           const vNode = b(cache, props, children);
 
           root.c = [vNode];
-          // 2 ops instead of one (replace), but shorter code!
-          renderedFallback && fallback && fallback.d && fallback.d.remove();
 
           // append dom
           const $dom = renderDOM(vNode);
-          $dom.appendChild($dom);
+
+          // 2 ops instead of one (replace), but shorter code!
+          renderedFallback && fallback && fallback.d && fallback.d.remove();
+          root.d?.appendChild($dom);
         });
 
         return root;
       } else {
-        return b(cache, props, children);
+        // have to wrap it in a div for faster diff (consistent node depth)
+        // until functions have vdom representation
+        return b('div', null, b(cache, props, children));
       }
     }
 
@@ -119,16 +122,13 @@ export function memoInstance<Props extends PropsArg = any>(
     // so in compare() we know props are objects!
     if (props !== prevProps || firstRender || children) {
       let sameProps = false;
-      if (prevProps) {
-        sameProps = compare(prevProps, props);
-      }
+      if (prevProps) sameProps = compare(prevProps, props);
+
       if (!sameProps) {
         cached = component(props, children);
 
         // same props will have to be false on first render
-        if (firstRender) {
-          firstRender = false;
-        }
+        if (firstRender) firstRender = false;
       }
       prevProps = props;
     }

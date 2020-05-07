@@ -8,8 +8,6 @@ import { machineRegistry } from '../machineRegistry';
  * of this node
  *
  * possible change: make this iterative? benchmark it first
- *
- * need it for diff() as well (bc )
  *  */
 export function safelyRemoveVNode(node: VNode) {
   switch (node.x) {

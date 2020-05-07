@@ -13,7 +13,7 @@ export function diff(
   newVNode: VNode | undefined | null,
   parentDom: HTMLElement | null
 ): void {
-  /** for isLeaf, memo, or static elements!
+  /** for machines not targeted, isLeaf, memo, static elements!
    * don't need to pass on dom (test it), same vnode
    */
   if (oldVNode === newVNode) return;
@@ -39,13 +39,15 @@ export function diff(
             return replace(oldVNode, newVNode, parentDom);
           } else {
             /** most computation is done here. Both VNodes are ELEMENT_NODES and
-             * have the same tag,  so we must diff props (attributes) and children */
+             * have the same tag, so we must diff props (attributes) and children */
 
             diffProps(oldVNode.a, newVNode.a, oldVNode.d as HTMLElement);
 
             /** only call diffKeyedChildren if the first nodes of both lists are keyed.
              * users should be aware of this behavior, and be sure to either key all
              * children or no children. this shortcut saves many iterations over children lists.
+             *
+             * if either of the arrays have 0 elements, only use diffChildren (faster anyways)
              *
              * most of the time, call diffChildren */
 
@@ -61,7 +63,8 @@ export function diff(
               keyedDiffChildren(
                 oldVNode.c,
                 newVNode.c,
-                // asserting the type bc it'll only be null after createElement and before renderDOM. can't be null at diff
+                // asserting the type bc it'll only be null after
+                // createElement and before renderDOM. can't be null at diff
                 oldVNode.d as HTMLElement
               );
             } else {
@@ -83,12 +86,11 @@ export function diff(
         case VNodeKind.Text:
           if (oldVNode.a.n === newVNode.a.n) {
             newVNode.d = oldVNode.d;
-            return;
           } else {
             oldVNode.d && (oldVNode.d.nodeValue = newVNode.a.n);
             newVNode.d = oldVNode.d;
-            return;
           }
+          return;
 
         default:
           return replace(oldVNode, newVNode, parentDom);
@@ -97,12 +99,9 @@ export function diff(
     case VNodeKind.Machine:
       switch (newVNode.x) {
         case VNodeKind.Machine:
+          oldVNode.i !== newVNode.i && unmountMachine(oldVNode.i);
+
           // "children" of a machineVNode is one child
-
-          if (oldVNode.i !== newVNode.i) {
-            unmountMachine(oldVNode.i);
-          }
-
           diff(oldVNode.c, newVNode.c, parentDom);
           return;
 
