@@ -1,7 +1,12 @@
 import { VNode, VNodeKind } from '../createElement';
 import { renderDOM } from '../renderDOM';
 import { diffProps } from './props';
-import { diffChildren, keyedDiffChildren } from './children';
+import {
+  diffChildren,
+  keyedDiffChildren,
+  safelyRemoveVNode,
+  unmountMachine,
+} from './children';
 
 export function diff(
   oldVNode: VNode,
@@ -21,6 +26,7 @@ export function diff(
     } else {
       oldVNode.d && oldVNode.d.remove();
     }
+    safelyRemoveVNode(oldVNode);
     return;
   }
 
@@ -92,6 +98,11 @@ export function diff(
       switch (newVNode.x) {
         case VNodeKind.Machine:
           // "children" of a machineVNode is one child
+
+          if (oldVNode.i !== newVNode.i) {
+            unmountMachine(oldVNode.i);
+          }
+
           diff(oldVNode.c, newVNode.c, parentDom);
           return;
 
@@ -130,4 +141,5 @@ function replace(
       $parent && $parent.replaceChild($new, $d);
     }
   }
+  safelyRemoveVNode(oldVNode);
 }

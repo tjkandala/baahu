@@ -1,4 +1,5 @@
-import { VNode, PropsArg } from './createElement';
+import { b, VNode, PropsArg } from './createElement';
+import { renderDOM } from './renderDOM';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -36,6 +37,66 @@ function defaultCompare<Props extends PropsArg = any>(
   }
 
   return true;
+}
+
+/**
+ *
+ *
+ * tradeoffs: wraps the component in a div (if it wasn't already loaded
+ * when called)
+ */
+export function bLazy<Props>(
+  lazyComponent: () => Promise<{
+    default: MachineComponent<Props> | SFC<Props>;
+  }>,
+  fallback: VNode | null = null,
+  timeout: number = 300
+): SFC<Props> {
+  let cache: SFC<Props> | MachineComponent<Props> | null = null;
+  let renderedFallback = false;
+
+  return (props, children) => {
+    const root = b('div', null);
+
+    if (root) {
+      if (cache == null) {
+        fallback &&
+          setTimeout(() => {
+            if (!cache) {
+              // const $fallback = renderDOM(fallback);
+              renderDOM(fallback);
+              if (root.d && fallback.d) {
+                root.d.appendChild(fallback.d);
+                root.c = [fallback];
+                renderedFallback = true;
+              }
+            }
+          }, timeout);
+
+        lazyComponent().then(module => {
+          cache = module.default;
+
+          // append vnode
+          const vNode = b(cache, props, children);
+          if (vNode) {
+            root.c = [vNode];
+            // 2 ops instead of one (replace), but shorter code!
+            fallback && renderedFallback && fallback.d?.remove();
+
+            // append dom
+            const $dom = renderDOM(vNode);
+            root.d?.appendChild($dom);
+          }
+        });
+
+        return root;
+      } else {
+        return b(cache, props, children);
+      }
+    }
+
+    return root;
+  };
 }
 
 /** memoizes an instance of the functional component.

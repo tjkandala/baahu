@@ -7,8 +7,11 @@ import { machineRegistry } from '../machineRegistry';
  * remove any machine instances that may be a descendant
  * of this node
  *
- * possible change: make this iterative? benchmark it first */
-function safelyRemoveVNode(node: VNode) {
+ * possible change: make this iterative? benchmark it first
+ *
+ * need it for diff() as well (bc )
+ *  */
+export function safelyRemoveVNode(node: VNode) {
   switch (node.x) {
     case VNodeKind.Machine: {
       // we found a machine to unmount
@@ -31,7 +34,7 @@ function safelyRemoveVNode(node: VNode) {
   }
 }
 
-function unmountMachine(idToDelete: string) {
+export function unmountMachine(idToDelete: string) {
   const mInst = machineRegistry.get(idToDelete);
 
   if (mInst) {
@@ -438,9 +441,6 @@ export function diffChildren(
   const len = oldVChildren.length;
   let newLen = newVChildren.length;
 
-  const oldMachines: string[] = [];
-  const newMachines: Set<string> = new Set();
-
   let oldVChild: VNode;
   let newVChild: VNode;
 
@@ -450,41 +450,11 @@ export function diffChildren(
     newVChild = newVChildren[i];
     // this will remove dom node if no newVChild
     diff(oldVChild, newVChild, parentDom);
-
-    oldVChild.x === VNodeKind.Machine && oldMachines.push(oldVChild.i);
-
-    newVChild &&
-      newVChild.x === VNodeKind.Machine &&
-      newMachines.add(newVChild.i);
-
-    // this will properly unmount all machine instances that are descendants of oldVChild
-    if (!newVChild) safelyRemoveVNode(oldVChild);
   }
 
   /** This will only be executed if newVChildren is longer than oldVChildren */
   for (; i < newLen; i++) {
     newVChild = newVChildren[i];
     parentDom.appendChild(renderDOM(newVChild));
-    // still need to check for machine ids here. (bc unkeyed, no way to keep track of identity)
-    newVChild.x === VNodeKind.Machine && newMachines.add(newVChild.i);
-  }
-
-  // loop thru old, checking if it exists in new!. if it doesn't exist anymore, unmount!
-  // this MIGHT involve some redundant work, but the results are correct (for the current test suite)
-  // write even more tests for this if this proves problematic. MOST reordering of machines will
-  // involve conditional rendering (the nullVNode will ensure that they are diffed in the same position),
-  // or KEYS, so the behavior of the unkeyed diff algorithm with nested-moving-machine-removal
-  // (beyond what is already tested) may not be important
-  i = oldMachines.length;
-  while (i--) {
-    const oldId = oldMachines[i];
-
-    if (!newMachines.has(oldId)) {
-      const mInst = machineRegistry.get(oldId);
-
-      const vNode = mInst?.v;
-
-      vNode && safelyRemoveVNode(vNode);
-    }
   }
 }
