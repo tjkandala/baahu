@@ -78,15 +78,14 @@ export function bLazy<Props>(
 
           // append vnode
           const vNode = b(cache, props, children);
-          if (vNode) {
-            root.c = [vNode];
-            // 2 ops instead of one (replace), but shorter code!
-            fallback && renderedFallback && fallback.d?.remove();
 
-            // append dom
-            const $dom = renderDOM(vNode);
-            root.d?.appendChild($dom);
-          }
+          root.c = [vNode];
+          // 2 ops instead of one (replace), but shorter code!
+          renderedFallback && fallback && fallback.d && fallback.d.remove();
+
+          // append dom
+          const $dom = renderDOM(vNode);
+          $dom.appendChild($dom);
         });
 
         return root;

@@ -167,7 +167,7 @@ export function b<Props extends PropsArg>(
   /** I call them props for everything, but they are really attributes for ELEMENT_NODEs */
   props: (Props & { key?: string | number }) | null | undefined,
   ...children: ChildrenArg
-): VNode | null {
+): VNode {
   switch (typeof type) {
     /** HTML element */
     case 'string':
@@ -314,7 +314,7 @@ export function b<Props extends PropsArg>(
         // assign given key to vnode
         props && props.key && vNode && (vNode.k = props.key);
 
-        return vNode ? vNode : null;
+        return vNode ? vNode : createTextVNode('');
       }
 
     default:

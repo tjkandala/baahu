@@ -374,11 +374,9 @@ export function emit(
   } else {
     const vNode = b(currentRootComponent, {});
 
-    if (vNode !== null) {
-      diff(currentVRoot, vNode, null);
-      machinesThatTransitioned.clear();
-      currentVRoot = vNode;
-    }
+    diff(currentVRoot, vNode, null);
+    machinesThatTransitioned.clear();
+    currentVRoot = vNode;
   }
 }
 
@@ -442,11 +440,9 @@ function newRoute(): void {
   // rerender
   const vNode: VNode | null = b(currentRootComponent, {});
 
-  if (vNode) {
-    diff(currentVRoot, vNode, null);
-    machinesThatTransitioned.clear();
-    currentVRoot = vNode;
-  }
+  diff(currentVRoot, vNode, null);
+  machinesThatTransitioned.clear();
+  currentVRoot = vNode;
 }
 
 window.onpopstate = newRoute;
@@ -475,20 +471,18 @@ export function mount(
 ): HTMLElement {
   machineRegistry.clear();
   renderType.t = 'g';
-  const vNode: VNode | null = b(rootComponent, {});
+  const vNode: VNode = b(rootComponent, {});
 
-  if (vNode) {
-    $root = renderDOM(vNode) as HTMLElement;
-    /**
-     * used to be $target.replaceWith($root), but that isn't supported on some broswers released
-     * as recently as 2016, so this method is good for now. just be sure to inform users to provide
-     * a nice empty div for baahu to append to!
-     */
-    $target.appendChild($root);
+  $root = renderDOM(vNode) as HTMLElement;
+  /**
+   * used to be $target.replaceWith($root), but that isn't supported on some broswers released
+   * as recently as 2016, so this method is good for now. just be sure to inform users to provide
+   * a nice empty div for baahu to append to!
+   */
+  $target.appendChild($root);
 
-    currentRootComponent = rootComponent;
-    currentVRoot = vNode;
-  }
+  currentRootComponent = rootComponent;
+  currentVRoot = vNode;
 
   return $root;
 }
