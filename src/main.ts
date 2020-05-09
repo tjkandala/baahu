@@ -318,18 +318,13 @@ export function emit(
   event: { type: string; [key: string]: any },
   target: string = '*'
 ): void {
-  target === '*' ? (renderType.t = 'g') : (renderType.t = 't');
-
-  /**
-   * render type can only be 't' or 'r' now. there used to be a 'g' category,
-   * but global events are now handled in the same way
-   */
+  // make sure to set this for free 'memo' type optimizations for machines!
+  renderType.t = 't';
 
   /**
    * if already transitioning, transition machines, but don't start render process.
    * */
   if (isTransitioning) {
-    renderType.t = 'g';
     transitionMachines(event, target);
     return;
   }
@@ -364,9 +359,6 @@ export function emit(
     const machInst = machineRegistry.get(idNodeDepth[j][0]);
     // the machine instance may not exist anymore (if an ancestor node stopped rendering it, for example)
     if (machInst) {
-      // console.log('inhere');
-      // rerender
-
       const vNode: VNode | null = machInst.s.render(
         machInst.st,
         machInst.ctx,
@@ -472,6 +464,7 @@ export function mount(
   $target: HTMLElement
 ): HTMLElement {
   machineRegistry.clear();
+  // have to render the whole tree on mount ofc, so making it behave like a route event works!
   renderType.t = 'r';
   const vNode: VNode = b(rootComponent, {});
 

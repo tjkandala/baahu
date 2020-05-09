@@ -88,7 +88,7 @@ export type MemoVNode = {
   k: string | number | null;
   /** a of a lazyvnode === props provided to SFC */
   a: Props | null | undefined;
-  /** bc this is lazy, vnode child is not initialized until diff */
+  /** bc this is lazy, vnode child is not initialized until diff (expect for first render/routing) */
   c: VNode | null;
   d: HTMLElement | null;
   i: null;
@@ -280,17 +280,9 @@ export function b<Props extends PropsArg>(
           const spec = existingInstance.s;
 
           /**
-           * THIS IS OUTDATED! NEW OPTIMIZATIONS! change the comments
-           *
-           * all the reasons that a machine can return its old value/vNode:
-           * 1) it is a leaf that didnt transition
-           * 2) renderType is 'tg' and it didn't transition
-           *
-           * reasons to rerender
-           * 1) it is a leaf that transitioned
-           * 2) renderType is 'targeted', but it transitioned (it is the targeted machine. in practice, this won't
-           *    happen, as targeted machine render fn is called directly)
-           * 3) renderType is 'global' or 'routing' (NOT 'tg')
+           * machines are rendered by nodeDepth order in emit().
+           * only render them here for routing-type renders
+           * (so route changes and inital mount!)
            */
           if (renderType.t !== 'r') {
             // yay, optimization! (leaf that hasn't transitioned)
@@ -331,15 +323,29 @@ export function b<Props extends PropsArg>(
           }
         }
       } else if ('memo' in type) {
+        /**
+         * 'memoized' functional components
+         */
+
+        // this doesn't actually do anything but return the SFC. TSX tricks!
+        const sfc = type(props as Props);
         const memoVNode: MemoVNode = {
           x: VNodeKind.Memo,
-          // this doesn't actually do anything but return the SFC. TSX tricks!
-          t: type(props as Props),
+          t: sfc,
           // can't just check for truthiness, or 0
           // becomes a null key
           k: props && props.key != null ? props.key : null,
           a: props,
-          c: null,
+          c:
+            renderType.t === 'r'
+              ? sfc(
+                  props as Props,
+                  children.length ? processChildren(children) : null
+                )
+              : createTextVNode(''),
+          /** render their child when render type is r. this is important for first render/routing!
+           * be lazy when it's a diff. decide whether to render or use the old child in diff()
+           */
           d: null,
           i: null,
           h: null,

@@ -5,10 +5,7 @@ import { machineRegistry } from '../machineRegistry';
 
 /** traverses the VNode to be removed in order to
  * remove any machine instances that may be a descendant
- * of this node
- *
- * possible change: make this iterative? benchmark it first
- *  */
+ * of this node */
 export function safelyRemoveVNode(node: VNode) {
   switch (node.x) {
     case VNodeKind.Machine: {

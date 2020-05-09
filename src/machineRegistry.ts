@@ -38,13 +38,12 @@ export const machinesThatTransitioned: Map<string, number> = new Map();
 /**
  * before rendering, set this variable to the type of event
  *
- * t: targeted,
- * g: global,
+ * t: targeted (events),
  * r: routing
  */
 
 export const renderType: {
-  t: 't' | 'g' | 'r';
+  t: 't' | 'r';
 } = {
-  t: 'g',
+  t: 't',
 };

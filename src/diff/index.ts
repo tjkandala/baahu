@@ -1,4 +1,4 @@
-import { VNode, VNodeKind } from '../createElement';
+import { VNode, VNodeKind, PropsArg } from '../createElement';
 import { renderDOM } from '../renderDOM';
 import { diffProps } from './props';
 import {
@@ -7,6 +7,7 @@ import {
   safelyRemoveVNode,
   unmountMachine,
 } from './children';
+import { b } from '..';
 
 export function diff(
   oldVNode: VNode,
@@ -14,32 +15,10 @@ export function diff(
   parentDom: HTMLElement | null,
   nodeDepth: number
 ): void {
-  // if (nodeDepth == null) {
-  //   console.log('no node depth');
-  //   console.log(oldVNode);
-  // }
-  // if (oldVNode.h == null) {
-  //   console.log('old v node dont got it');
-  // }
-
-  // if (nodeDepth === 0) {
-  //   console.log(oldVNode);
-  // }
-
-  // if (nodeDepth !== oldVNode.h) {
-  //   console.log('inequality!!');
-  //   console.log(nodeDepth);
-  //   console.log(oldVNode);
-  // }
-
-  /**
-   * temporary 'tests' while adding node depth!
-   */
-
   /** for machines not targeted, isLeaf, memo, static elements!
-   * don't need to pass on dom (test it), same vnode
+   * don't need to pass on dom (test it), same vnode. == for null/undefined
    */
-  if (oldVNode === newVNode) return;
+  if (oldVNode == newVNode) return;
 
   /** there is no node in the new tree corresponding
    * to the old tree, so remove node */
@@ -139,19 +118,31 @@ export function diff(
           return replace(oldVNode.c, newVNode, parentDom, nodeDepth);
       }
 
-    /** can't do memo without node depth-based global event opts anyways.. so finish
-     * those first!
-     */
-
     case VNodeKind.Memo:
       switch (newVNode.x) {
         case VNodeKind.Memo:
-          if (oldVNode.a === newVNode.a) {
-            newVNode.c = oldVNode.c;
-          } else {
-            // render, diff, assign newVNode.d and newVNode.c
-          }
+          /**
+           * all the reasons that a memo component should rerender:
+           * - the functions are different.
+           * -
+           *
+           * note, the props object itself will most likely be new on each render, so
+           * that's not a useful check. nvm,, null === null is a good opt!
+           */
 
+          if (
+            oldVNode.t !== newVNode.t ||
+            shouldRender(oldVNode.a, newVNode.a)
+          ) {
+            // rerender
+            const vNode = b(newVNode.t, newVNode.a);
+            newVNode.c = vNode;
+            renderDOM(newVNode, nodeDepth);
+          } else {
+            // pass on the child.
+            newVNode.c = oldVNode.c;
+            newVNode.d = oldVNode.d;
+          }
           return;
 
         default:
@@ -200,4 +191,24 @@ function replace(
     }
   }
   safelyRemoveVNode(oldVNode);
+}
+
+/**
+ * if this returns true, rerender the memo component
+ */
+function shouldRender<Props extends PropsArg = any>(
+  oldProps: Props | null | undefined,
+  newProps: Props | null | undefined
+): boolean {
+  // for when they they are both null or undefined, no point in rerendering. it's basically a static vnode/element
+  if (oldProps == newProps) return false;
+  if (newProps && oldProps) {
+    for (let i in oldProps) if (!(i in newProps)) return true;
+    for (let i in newProps) if (oldProps[i] !== newProps[i]) return true;
+  } else {
+    // one of new/old props don't exist, but the other do. have to rerender
+    return true;
+  }
+  // this means both newProps and oldProps exist, but they are shallow equal
+  return false;
 }
