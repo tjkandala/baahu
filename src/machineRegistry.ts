@@ -29,8 +29,11 @@ export const machineRegistry: MachineRegistry = new Map();
 
 /** keep track of machines that transitioned in the latest cycle. used for
  * memoizing leaf machines (if the machine didn't transition, it can return
- * the memoized VNode). "dirty checking." reset after TODO FIGURE OUT WHEN */
-export const machinesThatTransitioned: Map<string, true> = new Map();
+ * the memoized VNode). "dirty checking." reset after TODO FIGURE OUT WHEN
+ *
+ * value is nodeDepth
+ *  */
+export const machinesThatTransitioned: Map<string, number> = new Map();
 
 /**
  * before rendering, set this variable to the type of event

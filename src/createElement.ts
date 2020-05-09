@@ -1,10 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MachineComponent, SFC } from './component';
-import {
-  machineRegistry,
-  machinesThatTransitioned,
-  renderType,
-} from './machineRegistry';
+import { MachineComponent, SFC, MemoComponent } from './component';
+import { machineRegistry, renderType } from './machineRegistry';
 
 export type TagName = keyof HTMLElementTagNameMap;
 
@@ -49,6 +45,9 @@ type TextVNode = {
   /** dom */
   d: Text | null;
   i: null;
+  /** node depth (for global update opts). initialized during first render, spread by 'infection'
+   * on subsequent renders */
+  h: number | null;
 };
 
 export type ElementVNode = {
@@ -62,6 +61,8 @@ export type ElementVNode = {
   d: HTMLElement | null;
   /** id (for machine node lookup in registry) */
   i: null;
+  /** node depth */
+  h: number | null;
 };
 
 export type MachineVNode = {
@@ -75,6 +76,24 @@ export type MachineVNode = {
   d: HTMLElement | null;
   /** id (for machine node lookup in registry) */
   i: string;
+  /** node depth */
+  h: number | null;
+};
+
+// for functions wrapped w/ memo (make them rerender on global events!)
+export type MemoVNode = {
+  x: VNodeKind.Memo;
+  /** i of a lazyvnode is the functional component */
+  t: SFC;
+  k: string | number | null;
+  /** a of a lazyvnode === props provided to SFC */
+  a: Props | null | undefined;
+  /** bc this is lazy, vnode child is not initialized until diff */
+  c: VNode | null;
+  d: HTMLElement | null;
+  i: null;
+  /** node depth */
+  h: number | null;
 };
 
 /** unfortunately, i had to make this enum less readable bc the minifier wasn't doing the trick */
@@ -86,12 +105,12 @@ export enum VNodeKind {
 
   /** MACHINE_NODE */
   Machine,
-  // /** FUNCTION_NODE */
-  // F,
+  // /** LAZY_NODE (functions) */
+  Memo,
 }
 
-// export type VNode = ElementVNode | TextVNode | MachineVNode | FunctionVNode;
-export type VNode = ElementVNode | TextVNode | MachineVNode;
+// export type VNode = ElementVNode | TextVNode | MachineVNode | MemoVNode;
+export type VNode = ElementVNode | TextVNode | MachineVNode | MemoVNode;
 
 function createTextVNode(text: string): TextVNode {
   return {
@@ -104,6 +123,7 @@ function createTextVNode(text: string): TextVNode {
     c: null,
     d: null,
     i: null,
+    h: null,
   };
 }
 
@@ -163,7 +183,7 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
 
 /** createElement */
 export function b<Props extends PropsArg>(
-  type: SFC<Props> | MachineComponent<Props> | TagName,
+  type: SFC<Props> | MachineComponent<Props> | MemoComponent<Props> | TagName,
   /** I call them props for everything, but they are really attributes for ELEMENT_NODEs */
   props: (Props & { key?: string | number }) | null | undefined,
   ...children: ChildrenArg
@@ -179,6 +199,7 @@ export function b<Props extends PropsArg>(
         c: processChildren(children),
         d: null,
         i: null,
+        h: null,
       };
 
     /** machine components or SFCs */
@@ -240,6 +261,7 @@ export function b<Props extends PropsArg>(
             c: child ? child : createTextVNode(''),
             d: null,
             i: instanceId,
+            h: null,
           };
 
           const newInstance = {
@@ -258,6 +280,8 @@ export function b<Props extends PropsArg>(
           const spec = existingInstance.s;
 
           /**
+           * THIS IS OUTDATED! NEW OPTIMIZATIONS! change the comments
+           *
            * all the reasons that a machine can return its old value/vNode:
            * 1) it is a leaf that didnt transition
            * 2) renderType is 'tg' and it didn't transition
@@ -268,13 +292,14 @@ export function b<Props extends PropsArg>(
            *    happen, as targeted machine render fn is called directly)
            * 3) renderType is 'global' or 'routing' (NOT 'tg')
            */
-          if (
-            (renderType.t === 't' || spec.isLeaf) &&
-            !machinesThatTransitioned.has(existingInstance.id)
-          ) {
+          if (renderType.t !== 'r') {
             // yay, optimization! (leaf that hasn't transitioned)
             return existingInstance.v;
           } else {
+            /**
+             * NEW OPTS! only rerender here on route change! (to keep nested routers simple)
+             */
+
             // not a leaf, or it is a leaf that has changed! rerender
             const kids = processChildren(children);
             const child = spec.render(
@@ -295,6 +320,7 @@ export function b<Props extends PropsArg>(
               c: child ? child : createTextVNode(''),
               d: null,
               i: instanceId,
+              h: null,
             };
 
             existingInstance.v = vNode;
@@ -304,8 +330,25 @@ export function b<Props extends PropsArg>(
             return vNode;
           }
         }
+      } else if ('memo' in type) {
+        const memoVNode: MemoVNode = {
+          x: VNodeKind.Memo,
+          // this doesn't actually do anything but return the SFC. TSX tricks!
+          t: type(props as Props),
+          // can't just check for truthiness, or 0
+          // becomes a null key
+          k: props && props.key != null ? props.key : null,
+          a: props,
+          c: null,
+          d: null,
+          i: null,
+          h: null,
+        };
+
+        return memoVNode;
       } else {
-        // SFC/Stateless Functional Components
+        // SFC/Stateless Functional Components.
+
         const vNode = type(
           props as Props,
           children.length ? processChildren(children) : null

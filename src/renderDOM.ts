@@ -1,7 +1,9 @@
-import { VNode, VNodeKind } from './createElement';
+import { VNode, VNodeKind, ElementVNode } from './createElement';
 
 /** call this function with a VNode. it will recursively append DOM children until it reaches leaves */
-export function renderDOM(node: VNode): HTMLElement | Text {
+export function renderDOM(node: VNode, nodeDepth: number): HTMLElement | Text {
+  node.h = nodeDepth;
+
   switch (node.x) {
     case VNodeKind.Element:
       // any saves bytes (useless checking of 'disabled in el')
@@ -35,7 +37,7 @@ export function renderDOM(node: VNode): HTMLElement | Text {
       // let child: HTMLElement | Text;
       for (let i = 0, len = kids.length; i < len; i++) {
         // child = renderDOM(kids[i]);
-        $el.appendChild(renderDOM(kids[i]));
+        $el.appendChild(renderDOM(kids[i], nodeDepth + 1));
       }
 
       node.d = $el;
@@ -48,7 +50,12 @@ export function renderDOM(node: VNode): HTMLElement | Text {
       return node.d;
 
     case VNodeKind.Machine:
-      node.d = renderDOM(node.c) as HTMLElement;
+      node.d = renderDOM(node.c, nodeDepth + 1) as HTMLElement;
+      return node.d;
+
+    // HACKS, this isnt working code, just here to make TS shut up for now
+    case VNodeKind.Memo:
+      node.d = renderDOM(node.c as ElementVNode, nodeDepth + 1) as HTMLElement;
       return node.d;
   }
 }

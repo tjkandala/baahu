@@ -57,7 +57,8 @@ export function unmountMachine(idToDelete: string) {
 export function keyedDiffChildren(
   oldVChildren: VNode[],
   newVChildren: VNode[],
-  parentDom: HTMLElement
+  parentDom: HTMLElement,
+  nodeDepth: number
 ): undefined {
   /**
    * Common prefix and suffix optimization.
@@ -90,7 +91,7 @@ export function keyedDiffChildren(
 
       $nextNode = oldEndNode.d;
 
-      diff(oldEndNode, newEndNode, parentDom);
+      diff(oldEndNode, newEndNode, parentDom, nodeDepth + 1);
 
       oldEnd--;
       newEnd--;
@@ -107,7 +108,7 @@ export function keyedDiffChildren(
     let newStartNode = newVChildren[newStart];
 
     while (oldStartNode.k === newStartNode.k) {
-      diff(oldStartNode, newStartNode, parentDom);
+      diff(oldStartNode, newStartNode, parentDom, nodeDepth + 1);
 
       oldStart++;
       newStart++;
@@ -138,7 +139,7 @@ export function keyedDiffChildren(
      */
 
     while (newStart <= newEnd) {
-      $node = renderDOM(newVChildren[newStart]);
+      $node = renderDOM(newVChildren[newStart], nodeDepth + 1);
 
       oldStart >= oldLen
         ? parentDom.appendChild($node)
@@ -264,7 +265,7 @@ export function keyedDiffChildren(
 
           oldVNode = oldVChildren[indexInOldChildren];
 
-          diff(oldVNode, newVNode, parentDom);
+          diff(oldVNode, newVNode, parentDom, nodeDepth + 1);
 
           if (newVNode.d) $nextNode = newVNode.d;
 
@@ -273,7 +274,7 @@ export function keyedDiffChildren(
         case -1:
           // new node. this works for machine nodes as
           // well because renderDOM returns child
-          $node = renderDOM(newVNode);
+          $node = renderDOM(newVNode, nodeDepth + 1);
 
           $nextNode
             ? parentDom.insertBefore($node, $nextNode)
@@ -288,7 +289,7 @@ export function keyedDiffChildren(
 
           oldVNode = oldVChildren[indexInOldChildren];
 
-          diff(oldVNode, newVNode, parentDom);
+          diff(oldVNode, newVNode, parentDom, nodeDepth + 1);
 
           if (newVNode.d) {
             $nextNode
@@ -317,7 +318,7 @@ export function keyedDiffChildren(
         case -1:
           // new node. this works for machine nodes as
           // well because renderDOM returns child
-          $node = renderDOM(newVNode);
+          $node = renderDOM(newVNode, nodeDepth + 1);
 
           $nextNode
             ? parentDom.insertBefore($node, $nextNode)
@@ -334,7 +335,7 @@ export function keyedDiffChildren(
 
           oldVNode = oldVChildren[indexInOldChildren];
 
-          diff(oldVNode, newVNode, parentDom);
+          diff(oldVNode, newVNode, parentDom, nodeDepth + 1);
 
           if (newVNode.d) $nextNode = newVNode.d;
 
@@ -433,7 +434,8 @@ export function markLIS(sources: Int32Array): Int32Array {
 export function diffChildren(
   oldVChildren: VNode[],
   newVChildren: VNode[],
-  parentDom: HTMLElement
+  parentDom: HTMLElement,
+  nodeDepth: number
 ): void {
   let i = 0;
   const len = oldVChildren.length;
@@ -447,12 +449,12 @@ export function diffChildren(
     oldVChild = oldVChildren[i];
     newVChild = newVChildren[i];
     // this will remove dom node if no newVChild
-    diff(oldVChild, newVChild, parentDom);
+    diff(oldVChild, newVChild, parentDom, nodeDepth + 1);
   }
 
   /** This will only be executed if newVChildren is longer than oldVChildren */
   for (; i < newLen; i++) {
     newVChild = newVChildren[i];
-    parentDom.appendChild(renderDOM(newVChild));
+    parentDom.appendChild(renderDOM(newVChild, nodeDepth + 1));
   }
 }

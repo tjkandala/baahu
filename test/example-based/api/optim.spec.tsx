@@ -9,4 +9,14 @@ describe('optimizations', () => {
      */
     expect(true).toBe(true);
   });
+
+  test('granular global events', () => {
+    const idNodeDepth: [string, number][] = [];
+
+    idNodeDepth.push(['hi', 2], ['ur mom', 1], ['a child', 4], ['fun', 3]);
+
+    idNodeDepth.sort((a, b) => b[1] - a[1]);
+
+    expect(true).toBe(true);
+  });
 });

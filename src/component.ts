@@ -14,7 +14,7 @@ export type SFC<Props extends PropsArg = any> = (
   children: Array<VNode> | null
 ) => VNode | null;
 
-function defaultCompare<Props extends PropsArg = any>(
+export function defaultCompare<Props extends PropsArg = any>(
   oldProps: Props,
   newProps: Props
 ): boolean {
@@ -39,6 +39,22 @@ function defaultCompare<Props extends PropsArg = any>(
   return true;
 }
 
+export interface MemoComponent<Props extends PropsArg = any> {
+  // the props arg will be thrown away, just keep it for type checking!
+  (props: Props): SFC<Props>;
+  memo: boolean;
+}
+
+export function memo<Props>(sfc: SFC<Props>): MemoComponent<Props> {
+  function memoComponent() {
+    return sfc;
+  }
+
+  memoComponent.memo = true;
+
+  return memoComponent;
+}
+
 /**
  *
  *
@@ -54,17 +70,18 @@ export function bLazy<Props>(
 ): SFC<Props> {
   let cache: SFC<Props> | MachineComponent<Props> | null = null;
   let renderedFallback = false;
+  let startedLoading = false;
 
   return (props, children) => {
-    const root = b('div', null);
+    if (cache == null) {
+      const root = b('div', null);
 
-    if (root) {
-      if (cache == null) {
+      if (!startedLoading) {
         fallback &&
           setTimeout(() => {
             if (!cache) {
               // const $fallback = renderDOM(fallback);
-              renderDOM(fallback);
+              renderDOM(fallback, root.h! + 1);
               if (root.d && fallback.d) {
                 root.d.appendChild(fallback.d);
                 root.c = [fallback];
@@ -82,22 +99,21 @@ export function bLazy<Props>(
           root.c = [vNode];
 
           // append dom
-          const $dom = renderDOM(vNode);
+          const $dom = renderDOM(vNode, root.h! + 1);
 
           // 2 ops instead of one (replace), but shorter code!
           renderedFallback && fallback && fallback.d && fallback.d.remove();
           root.d?.appendChild($dom);
         });
-
-        return root;
-      } else {
-        // have to wrap it in a div for faster diff (consistent node depth)
-        // until functions have vdom representation
-        return b('div', null, b(cache, props, children));
+        startedLoading = true;
       }
-    }
 
-    return root;
+      return root;
+    } else {
+      // have to wrap it in a div for faster diff (consistent node depth)
+      // until functions have vdom representation
+      return b('div', null, b(cache, props, children));
+    }
   };
 }
 

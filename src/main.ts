@@ -65,30 +65,28 @@ function transitionMachines(
           // add to machinesThatTransitioned.
           // this will allow machines to rerender on events even
           // if they don't do anything ("listen" to events)
-          machinesThatTransitioned.set(machineInstance.id, true);
+          machinesThatTransitioned.set(
+            machineInstance.id,
+            machineInstance.v.h!
+          );
 
           const effects = rootHandler.effects;
 
-          if (effects) {
-            if (typeof effects === 'function') {
+          if (effects)
+            if (typeof effects === 'function')
               effects(machineInstance.ctx, event, machineInstance.id);
-            } else {
-              for (let i = 0; i < effects.length; i++) {
+            else
+              for (let i = 0; i < effects.length; i++)
                 effects[i](machineInstance.ctx, event, machineInstance.id);
-              }
-            }
-            // machinesThatTransitioned.set(machineInstance.id, true);
-          }
 
           // take to next state if target
-          if (rootHandler.target) {
+          if (rootHandler.target)
             takeToNextState(
               rootHandler.target,
               machineInstance,
               rootHandler,
               event
             );
-          }
         }
       }
 
@@ -110,7 +108,10 @@ function transitionMachines(
         const transitionHandler = stateHandler.on[eventType];
 
         if (transitionHandler) {
-          machinesThatTransitioned.set(machineInstance.id, true);
+          machinesThatTransitioned.set(
+            machineInstance.id,
+            machineInstance.v.h!
+          );
 
           const cond = transitionHandler.cond;
 
@@ -118,25 +119,20 @@ function transitionMachines(
             const targetState = transitionHandler.target;
             const effects = transitionHandler.effects;
 
-            if (targetState) {
+            if (targetState)
               takeToNextState(
                 targetState,
                 machineInstance,
                 stateHandler,
                 event
               );
-            }
 
-            if (effects) {
-              if (typeof effects === 'function') {
+            if (effects)
+              if (typeof effects === 'function')
                 effects(machineInstance.ctx, event, machineInstance.id);
-              } else {
-                for (let i = 0; i < effects.length; i++) {
+              else
+                for (let i = 0; i < effects.length; i++)
                   effects[i](machineInstance.ctx, event, machineInstance.id);
-                }
-              }
-              // machinesThatTransitioned.set(machineInstance.id, true);
-            }
           }
         }
       }
@@ -160,28 +156,29 @@ function transitionMachines(
           rootHandler &&
           (!rootHandler.cond || rootHandler.cond(machineInstance.ctx, event))
         ) {
-          machinesThatTransitioned.set(machineInstance.id, true);
+          machinesThatTransitioned.set(
+            machineInstance.id,
+            machineInstance.v.h!
+          );
 
           const effects = rootHandler.effects;
 
-          if (effects) {
-            if (typeof effects === 'function') {
+          if (effects)
+            if (typeof effects === 'function')
               allEffects.push([effects, machineInstance]);
-            } else {
+            else {
               let j = effects.length;
               while (j--) allEffects.push([effects[j], machineInstance]);
             }
-          }
 
           // take to next state if target
-          if (rootHandler.target) {
+          if (rootHandler.target)
             takeToNextState(
               rootHandler.target,
               machineInstance,
               rootHandler,
               event
             );
-          }
         }
       }
 
@@ -202,7 +199,10 @@ function transitionMachines(
         const transitionHandler = stateHandler.on[eventType];
 
         if (transitionHandler) {
-          machinesThatTransitioned.set(machineInstance.id, true);
+          machinesThatTransitioned.set(
+            machineInstance.id,
+            machineInstance.v.h!
+          );
 
           const cond = transitionHandler.cond;
 
@@ -218,23 +218,21 @@ function transitionMachines(
              * then perform effects after all transitions + machines for this event!
              */
 
-            if (effects) {
-              if (typeof effects === 'function') {
+            if (effects)
+              if (typeof effects === 'function')
                 allEffects.push([effects, machineInstance]);
-              } else {
+              else {
                 let j = effects.length;
                 while (j--) allEffects.push([effects[j], machineInstance]);
               }
-            }
 
-            if (targetState) {
+            if (targetState)
               takeToNextState(
                 targetState,
                 machineInstance,
                 stateHandler,
                 event
               );
-            }
           }
         }
       }
@@ -273,11 +271,9 @@ function takeToNextState(
   // check for target function. standardized to string
   let stdTargetState: string;
 
-  if (typeof targetState === 'function') {
+  if (typeof targetState === 'function')
     stdTargetState = targetState(machineInstance.ctx, machineInstance.s);
-  } else {
-    stdTargetState = targetState;
-  }
+  else stdTargetState = targetState;
 
   if (stdTargetState !== machineInstance.st) {
     // only do anything if targetState !== current machine instance state
@@ -306,7 +302,7 @@ function takeToNextState(
           machineInstance.id
         );
 
-      machinesThatTransitioned.set(machineInstance.id, true);
+      machinesThatTransitioned.set(machineInstance.id, machineInstance.v.h!);
     } else {
       /** for js users who may specify invalid targets */
       if (process.env.NODE_ENV !== 'production') {
@@ -324,8 +320,14 @@ export function emit(
 ): void {
   target === '*' ? (renderType.t = 'g') : (renderType.t = 't');
 
-  // if already transitioning, transition machines, but don't start render process.
-  // change renderType to global, as we can no longer be sure (description TODO)
+  /**
+   * render type can only be 't' or 'r' now. there used to be a 'g' category,
+   * but global events are now handled in the same way
+   */
+
+  /**
+   * if already transitioning, transition machines, but don't start render process.
+   * */
   if (isTransitioning) {
     renderType.t = 'g';
     transitionMachines(event, target);
@@ -339,44 +341,44 @@ export function emit(
   isTransitioning = false;
 
   /**
-   * check how many machines have transitioned/performed effects.
-   * if one, just rerender that machine. If multiple,
-   * rerender the whole app (think of better ways).
-   *
-   * no-op if the event(s) led to no transitions/effects
+   * no rerenders if no machines transitioned. handle global
+   * and targeted events in (almost) the same way
    */
   if (machinesThatTransitioned.size === 0) return;
 
-  if (renderType.t === 't') {
-    /**
-     * no need to iterate, thru mTT; if we reached this point,
-     * we are pretty sure that the target was the only machine
-     * that transitioned (no nested events, obv wasn't a global)
-     */
+  /** array of tuples [instanceId, nodeDepth] */
+  const idNodeDepth: [string, number][] = [];
 
-    // for (const [k] of machinesThatTransitioned) {
-    const machine = machineRegistry.get(target);
-    if (machine) {
-      // the product of the render function is the child 'machineVNode.c',
-      //  not the machineVNode itself
-      const vNode: VNode | null = machine.s.render(
-        machine.st,
-        machine.ctx,
-        machine.id,
-        machine.c
+  for (const kv of machinesThatTransitioned) {
+    idNodeDepth.push(kv);
+  }
+
+  let j = idNodeDepth.length;
+
+  /** sort machines that transitioned in DESC order, iterate backwards
+   * don't need to sort it if there's only one machine (e.g. targeted events)
+   * */
+  j > 1 && idNodeDepth.sort((a, b) => b[1] - a[1]);
+
+  while (j--) {
+    const machInst = machineRegistry.get(idNodeDepth[j][0]);
+    // the machine instance may not exist anymore (if an ancestor node stopped rendering it, for example)
+    if (machInst) {
+      // console.log('inhere');
+      // rerender
+
+      const vNode: VNode | null = machInst.s.render(
+        machInst.st,
+        machInst.ctx,
+        machInst.id,
+        machInst.c
       );
 
-      diff(machine.v.c, vNode, null);
+      // machine.v.c.h! -> vnode.h -> node depth
+      diff(machInst.v.c, vNode, null, machInst.v.c.h!);
       machinesThatTransitioned.clear();
-      machine.v.c = vNode as VNode;
+      machInst.v.c = vNode as VNode;
     }
-    // }
-  } else {
-    const vNode = b(currentRootComponent, {});
-
-    diff(currentVRoot, vNode, null);
-    machinesThatTransitioned.clear();
-    currentVRoot = vNode;
   }
 }
 
@@ -440,7 +442,7 @@ function newRoute(): void {
   // rerender
   const vNode: VNode | null = b(currentRootComponent, {});
 
-  diff(currentVRoot, vNode, null);
+  diff(currentVRoot, vNode, $root, 0);
   machinesThatTransitioned.clear();
   currentVRoot = vNode;
 }
@@ -470,10 +472,10 @@ export function mount(
   $target: HTMLElement
 ): HTMLElement {
   machineRegistry.clear();
-  renderType.t = 'g';
+  renderType.t = 'r';
   const vNode: VNode = b(rootComponent, {});
 
-  $root = renderDOM(vNode) as HTMLElement;
+  $root = renderDOM(vNode, 0) as HTMLElement;
   /**
    * used to be $target.replaceWith($root), but that isn't supported on some broswers released
    * as recently as 2016, so this method is good for now. just be sure to inform users to provide

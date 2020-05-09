@@ -1,4 +1,5 @@
 import { b, mount, createMachine, emit } from '../../src';
+import { machineRegistry } from '../../src/machineRegistry';
 
 describe('todo app', () => {
   let $root = document.body;
@@ -41,7 +42,7 @@ describe('todo app', () => {
           </form>
           <div>
             {ctx.todos.map((todo: any) => (
-              <Item todo={todo} />
+              <Item todo={todo} key={todo.key} />
             ))}
           </div>
         </div>
@@ -91,15 +92,24 @@ describe('todo app', () => {
     // key will be 2
     emit({ type: 'NEW_TODO', todo: 'third' }, 'list');
 
+    // three items, one list
+    expect(machineRegistry.size).toBe(4);
+
     expect($list?.childNodes.length).toBe(3);
 
     // delete second item/key 1
     emit({ type: 'DELETE_ITEM', key: 1 });
 
+    // two items, one list
+    expect(machineRegistry.size).toBe(3);
+
     expect($list?.childNodes.length).toBe(2);
 
     // delete first item/key 0
     emit({ type: 'DELETE_ITEM', key: 0 });
+
+    // one item, one list
+    expect(machineRegistry.size).toBe(2);
 
     expect($list?.childNodes.length).toBe(1);
 
@@ -107,6 +117,9 @@ describe('todo app', () => {
 
     // delete third item/key 2
     emit({ type: 'DELETE_ITEM', key: 2 });
+
+    // no items, one list
+    expect(machineRegistry.size).toBe(1);
 
     expect($list?.childNodes.length).toBe(0);
   });
