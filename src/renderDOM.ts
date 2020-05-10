@@ -1,4 +1,5 @@
-import { VNode, VNodeKind, ElementVNode } from './createElement';
+import { VNode, VNodeKind, b } from './createElement';
+import { renderType } from './machineRegistry';
 
 /** call this function with a VNode. it will recursively append DOM children until it reaches leaves */
 export function renderDOM(node: VNode, nodeDepth: number): HTMLElement | Text {
@@ -53,9 +54,23 @@ export function renderDOM(node: VNode, nodeDepth: number): HTMLElement | Text {
       node.d = renderDOM(node.c, nodeDepth + 1) as HTMLElement;
       return node.d;
 
-    // HACKS, this isnt working code, just here to make TS shut up for now
     case VNodeKind.Memo:
-      node.d = renderDOM(node.c as ElementVNode, nodeDepth + 1) as HTMLElement;
+      /**
+       * the following code should be run from diffChildren (keyed or unkeyed)
+       * (when a new node is created at this position), or replace() from diff()
+       *
+       * check for render type to make sure this isn't doing redundant work for first mount!
+       *
+       * have to render the vnode first, then replace the placeholder child with it.
+       * call renderDOM as usual. set node.d to the return value, then return node.d
+       */
+      if (renderType.t !== 'r') {
+        // memo ignores children. it wouldn't work with children anyways
+        node.c = b(node.t, node.a);
+      }
+      // if renderType was r, the vnode was already created in b()
+      node.d = renderDOM(node.c, nodeDepth + 1) as HTMLElement;
+
       return node.d;
   }
 }

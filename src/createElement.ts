@@ -73,7 +73,7 @@ export type MachineVNode = {
   /** one child */
   c: VNode;
   /** dom of a machine node is the same as its child (for brevity during diff) */
-  d: HTMLElement | null;
+  d: HTMLElement | Text | null;
   /** id (for machine node lookup in registry) */
   i: string;
   /** node depth */
@@ -89,8 +89,8 @@ export type MemoVNode = {
   /** a of a lazyvnode === props provided to SFC */
   a: Props | null | undefined;
   /** bc this is lazy, vnode child is not initialized until diff (expect for first render/routing) */
-  c: VNode | null;
-  d: HTMLElement | null;
+  c: VNode;
+  d: HTMLElement | Text | null;
   i: null;
   /** node depth */
   h: number | null;
@@ -269,7 +269,6 @@ export function b<Props extends PropsArg>(
             st: initialState,
             ctx: initialContext,
             s: spec,
-            l: spec.isLeaf ? spec.isLeaf : false,
             v: vNode,
             c: kids,
           };
@@ -329,6 +328,15 @@ export function b<Props extends PropsArg>(
 
         // this doesn't actually do anything but return the SFC. TSX tricks!
         const sfc = type(props as Props);
+
+        const child =
+          renderType.t === 'r'
+            ? sfc(
+                props as Props,
+                children.length ? processChildren(children) : null
+              )
+            : createTextVNode('');
+
         const memoVNode: MemoVNode = {
           x: VNodeKind.Memo,
           t: sfc,
@@ -336,13 +344,7 @@ export function b<Props extends PropsArg>(
           // becomes a null key
           k: props && props.key != null ? props.key : null,
           a: props,
-          c:
-            renderType.t === 'r'
-              ? sfc(
-                  props as Props,
-                  children.length ? processChildren(children) : null
-                )
-              : createTextVNode(''),
+          c: child || createTextVNode(''),
           /** render their child when render type is r. this is important for first render/routing!
            * be lazy when it's a diff. decide whether to render or use the old child in diff()
            */

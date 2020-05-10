@@ -1,6 +1,7 @@
 {
   "include": ["src", "types", "srce"],
   "compilerOptions": {
+    "target": "ES2015",
     "module": "esnext",
     "lib": ["dom", "esnext"],
     "importHelpers": true,
@@ -12,7 +13,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "downlevelIteration": true,
+
     "moduleResolution": "node",
     "baseUrl": "./",
     "paths": {

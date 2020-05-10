@@ -1,5 +1,8 @@
 import { memo } from '../../../src/component';
-import { b, mount } from '../../../src';
+import { b, mount, createMachine, VNode, emit } from '../../../src';
+import { machineRegistry } from '../../../src/machineRegistry';
+import { shouldRender } from '../../../src/diff/index';
+import { ElementVNode } from '../../../src/createElement';
 
 describe('optimizations', () => {
   // memo instance
@@ -25,24 +28,113 @@ describe('optimizations', () => {
     expect(true).toBe(true);
   });
 
-  test('memo', () => {
+  test('shouldRender', () => {
+    expect(shouldRender({ count: 10 }, { count: 11 })).toBe(true);
+
+    expect(shouldRender({ count: 10 }, { count: 10 })).toBe(false);
+
+    const anObjProp = { name: 'TJ' };
+
+    // same object reference
+    expect(
+      shouldRender(
+        { count: 10, objProp: anObjProp },
+        { count: 10, objProp: anObjProp }
+      )
+    ).toBe(false);
+
+    expect(
+      shouldRender(
+        { count: 10, objProp: anObjProp },
+        { count: 11, objProp: anObjProp }
+      )
+    ).toBe(true);
+
+    // new objects. this should be true bc only checking for shallow eq
+    expect(
+      shouldRender(
+        { count: 10, objProp: { name: 'TJ' } },
+        { count: 10, objProp: { name: 'TJ' } }
+      )
+    ).toBe(true);
+  });
+
+  test('memo basic', () => {
     const MemoComp = memo<{ count: number }>(({ count }) => {
+      renders++;
       return <p>{count}</p>;
     });
 
-    const App = () => (
-      <div>
-        <MemoComp count={22} />
-      </div>
-    );
+    const Mach = createMachine<{}>({
+      id: 'mach',
+      initialState: 'default',
+      initialContext: () => ({
+        first: 10,
+        second: 22,
+      }),
+      states: {
+        default: {
+          on: {
+            INC_FIRST: {
+              effects: ctx => (ctx.first = ctx.first + 1),
+            },
+          },
+        },
+      },
+      render: (_s, ctx) => (
+        <div>
+          <MemoComp count={ctx.first} />
+          <MemoComp count={ctx.second} />
+        </div>
+      ),
+    });
 
-    // const vinod = b(MemoComp, { count: 22 });
+    /** TODO: count renders */
+    let renders = 0;
 
-    // console.log(vinod);
+    $root = mount(Mach, $root);
 
-    $root = mount(App, $root);
+    const inst = machineRegistry.get('mach');
 
-    console.log($root.firstChild);
+    const rootMachineVNode = inst?.v;
+
+    const divVChildrenBefore = rootMachineVNode?.c?.c as VNode[];
+
+    const firstVChildBefore = divVChildrenBefore[0].c as ElementVNode;
+    const secondVChildBefore = divVChildrenBefore[1].c as ElementVNode;
+
+    expect(renders).toBe(2);
+
+    expect(inst?.ctx['first']).toBe(10);
+
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('10');
+
+    expect($root.childNodes[1]?.firstChild?.nodeValue).toBe('22');
+
+    const vkids = rootMachineVNode?.c?.c as VNode[];
+    expect(vkids.length).toBe(2);
+
+    emit({ type: 'INC_FIRST' });
+
+    // this should be three bc props of first memo changed, second didn't
+    expect(renders).toBe(3);
+
+    // check that first vnode is not equal (before + after), while second vnode is!
+
+    const divVChildrenAfter = rootMachineVNode?.c?.c as VNode[];
+
+    const firstVChildAfter = divVChildrenAfter[0].c as ElementVNode;
+    const secondVChildAfter = divVChildrenAfter[1].c as ElementVNode;
+
+    expect(firstVChildBefore === firstVChildAfter).toBe(false);
+
+    expect(secondVChildBefore === secondVChildAfter).toBe(true);
+
+    expect(inst?.ctx['first']).toBe(11);
+
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('11');
+
+    expect($root.childNodes[1]?.firstChild?.nodeValue).toBe('22');
 
     expect(true).toBe(true);
   });

@@ -1,4 +1,4 @@
-import { markLIS } from '../../src/diff/children';
+import { markLIS } from '../../src/diff';
 
 describe('lis', () => {
   test('mark longest increasing subsequence', () => {

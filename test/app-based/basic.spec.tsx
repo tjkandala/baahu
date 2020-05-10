@@ -4,7 +4,7 @@ import {
   emit,
   createMachine,
   createRouter,
-  memoInstance,
+  memo,
   mount,
   linkTo,
 } from '../../src';
@@ -42,7 +42,7 @@ describe('basic apps', () => {
 
     const footerRenders: string[] = [];
 
-    const MyFooter = memoInstance<{ path: string }>(({ path }) => {
+    const MyFooter = memo<{ path: string }>(({ path }) => {
       footerRenders.push('render');
       return <h3>{path}</h3>;
     });
@@ -51,7 +51,6 @@ describe('basic apps', () => {
     //  so we can iterate through them for tests
 
     const Home = createMachine<{}, HomeState, HomeEvent, {}>({
-      isLeaf: true,
       id: 'Home',
       initialState: 'loading',
       initialContext: () => ({}),
@@ -98,7 +97,6 @@ describe('basic apps', () => {
       VideoListEvent,
       VideoListContext
     >({
-      isLeaf: false,
       id: 'VideoList',
       initialState: 'loading',
       initialContext: props => ({
@@ -157,8 +155,6 @@ describe('basic apps', () => {
     });
 
     const Video = createMachine<VideoProps, VideoState, VideoEvent, {}>({
-      // with new optimizations, even non-leaf nodes will not rerender when they don't transition!
-      isLeaf: false,
       id: props => `video-${props.category}-${props.listPosition}`,
       initialContext: () => ({}),
       initialState: 'buffering',
@@ -235,6 +231,7 @@ describe('basic apps', () => {
 
     linkTo('/videos');
 
+    // memo doesn't bail out of route changes
     expect(footerRenders.length).toBe(2);
 
     expect($root.childNodes[1].childNodes.length).toBe(1);

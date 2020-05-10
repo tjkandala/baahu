@@ -1,4 +1,4 @@
-import { b, emit, mount } from '../../src';
+import { b, emit, mount, memo } from '../../src';
 import { SFC, createMachine, MachineComponent } from '../../src/component';
 import {
   machineRegistry,
@@ -23,8 +23,6 @@ type ListState = 'first' | 'second';
 const failures = [];
 
 const BadVideoComponent = createMachine<{}, BadVideoState, BadVideoEvent>({
-  // make it optional, default to false
-  isLeaf: false,
   id: 'video',
   initialContext: () => ({}),
   initialState: 'loading',
@@ -47,14 +45,13 @@ function createListDiffComponent(
   listTwo: ListItem[],
   diffType: string,
   testCase: string,
-  machine: boolean
+  type: 'element' | 'machine' | 'memo'
 ): MachineComponent<{}, ListState, ListEvent> {
   const ListMach: MachineComponent<{}, ListState, ListEvent> = createMachine<
     {},
     ListState,
     ListEvent
   >({
-    isLeaf: true,
     id: `listMach-${diffType}-${testCase}`,
     initialContext: () => ({}),
     initialState: 'first',
@@ -79,9 +76,14 @@ function createListDiffComponent(
             'div',
             {},
             ...listOne.map(item =>
-              machine ? (
+              type === 'machine' ? (
                 <ItemMachine
                   item={item}
+                  key={diffType === 'keyed' ? item.key : undefined}
+                />
+              ) : type === 'memo' ? (
+                <MemoItem
+                  todo={item.todo}
                   key={diffType === 'keyed' ? item.key : undefined}
                 />
               ) : (
@@ -97,9 +99,14 @@ function createListDiffComponent(
             'div',
             {},
             ...listTwo.map(item =>
-              machine ? (
+              type === 'machine' ? (
                 <ItemMachine
                   item={item}
+                  key={diffType === 'keyed' ? item.key : undefined}
+                />
+              ) : type === 'memo' ? (
+                <MemoItem
+                  todo={item.todo}
                   key={diffType === 'keyed' ? item.key : undefined}
                 />
               ) : (
@@ -124,6 +131,8 @@ const ItemMachine = createMachine<{ item: ListItem }>({
   },
   render: (_s, ctx) => <p>{ctx.item.todo}</p>,
 });
+
+const MemoItem = memo<{ todo: string }>(({ todo }) => <p>{todo}</p>);
 
 /** keys represent test cases */
 type ListMap = {
@@ -356,7 +365,7 @@ const listMap: ListMap = {
           listTwo,
           diffType,
           testCase,
-          false
+          'element'
         );
 
         const MyLayout: SFC = () =>
@@ -433,7 +442,83 @@ const listMap: ListMap = {
           listTwo,
           diffType,
           testCase,
-          true
+          'machine'
+        );
+
+        const MyLayout: SFC = () =>
+          b(
+            'div',
+            null,
+            b(ListMach, null),
+            b('h1', null, 'good tests'),
+            b(BadVideoComponent, null)
+          );
+
+        $root = mount(MyLayout, $root) as HTMLElement;
+
+        expect($root.nodeName).toBe('DIV');
+
+        // length should be correct
+        expect($root.firstChild?.childNodes?.length).toBe(listOne.length);
+
+        // check if DOM correctly represents VDom (values)
+        $root.firstChild?.childNodes.forEach((child, i) => {
+          expect(child.firstChild?.nodeValue).toBe(listOne[i].todo);
+        });
+
+        // now, emit toggle event. should change to represent second list
+        emit({ type: 'TOGGLE' }, `listMach-${diffType}-${testCase}`);
+
+        // length should be correct
+        expect($root.firstChild?.childNodes?.length).toBe(listTwo.length);
+
+        // check if DOM correctly represents VDom (values) after 1 toggle
+        $root.firstChild?.childNodes.forEach((child, i) => {
+          expect(child.firstChild?.nodeValue).toBe(listTwo[i].todo);
+        });
+
+        // target a different leaf machine, machine shouldn't rerender
+        emit({ type: 'LOADED' });
+
+        // now, render the first list again
+        emit({ type: 'TOGGLE' }, `listMach-${diffType}-${testCase}`);
+
+        // length should be correct
+        expect($root.firstChild?.childNodes?.length).toBe(listOne.length);
+
+        // check if DOM correctly represents VDom (values) after 2 toggles
+        $root.firstChild?.childNodes.forEach((child, i) => {
+          expect(child.firstChild?.nodeValue).toBe(listOne[i].todo);
+        });
+      });
+
+      // have to clear bc its the same app instance
+      machineRegistry.clear();
+      machinesThatTransitioned.clear();
+    });
+  });
+});
+
+/**
+ * Testing diffing lists. (but with memo nodes)
+ * Only testing keyed diff, as reordering memo
+ * without keys is pointless (the props would be supplied
+ * to the wrong nodes, leading to extra rerenders)
+ */
+['keyed'].forEach(diffType => {
+  describe(`${diffType} list diffing (memo)`, () => {
+    let $root = document.body;
+
+    Object.keys(listMap).map(testCase => {
+      test(testCase, () => {
+        const { listOne, listTwo } = listMap[testCase];
+
+        const ListMach = createListDiffComponent(
+          listOne,
+          listTwo,
+          diffType,
+          testCase,
+          'memo'
         );
 
         const MyLayout: SFC = () =>
@@ -500,7 +585,6 @@ describe('basic events', () => {
   }
 
   const testMach = createMachine<{}, MyState, MyEvent, MyContext>({
-    isLeaf: true,
     id: 'testMach',
     initialContext: () => ({
       text: 'initial text',
@@ -557,7 +641,6 @@ describe('can replace nodes of different types', () => {
     type MyEvent = { type: 'TOGGLE' };
 
     const ToggleMachine = createMachine<{}, State, MyEvent>({
-      isLeaf: true,
       id: 'toggle',
       initialContext: () => ({}),
       initialState: 'one',
@@ -600,4 +683,6 @@ describe('can replace nodes of different types', () => {
 
     expect($root.firstChild?.nodeName).toBe('INPUT');
   });
+
+  // TODO: keyed diff for memo!
 });

@@ -350,7 +350,8 @@ export function emit(
 
   let j = idNodeDepth.length;
 
-  /** sort machines that transitioned in DESC order, iterate backwards
+  /** sort machines that transitioned in DESC order, iterate backwards,
+   * so you render machines from top to bottom!
    * don't need to sort it if there's only one machine (e.g. targeted events)
    * */
   j > 1 && idNodeDepth.sort((a, b) => b[1] - a[1]);

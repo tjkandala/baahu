@@ -14,7 +14,7 @@ import {
   machinesThatTransitioned,
 } from '../../src/machineRegistry';
 import { VNode } from '../../src/createElement';
-import { markLIS } from '../../src/diff/children';
+import { markLIS } from '../../src/diff';
 
 /**
  * Think of properties to test:
@@ -164,7 +164,6 @@ describe('machine property-based tests', () => {
     fc.assert(
       fc.property(fc.integer(0, 50), fc.integer(0, 50), (numOne, numTwo) => {
         const MachThatTransitions = createMachine<{ i: number }>({
-          isLeaf: true,
           id: props => `transitions-${props.i}`,
           initialState: 'loading',
           initialContext: () => ({}),
@@ -182,7 +181,6 @@ describe('machine property-based tests', () => {
         });
 
         const MachThatDoesntTransition = createMachine<{ i: number }>({
-          isLeaf: true,
           id: props => `doesnottransition-${props.i}`,
           initialState: 'loading',
           initialContext: () => ({}),

@@ -14,31 +14,6 @@ export type SFC<Props extends PropsArg = any> = (
   children: Array<VNode> | null
 ) => VNode | null;
 
-export function defaultCompare<Props extends PropsArg = any>(
-  oldProps: Props,
-  newProps: Props
-): boolean {
-  // https://jsperf.com/object-keys-vs-hasownproperty/55
-
-  // also, getting Object.keys to check for
-  // changed length is too slow, it wouldn't be an optimization
-
-  if (process.env.NODE_ENV !== 'production') {
-    if (typeof oldProps !== 'object' || typeof newProps !== 'object') {
-      throw new TypeError('props must be an object');
-    }
-  }
-
-  // TODO: Dev mode type errors
-  for (const k in newProps) {
-    if (newProps.hasOwnProperty(k)) {
-      if (newProps[k] !== oldProps[k]) return false;
-    }
-  }
-
-  return true;
-}
-
 export interface MemoComponent<Props extends PropsArg = any> {
   // the props arg will be thrown away, just keep it for type checking!
   (props: Props): SFC<Props>;
@@ -56,19 +31,21 @@ export function memo<Props>(sfc: SFC<Props>): MemoComponent<Props> {
 }
 
 /**
- *
- *
  * tradeoffs: wraps the component in a div (if it wasn't already loaded
- * when called)
+ * when called). also, might only be appropriate for route-level code-splitting.
+ * work on resuable lazy
  */
-export function bLazy<Props>(
-  lazyComponent: () => Promise<{
-    default: MachineComponent<Props> | SFC<Props>;
-  }>,
-  fallback: VNode | null = null,
-  timeout: number = 300
-): SFC<Props> {
-  let cache: SFC<Props> | MachineComponent<Props> | null = null;
+export function bLazy<Props>({
+  fallback,
+  timeout,
+  lazyComponent,
+  onError,
+}: BLazyConfig<Props>): SFC<Props> {
+  let cache:
+    | SFC<Props>
+    | MachineComponent<Props>
+    | MemoComponent<Props>
+    | null = null;
   let renderedFallback = false;
   let startedLoading = false;
 
@@ -88,68 +65,53 @@ export function bLazy<Props>(
                 renderedFallback = true;
               }
             }
-          }, timeout);
+          }, timeout || 300);
 
-        lazyComponent().then(module => {
-          cache = module.default;
+        lazyComponent()
+          .then(module => {
+            cache = module.default;
 
-          // append vnode
-          const vNode = b(cache, props, children);
+            // append vnode
+            const vNode = b(cache, props, children);
 
-          root.c = [vNode];
+            root.c = [vNode];
 
-          // append dom
-          const $dom = renderDOM(vNode, root.h! + 1);
+            // append dom
+            const $dom = renderDOM(vNode, root.h! + 1);
 
-          // 2 ops instead of one (replace), but shorter code!
-          renderedFallback && fallback && fallback.d && fallback.d.remove();
-          root.d?.appendChild($dom);
-        });
+            // 2 ops instead of one (replace), but shorter code!
+            renderedFallback && fallback && fallback.d && fallback.d.remove();
+            root.d?.appendChild($dom);
+          })
+          .catch(() => {
+            if (onError && root.d) {
+              // append vnode
+              root.c = [onError];
+              // append dom
+              const $dom = renderDOM(onError, root.h! + 1);
+
+              renderedFallback && fallback && fallback.d && fallback.d.remove();
+              root.d.appendChild($dom);
+            }
+          });
         startedLoading = true;
       }
 
       return root;
     } else {
       // have to wrap it in a div for faster diff (consistent node depth)
-      // until functions have vdom representation
       return b('div', null, b(cache, props, children));
     }
   };
 }
 
-/** memoizes an instance of the functional component.
- *
- *  READ: it only works
- * for one instance of a component. Correct usage of memoInstance involves
- * components like navbars/sidebars, which take props which don't change very often.
- *
- * You CAN use it with static "components" like footers, but you should probably
- * just use an element, e.g. `const footer = <div><p>my footer<p><div>` */
-export function memoInstance<Props extends PropsArg = any>(
-  component: SFC<Props>,
-  compare: (oldProps: Props, newProps: Props) => boolean = defaultCompare
-): SFC<Props> {
-  let firstRender = true;
-  let prevProps: Props | false = false;
-  let cached: VNode | null = null;
-
-  return (props: Props, children: Array<VNode> | null) => {
-    // this condition will take care of primitives (null === null, string === string, etc),
-    // so in compare() we know props are objects!
-    if (props !== prevProps || firstRender || children) {
-      let sameProps = false;
-      if (prevProps) sameProps = compare(prevProps, props);
-
-      if (!sameProps) {
-        cached = component(props, children);
-
-        // same props will have to be false on first render
-        if (firstRender) firstRender = false;
-      }
-      prevProps = props;
-    }
-    return cached;
-  };
+export interface BLazyConfig<Props> {
+  lazyComponent: () => Promise<{
+    default: MachineComponent<Props> | SFC<Props> | MemoComponent<Props>;
+  }>;
+  fallback?: VNode;
+  onError?: VNode;
+  timeout?: number;
 }
 
 /** MACHINE COMPONENTS */
@@ -212,8 +174,6 @@ export interface MachineSpec<
   id: DeriveIdFunction<Props> | string;
   initialContext: DeriveContextFunction<Props, ContextSchema>;
   initialState: StateSchema | DeriveInitialStateFunction<Props, StateSchema>;
-  // defaulting isLeaf to false is good
-  isLeaf?: boolean;
   // behavior
   onMount?: (context: ContextSchema) => void;
   onUnmount?: (context: ContextSchema, state: StateSchema) => void;

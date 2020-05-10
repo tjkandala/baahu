@@ -8,7 +8,7 @@ import {
 } from './main';
 import { b, ChildArg, VNode } from './createElement';
 import {
-  memoInstance,
+  memo,
   bLazy,
   createMachine,
   MachineComponent,
@@ -16,6 +16,7 @@ import {
   Effect,
   BaahuEvent,
   SFC,
+  BLazyConfig,
   DeriveIdFunction,
   DeriveContextFunction,
   DeriveInitialStateFunction,
@@ -25,7 +26,7 @@ import {
 export {
   mount,
   b,
-  memoInstance,
+  memo,
   bLazy,
   createMachine,
   createRouter,
@@ -37,6 +38,7 @@ export {
   Effect,
   BaahuEvent,
   SFC,
+  BLazyConfig,
   RouterSchema,
   RouterCallback,
   DeriveIdFunction,

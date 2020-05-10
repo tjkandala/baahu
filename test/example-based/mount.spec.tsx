@@ -4,7 +4,6 @@ import { createMachine } from '../../src/component';
 
 describe('mounting', () => {
   const TestMach = createMachine({
-    isLeaf: true,
     id: 'testRoot',
     initialContext: () => ({}),
     initialState: 'ready',
