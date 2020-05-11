@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { renderDOM } from './renderDOM';
-import { VNode, b, PropsArg } from './createElement';
+import { VNode, b, PropsArg, ChildArg } from './createElement';
 import {
   MachineComponent,
   SFC,
@@ -393,16 +393,17 @@ export function createRouter<Props extends PropsArg = any>(
 
   for (const key in routerSchema) {
     if (process.env.NODE_ENV !== 'production') {
-      if (key[0] !== '/') throw SyntaxError('routes should begin with /');
+      if (key[0] !== '*' && key[0] !== '/')
+        throw SyntaxError('routes should begin with /');
     }
 
     myTrieRouter.i(`${prefix}${key === '/' ? '' : key}`, routerSchema[key]);
   }
 
-  function routerComp(props: Props): VNode | null {
+  function routerComp(props: Props, children: ChildArg): VNode | null {
     const match = myTrieRouter.f(location.pathname);
     // checking for handler for js users. (h = handler, p = params/route params)
-    return match && match.h ? match.h(match.p, props) : null;
+    return match && match.h ? match.h(match.p, props, children) : null;
   }
 
   return routerComp;
@@ -489,5 +490,6 @@ export type RouterSchema<Props extends PropsArg = any> = {
 
 export type RouterCallback<Props extends PropsArg = any> = (
   params: Params,
-  props: Props
+  props: Props,
+  children: ChildArg
 ) => VNode;
