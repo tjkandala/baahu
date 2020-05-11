@@ -8,7 +8,8 @@ export function diff(
   oldVNode: VNode,
   newVNode: VNode | undefined | null,
   parentDom: HTMLElement | null,
-  nodeDepth: number
+  nodeDepth: number,
+  isSvg: boolean
 ): void {
   /** for machines not targeted, isLeaf, memo, static elements!
    * don't need to pass on dom (test it), same vnode. == for null/undefined
@@ -27,6 +28,11 @@ export function diff(
     return;
   }
 
+  // you can't exit the svg namespace, so the logic is simple.
+  // once you've reached an svg node, it and all of its descendants
+  // must be created with createElementNS()
+  isSvg = newVNode.t === 'svg' || isSvg;
+
   newVNode.h = nodeDepth;
 
   switch (oldVNode.x) {
@@ -35,7 +41,7 @@ export function diff(
         case VNodeKind.Element:
           if (oldVNode.t !== newVNode.t) {
             /** different tags can't represent the same node */
-            return replace(oldVNode, newVNode, parentDom, nodeDepth);
+            return replace(oldVNode, newVNode, parentDom, nodeDepth, isSvg);
           } else {
             /** most computation is done here. Both VNodes are ELEMENT_NODES and
              * have the same tag, so we must diff props (attributes) and children */
@@ -65,14 +71,16 @@ export function diff(
                 // asserting the type bc it'll only be null after
                 // createElement and before renderDOM. can't be null at diff
                 oldVNode.d as HTMLElement,
-                nodeDepth
+                nodeDepth,
+                isSvg
               );
             } else {
               diffChildren(
                 oldVNode.c,
                 newVNode.c,
                 oldVNode.d as HTMLElement,
-                nodeDepth
+                nodeDepth,
+                isSvg
               );
             }
 
@@ -83,7 +91,7 @@ export function diff(
           }
 
         default:
-          return replace(oldVNode, newVNode, parentDom, nodeDepth);
+          return replace(oldVNode, newVNode, parentDom, nodeDepth, isSvg);
       }
 
     case VNodeKind.Text:
@@ -97,7 +105,7 @@ export function diff(
           return;
 
         default:
-          return replace(oldVNode, newVNode, parentDom, nodeDepth);
+          return replace(oldVNode, newVNode, parentDom, nodeDepth, isSvg);
       }
 
     case VNodeKind.Machine:
@@ -106,12 +114,12 @@ export function diff(
           oldVNode.i !== newVNode.i && unmountMachine(oldVNode.i);
 
           // "children" of a machineVNode is one child
-          diff(oldVNode.c, newVNode.c, parentDom, nodeDepth + 1);
+          diff(oldVNode.c, newVNode.c, parentDom, nodeDepth + 1, isSvg);
           newVNode.d = newVNode.c.d;
           return;
 
         default:
-          return replace(oldVNode.c, newVNode, parentDom, nodeDepth);
+          return replace(oldVNode.c, newVNode, parentDom, nodeDepth, isSvg);
       }
 
     /**
@@ -133,7 +141,7 @@ export function diff(
 
           if (renderType.t === 'r') {
             // it already rendered on route change
-            diff(oldVNode.c, newVNode.c, parentDom, nodeDepth + 1);
+            diff(oldVNode.c, newVNode.c, parentDom, nodeDepth + 1, isSvg);
             newVNode.d = newVNode.c.d;
           } else if (
             oldVNode.t !== newVNode.t ||
@@ -144,7 +152,7 @@ export function diff(
             const vNode = b(newVNode.t, newVNode.a);
             newVNode.c = vNode;
             // diff
-            diff(oldVNode.c, newVNode.c, parentDom, nodeDepth + 1);
+            diff(oldVNode.c, newVNode.c, parentDom, nodeDepth + 1, isSvg);
             newVNode.d = newVNode.c.d;
           } else {
             // don't render. pass on the child.
@@ -154,7 +162,7 @@ export function diff(
           return;
 
         default:
-          return replace(oldVNode.c, newVNode, parentDom, nodeDepth);
+          return replace(oldVNode.c, newVNode, parentDom, nodeDepth, isSvg);
       }
   }
 }
@@ -163,7 +171,8 @@ function replace(
   oldVNode: VNode,
   newVNode: VNode,
   parentDom: HTMLElement | null,
-  nodeDepth: number
+  nodeDepth: number,
+  isSvg: boolean
 ): void {
   /**
    * what about replacing an element/text node with a machine?
@@ -177,7 +186,7 @@ function replace(
    * replace is called with the child of oldVNode
    */
 
-  const $new = renderDOM(newVNode, nodeDepth);
+  const $new = renderDOM(newVNode, nodeDepth, isSvg);
   if (parentDom) {
     // replaceWith isn't supported on old browsers
     // if (!oldVNode.d) {
@@ -275,7 +284,8 @@ function keyedDiffChildren(
   oldVChildren: VNode[],
   newVChildren: VNode[],
   parentDom: HTMLElement,
-  nodeDepth: number
+  nodeDepth: number,
+  isSvg: boolean
 ): undefined {
   /**
    * Common prefix and suffix optimization.
@@ -308,7 +318,7 @@ function keyedDiffChildren(
 
       $nextNode = oldEndNode.d;
 
-      diff(oldEndNode, newEndNode, parentDom, nodeDepth + 1);
+      diff(oldEndNode, newEndNode, parentDom, nodeDepth + 1, isSvg);
 
       oldEnd--;
       newEnd--;
@@ -325,7 +335,7 @@ function keyedDiffChildren(
     let newStartNode = newVChildren[newStart];
 
     while (oldStartNode.k === newStartNode.k) {
-      diff(oldStartNode, newStartNode, parentDom, nodeDepth + 1);
+      diff(oldStartNode, newStartNode, parentDom, nodeDepth + 1, isSvg);
 
       oldStart++;
       newStart++;
@@ -356,7 +366,7 @@ function keyedDiffChildren(
      */
 
     while (newStart <= newEnd) {
-      $node = renderDOM(newVChildren[newStart], nodeDepth + 1);
+      $node = renderDOM(newVChildren[newStart], nodeDepth + 1, isSvg);
 
       oldStart >= oldLen
         ? parentDom.appendChild($node)
@@ -482,7 +492,7 @@ function keyedDiffChildren(
 
           oldVNode = oldVChildren[indexInOldChildren];
 
-          diff(oldVNode, newVNode, parentDom, nodeDepth + 1);
+          diff(oldVNode, newVNode, parentDom, nodeDepth + 1, isSvg);
 
           if (newVNode.d) $nextNode = newVNode.d;
 
@@ -491,7 +501,7 @@ function keyedDiffChildren(
         case -1:
           // new node. this works for machine nodes as
           // well because renderDOM returns child
-          $node = renderDOM(newVNode, nodeDepth + 1);
+          $node = renderDOM(newVNode, nodeDepth + 1, isSvg);
 
           $nextNode
             ? parentDom.insertBefore($node, $nextNode)
@@ -506,7 +516,7 @@ function keyedDiffChildren(
 
           oldVNode = oldVChildren[indexInOldChildren];
 
-          diff(oldVNode, newVNode, parentDom, nodeDepth + 1);
+          diff(oldVNode, newVNode, parentDom, nodeDepth + 1, isSvg);
 
           if (newVNode.d) {
             $nextNode
@@ -535,7 +545,7 @@ function keyedDiffChildren(
         case -1:
           // new node. this works for machine nodes as
           // well because renderDOM returns child
-          $node = renderDOM(newVNode, nodeDepth + 1);
+          $node = renderDOM(newVNode, nodeDepth + 1, isSvg);
 
           $nextNode
             ? parentDom.insertBefore($node, $nextNode)
@@ -552,7 +562,7 @@ function keyedDiffChildren(
 
           oldVNode = oldVChildren[indexInOldChildren];
 
-          diff(oldVNode, newVNode, parentDom, nodeDepth + 1);
+          diff(oldVNode, newVNode, parentDom, nodeDepth + 1, isSvg);
 
           if (newVNode.d) $nextNode = newVNode.d;
 
@@ -652,7 +662,8 @@ function diffChildren(
   oldVChildren: VNode[],
   newVChildren: VNode[],
   parentDom: HTMLElement,
-  nodeDepth: number
+  nodeDepth: number,
+  isSvg: boolean
 ): void {
   let i = 0;
   const len = oldVChildren.length;
@@ -666,12 +677,12 @@ function diffChildren(
     oldVChild = oldVChildren[i];
     newVChild = newVChildren[i];
     // this will remove dom node if no newVChild
-    diff(oldVChild, newVChild, parentDom, nodeDepth + 1);
+    diff(oldVChild, newVChild, parentDom, nodeDepth + 1, isSvg);
   }
 
   /** This will only be executed if newVChildren is longer than oldVChildren */
   for (; i < newLen; i++) {
     newVChild = newVChildren[i];
-    parentDom.appendChild(renderDOM(newVChild, nodeDepth + 1));
+    parentDom.appendChild(renderDOM(newVChild, nodeDepth + 1, isSvg));
   }
 }

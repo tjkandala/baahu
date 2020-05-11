@@ -2,13 +2,21 @@ import { VNode, VNodeKind, b } from './createElement';
 import { renderType } from './machineRegistry';
 
 /** call this function with a VNode. it will recursively append DOM children until it reaches leaves */
-export function renderDOM(node: VNode, nodeDepth: number): HTMLElement | Text {
+export function renderDOM(
+  node: VNode,
+  nodeDepth: number,
+  isSvg: boolean
+): HTMLElement | Text {
   node.h = nodeDepth;
 
   switch (node.x) {
     case VNodeKind.Element:
+      isSvg = node.t === 'svg' || isSvg;
+
       // any saves bytes (useless checking of 'disabled in el')
-      const $el: any = document.createElement(node.t);
+      const $el: any = isSvg
+        ? document.createElementNS('http://www.w3.org/2000/svg', node.t)
+        : document.createElement(node.t);
 
       const attrs = node.a;
 
@@ -38,7 +46,7 @@ export function renderDOM(node: VNode, nodeDepth: number): HTMLElement | Text {
       // let child: HTMLElement | Text;
       for (let i = 0, len = kids.length; i < len; i++) {
         // child = renderDOM(kids[i]);
-        $el.appendChild(renderDOM(kids[i], nodeDepth + 1));
+        $el.appendChild(renderDOM(kids[i], nodeDepth + 1, isSvg));
       }
 
       node.d = $el;
@@ -51,7 +59,7 @@ export function renderDOM(node: VNode, nodeDepth: number): HTMLElement | Text {
       return node.d;
 
     case VNodeKind.Machine:
-      node.d = renderDOM(node.c, nodeDepth + 1) as HTMLElement;
+      node.d = renderDOM(node.c, nodeDepth + 1, isSvg) as HTMLElement;
       return node.d;
 
     case VNodeKind.Memo:
@@ -69,7 +77,7 @@ export function renderDOM(node: VNode, nodeDepth: number): HTMLElement | Text {
         node.c = b(node.t, node.a);
       }
       // if renderType was r, the vnode was already created in b()
-      node.d = renderDOM(node.c, nodeDepth + 1) as HTMLElement;
+      node.d = renderDOM(node.c, nodeDepth + 1, isSvg) as HTMLElement;
 
       return node.d;
   }
