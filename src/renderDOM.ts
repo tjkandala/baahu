@@ -5,7 +5,7 @@ import { renderType } from './machineRegistry';
 export function renderDOM(
   node: VNode,
   nodeDepth: number,
-  isSvg: boolean
+  isSvg: boolean = false
 ): HTMLElement | Text {
   node.h = nodeDepth;
 

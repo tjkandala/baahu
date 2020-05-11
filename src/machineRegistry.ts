@@ -7,7 +7,7 @@ export type MachineInstance = {
   /** state */
   st: string;
   /** context */
-  ctx: Record<string, any>;
+  x: Record<string, any>;
   /**
    * spec:
    * the spec is the object created by developers. it describes how the machine instance,

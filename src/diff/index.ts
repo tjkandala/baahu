@@ -9,7 +9,7 @@ export function diff(
   newVNode: VNode | undefined | null,
   parentDom: HTMLElement | null,
   nodeDepth: number,
-  isSvg: boolean
+  isSvg: boolean = false
 ): void {
   /** for machines not targeted, isLeaf, memo, static elements!
    * don't need to pass on dom (test it), same vnode. == for null/undefined
@@ -256,7 +256,7 @@ function unmountMachine(idToDelete: string) {
   const mInst = machineRegistry.get(idToDelete);
 
   if (mInst) {
-    mInst.s.onUnmount && mInst.s.onUnmount(mInst.ctx, mInst.st);
+    mInst.s.onUnmount && mInst.s.onUnmount(mInst.x, mInst.st);
 
     machineRegistry.delete(idToDelete);
   }

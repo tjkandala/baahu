@@ -60,7 +60,7 @@ function transitionMachines(
         const rootHandler = rootOn[eventType];
         if (
           rootHandler &&
-          (!rootHandler.cond || rootHandler.cond(machineInstance.ctx, event))
+          (!rootHandler.cond || rootHandler.cond(machineInstance.x, event))
         ) {
           // add to machinesThatTransitioned.
           // this will allow machines to rerender on events even
@@ -74,10 +74,10 @@ function transitionMachines(
 
           if (effects)
             if (typeof effects === 'function')
-              effects(machineInstance.ctx, event, machineInstance.id);
+              effects(machineInstance.x, event, machineInstance.id);
             else
               for (let i = 0; i < effects.length; i++)
-                effects[i](machineInstance.ctx, event, machineInstance.id);
+                effects[i](machineInstance.x, event, machineInstance.id);
 
           // take to next state if target
           if (rootHandler.target)
@@ -115,7 +115,7 @@ function transitionMachines(
 
           const cond = transitionHandler.cond;
 
-          if (!cond || cond(machineInstance.ctx, event)) {
+          if (!cond || cond(machineInstance.x, event)) {
             const targetState = transitionHandler.target;
             const effects = transitionHandler.effects;
 
@@ -129,10 +129,10 @@ function transitionMachines(
 
             if (effects)
               if (typeof effects === 'function')
-                effects(machineInstance.ctx, event, machineInstance.id);
+                effects(machineInstance.x, event, machineInstance.id);
               else
                 for (let i = 0; i < effects.length; i++)
-                  effects[i](machineInstance.ctx, event, machineInstance.id);
+                  effects[i](machineInstance.x, event, machineInstance.id);
           }
         }
       }
@@ -154,7 +154,7 @@ function transitionMachines(
         const rootHandler = rootOn[eventType];
         if (
           rootHandler &&
-          (!rootHandler.cond || rootHandler.cond(machineInstance.ctx, event))
+          (!rootHandler.cond || rootHandler.cond(machineInstance.x, event))
         ) {
           machinesThatTransitioned.set(
             machineInstance.id,
@@ -206,7 +206,7 @@ function transitionMachines(
 
           const cond = transitionHandler.cond;
 
-          if (!cond || cond(machineInstance.ctx, event)) {
+          if (!cond || cond(machineInstance.x, event)) {
             const targetState = transitionHandler.target;
             const effects = transitionHandler.effects;
 
@@ -242,7 +242,7 @@ function transitionMachines(
     let machineInstance: MachineInstance;
     while (i--) {
       machineInstance = allEffects[i][1];
-      allEffects[i][0](machineInstance.ctx, event, machineInstance.id);
+      allEffects[i][0](machineInstance.x, event, machineInstance.id);
 
       // don't delete, this is here for leaf node optimizations
       // machinesThatTransitioned.set(machineInstance.id, true);
@@ -272,7 +272,7 @@ function takeToNextState(
   let stdTargetState: string;
 
   if (typeof targetState === 'function')
-    stdTargetState = targetState(machineInstance.ctx, machineInstance.s);
+    stdTargetState = targetState(machineInstance.x, machineInstance.s);
   else stdTargetState = targetState;
 
   if (stdTargetState !== machineInstance.st) {
@@ -293,14 +293,10 @@ function takeToNextState(
        * */
 
       stateHandler.onExit &&
-        stateHandler.onExit(machineInstance.ctx, event, machineInstance.id);
+        stateHandler.onExit(machineInstance.x, event, machineInstance.id);
 
       nextStateHandler.onEntry &&
-        nextStateHandler.onEntry(
-          machineInstance.ctx,
-          event,
-          machineInstance.id
-        );
+        nextStateHandler.onEntry(machineInstance.x, event, machineInstance.id);
 
       machinesThatTransitioned.set(machineInstance.id, machineInstance.v.h!);
     } else {
@@ -362,7 +358,7 @@ export function emit(
     if (machInst) {
       const vNode: VNode | null = machInst.s.render(
         machInst.st,
-        machInst.ctx,
+        machInst.x,
         machInst.id,
         machInst.c
       );

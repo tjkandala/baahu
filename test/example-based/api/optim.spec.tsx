@@ -105,7 +105,7 @@ describe('optimizations', () => {
 
     expect(renders).toBe(2);
 
-    expect(inst?.ctx['first']).toBe(10);
+    expect(inst?.x['first']).toBe(10);
 
     expect($root.firstChild?.firstChild?.nodeValue).toBe('10');
 
@@ -130,7 +130,7 @@ describe('optimizations', () => {
 
     expect(secondVChildBefore === secondVChildAfter).toBe(true);
 
-    expect(inst?.ctx['first']).toBe(11);
+    expect(inst?.x['first']).toBe(11);
 
     expect($root.firstChild?.firstChild?.nodeValue).toBe('11');
 

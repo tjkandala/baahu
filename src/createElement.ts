@@ -267,7 +267,7 @@ export function b<Props extends PropsArg>(
           const newInstance = {
             id: instanceId,
             st: initialState,
-            ctx: initialContext,
+            x: initialContext,
             s: spec,
             v: vNode,
             c: kids,
@@ -295,7 +295,7 @@ export function b<Props extends PropsArg>(
             const kids = processChildren(children);
             const child = spec.render(
               existingInstance.st,
-              existingInstance.ctx,
+              existingInstance.x,
               existingInstance.id,
               kids
             );
