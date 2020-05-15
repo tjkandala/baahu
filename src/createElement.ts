@@ -112,7 +112,7 @@ export enum VNodeKind {
 // export type VNode = ElementVNode | TextVNode | MachineVNode | MemoVNode;
 export type VNode = ElementVNode | TextVNode | MachineVNode | MemoVNode;
 
-function createTextVNode(text: string): TextVNode {
+export function createTextVNode(text: string): TextVNode {
   return {
     x: VNodeKind.Text,
     t: null,

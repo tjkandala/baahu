@@ -35,12 +35,14 @@ export function memo<Props>(sfc: SFC<Props>): MemoComponent<Props> {
  * when called). also, might only be appropriate for route-level code-splitting.
  * work on resuable lazy
  */
-export function bLazy<Props>({
-  fallback,
-  timeout,
-  lazyComponent,
-  onError,
-}: BLazyConfig<Props>): SFC<Props> {
+export function bLazy<Props>(
+  lazyComponent: () => Promise<{
+    default: MachineComponent<Props> | SFC<Props> | MemoComponent<Props>;
+  }>,
+  fallback?: VNode,
+  timeout?: number,
+  onError?: VNode
+): SFC<Props> {
   let cache:
     | SFC<Props>
     | MachineComponent<Props>
@@ -103,15 +105,6 @@ export function bLazy<Props>({
       return b('div', null, b(cache, props, children));
     }
   };
-}
-
-export interface BLazyConfig<Props> {
-  lazyComponent: () => Promise<{
-    default: MachineComponent<Props> | SFC<Props> | MemoComponent<Props>;
-  }>;
-  fallback?: VNode;
-  onError?: VNode;
-  timeout?: number;
 }
 
 /** MACHINE COMPONENTS */

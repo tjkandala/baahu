@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { renderDOM } from './renderDOM';
-import { VNode, b, PropsArg, ChildArg } from './createElement';
+import { VNode, b, PropsArg, ChildArg, createTextVNode } from './createElement';
 import {
   MachineComponent,
   SFC,
@@ -64,7 +64,9 @@ function transitionMachines(
         ) {
           // add to machinesThatTransitioned.
           // this will allow machines to rerender on events even
-          // if they don't do anything ("listen" to events)
+          // if they don't do anything ("listen" to events).
+          // the cond will still allow machines to NOT rerender (like a list of machines
+          // of same type in which one machine cares about the event)
           machinesThatTransitioned.set(
             machineInstance.id,
             machineInstance.v.h!
@@ -356,12 +358,14 @@ export function emit(
     const machInst = machineRegistry.get(idNodeDepth[j][0]);
     // the machine instance may not exist anymore (if an ancestor node stopped rendering it, for example)
     if (machInst) {
-      const vNode: VNode | null = machInst.s.render(
+      let vNode: VNode | null = machInst.s.render(
         machInst.st,
         machInst.x,
         machInst.id,
         machInst.c
       );
+
+      if (vNode == null) vNode = createTextVNode('');
 
       // machine.v.c.h! -> vnode.h -> node depth
       diff(machInst.v.c, vNode, null, machInst.v.c.h!);
@@ -374,7 +378,7 @@ export function emit(
 export function createRouter<Props extends PropsArg = any>(
   routerSchema: RouterSchema<Props>,
   prefix = ''
-): SFC<Props> {
+): SFC<Props & { children?: any }> {
   if (process.env.NODE_ENV !== 'production') {
     if (typeof prefix !== 'string') throw TypeError('prefix must be a string');
   }
