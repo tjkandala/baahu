@@ -210,14 +210,8 @@ function takeToNextState(
       stateHandler.onExit &&
         allEffects.push([stateHandler.onExit, machineInstance]);
 
-      // stateHandler.onExit &&
-      //   stateHandler.onExit(machineInstance.x, event, machineInstance.id);
-
       nextStateHandler.onEntry &&
         allEffects.push([nextStateHandler.onEntry, machineInstance]);
-
-      // nextStateHandler.onEntry &&
-      //   nextStateHandler.onEntry(machineInstance.x, event, machineInstance.id);
 
       machinesThatTransitioned.set(machineInstance.id, machineInstance.v.h!);
     } else {
@@ -284,10 +278,10 @@ export function emit(
         machInst.c
       );
 
-      if (vNode == null) vNode = createTextVNode('');
+      // if (vNode == null) vNode = createTextVNode(''); save some bytes w/ short-circuit
 
       // machine.v.c.h! -> vnode.h -> node depth
-      diff(machInst.v.c, vNode, null, machInst.v.c.h!);
+      diff(machInst.v.c, vNode || createTextVNode(''), null, machInst.v.c.h!);
       machinesThatTransitioned.clear();
       machInst.v.c = vNode as VNode;
     }
