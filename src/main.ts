@@ -148,6 +148,9 @@ function transitionMachines(
      *  same effect function can be used for multiple machine instances */
     const allEffects: Array<[Effect, MachineInstance]> = [];
 
+    let i: number;
+    let l: number;
+
     for (const [, machineInstance] of machineRegistry) {
       // check if there is a catch all listener for this event (root-level "on")
       const rootOn = machineInstance.s.on;
@@ -169,8 +172,9 @@ function transitionMachines(
             if (typeof effects === 'function')
               allEffects.push([effects, machineInstance]);
             else {
-              let j = effects.length;
-              while (j--) allEffects.push([effects[j], machineInstance]);
+              i = 0;
+              l = effects.length;
+              while (i < l) allEffects.push([effects[i++], machineInstance]);
             }
 
           // take to next state if target
@@ -224,8 +228,10 @@ function transitionMachines(
               if (typeof effects === 'function')
                 allEffects.push([effects, machineInstance]);
               else {
-                let j = effects.length;
-                while (j--) allEffects.push([effects[j], machineInstance]);
+                // let j = effects.length;
+                i = 0;
+                l = effects.length;
+                while (i < l) allEffects.push([effects[i++], machineInstance]);
               }
 
             if (targetState)
@@ -240,11 +246,12 @@ function transitionMachines(
       }
     }
 
-    let i = allEffects.length;
+    i = 0;
+    l = allEffects.length;
     let machineInstance: MachineInstance;
-    while (i--) {
+    while (i < l) {
       machineInstance = allEffects[i][1];
-      allEffects[i][0](machineInstance.x, event, machineInstance.id);
+      allEffects[i++][0](machineInstance.x, event, machineInstance.id);
 
       // don't delete, this is here for leaf node optimizations
       // machinesThatTransitioned.set(machineInstance.id, true);
