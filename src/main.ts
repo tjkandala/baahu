@@ -14,7 +14,6 @@ import {
   MachineInstance,
   machinesThatTransitioned,
   renderType,
-  machineDuty,
 } from './machineRegistry';
 
 let isTransitioning = false;
@@ -296,7 +295,7 @@ export function emit(
 
       // machine.v.c.h! -> vnode.h -> node depth
       diff(machInst.v.c, vNode || createTextVNode(''), null, machInst.v.c.h!);
-      machineDuty();
+      machinesThatTransitioned.clear();
       machInst.v.c = vNode as VNode;
     }
   }
@@ -364,7 +363,7 @@ function newRoute(): void {
   const vNode: VNode | null = b(currentRootComponent, {});
 
   diff(currentVRoot, vNode, $root, 0);
-  machineDuty();
+  machinesThatTransitioned.clear();
   currentVRoot = vNode;
 }
 
@@ -407,7 +406,7 @@ export function mount(
 
   currentRootComponent = rootComponent;
   currentVRoot = vNode;
-  machineDuty();
+  machinesThatTransitioned.clear();
 
   return $root;
 }

@@ -1,6 +1,5 @@
 import { b, VNode, PropsArg } from './createElement';
 import { renderDOM } from './renderDOM';
-import { machineDuty } from './machineRegistry';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -85,8 +84,6 @@ export function bLazy<Props>(
             // 2 ops instead of one (replace), but shorter code!
             renderedFallback && fallback && fallback.d && fallback.d.remove();
             root.d?.appendChild($dom);
-
-            machineDuty();
           })
           .catch(() => {
             if (onError && root.d) {

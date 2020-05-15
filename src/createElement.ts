@@ -1,10 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MachineComponent, SFC, MemoComponent } from './component';
-import {
-  machineRegistry,
-  renderType,
-  machinesThatMounted,
-} from './machineRegistry';
+import { machineRegistry, renderType } from './machineRegistry';
 
 export type TagName = keyof HTMLElementTagNameMap;
 
@@ -230,8 +226,21 @@ export function b<Props extends PropsArg>(
               ? spec.initialState(mProps)
               : spec.initialState;
 
-          /** important */
-          machinesThatMounted.add(instanceId);
+          spec.onMount && spec.onMount(initialContext);
+
+          const stateHandler = spec.states[initialState];
+
+          if (process.env.NODE_ENV !== 'production') {
+            if (!stateHandler) {
+              throw new TypeError(
+                `Machine ${instanceId} does not specify behavior for state: ${initialState}`
+              );
+            }
+          }
+
+          /** call onEntry for initial state */
+          stateHandler.onEntry &&
+            stateHandler.onEntry(initialContext, { type: 'MOUNT' }, instanceId);
 
           const kids = processChildren(children);
           const child = spec.render(
