@@ -38,10 +38,10 @@ function transitionMachines(
   event: { type: string; [key: string]: any },
   target = '*'
 ): void {
-  const eventType = event.type;
-
   let i: number;
   let l: number;
+
+  const allEffects: Array<[Effect, MachineInstance]> = [];
 
   /**
    * logic for non-wildcard events (there is a named target)
@@ -55,99 +55,7 @@ function transitionMachines(
   if (target !== '*') {
     const machineInstance = machineRegistry.get(target);
 
-    if (machineInstance) {
-      // check if there is a catch all listener for this event (root-level "on")
-      const rootOn = machineInstance.s.on;
-
-      if (rootOn) {
-        const rootHandler = rootOn[eventType];
-        if (
-          rootHandler &&
-          (!rootHandler.cond || rootHandler.cond(machineInstance.x, event))
-        ) {
-          // add to machinesThatTransitioned.
-          // this will allow machines to rerender on events even
-          // if they don't do anything ("listen" to events).
-          // the cond will still allow machines to NOT rerender (like a list of machines
-          // of same type in which one machine cares about the event)
-          machinesThatTransitioned.set(
-            machineInstance.id,
-            machineInstance.v.h!
-          );
-
-          const effects = rootHandler.effects;
-
-          if (effects)
-            if (typeof effects === 'function')
-              effects(machineInstance.x, event, machineInstance.id);
-            else {
-              i = 0;
-              l = effects.length;
-              while (i < l)
-                effects[i++](machineInstance.x, event, machineInstance.id);
-            }
-
-          // take to next state if target
-          if (rootHandler.target)
-            takeToNextState(
-              rootHandler.target,
-              machineInstance,
-              rootHandler,
-              event
-            );
-        }
-      }
-
-      /** check if the machine has a handler/behavior spec
-       * for its current state (it has to if written in TS) */
-      const stateHandler = machineInstance.s.states[machineInstance.st];
-
-      /** for js users who may specify invalid states */
-      if (process.env.NODE_ENV !== 'production') {
-        if (!stateHandler) {
-          throw TypeError(
-            `The specified state handler for '${machineInstance.st}' does not exist on ${machineInstance.id}`
-          );
-        }
-      }
-
-      if (stateHandler.on) {
-        /** check if this machine listens to this eventType */
-        const transitionHandler = stateHandler.on[eventType];
-
-        if (transitionHandler) {
-          machinesThatTransitioned.set(
-            machineInstance.id,
-            machineInstance.v.h!
-          );
-
-          const cond = transitionHandler.cond;
-
-          if (!cond || cond(machineInstance.x, event)) {
-            const targetState = transitionHandler.target;
-            const effects = transitionHandler.effects;
-
-            if (targetState)
-              takeToNextState(
-                targetState,
-                machineInstance,
-                stateHandler,
-                event
-              );
-
-            if (effects)
-              if (typeof effects === 'function')
-                effects(machineInstance.x, event, machineInstance.id);
-              else {
-                i = 0;
-                l = effects.length;
-                while (i < l)
-                  effects[i++](machineInstance.x, event, machineInstance.id);
-              }
-          }
-        }
-      }
-    }
+    if (machineInstance) transitionMachine(machineInstance, event, allEffects);
   } else {
     /** high-level logic for wildcard events; check every machine to
      * see if it listens to this event in its current state. */
@@ -159,124 +67,113 @@ function transitionMachines(
      * batch all effects for each event for executing so that all machines will
      * have transitioned before "nested"/"ping pong" events work as expected!
      *  */
-    const allEffects: Array<[Effect, MachineInstance]> = [];
 
     for (const [, machineInstance] of machineRegistry) {
-      // check if there is a catch all listener for this event (root-level "on")
-      const rootOn = machineInstance.s.on;
+      transitionMachine(machineInstance, event, allEffects);
+    }
+  }
 
-      if (rootOn) {
-        const rootHandler = rootOn[eventType];
-        if (
-          rootHandler &&
-          (!rootHandler.cond || rootHandler.cond(machineInstance.x, event))
-        ) {
-          machinesThatTransitioned.set(
-            machineInstance.id,
-            machineInstance.v.h!
-          );
+  i = 0;
+  l = allEffects.length;
+  let machineInstance: MachineInstance;
+  while (i < l) {
+    machineInstance = allEffects[i][1];
+    allEffects[i++][0](machineInstance.x, event, machineInstance.id);
+  }
+}
 
-          const effects = rootHandler.effects;
+function transitionMachine(
+  machineInstance: MachineInstance,
+  event: { type: string; [key: string]: any },
+  allEffects: Array<[Effect, MachineInstance]> = []
+): void {
+  // check if there is a catch all listener for this event (root-level "on")
+  const rootOn = machineInstance.s.on;
 
-          if (effects)
-            if (typeof effects === 'function')
-              allEffects.push([effects, machineInstance]);
-            else {
-              i = 0;
-              l = effects.length;
-              while (i < l) allEffects.push([effects[i++], machineInstance]);
-            }
+  let i: number;
+  let l: number;
+  let t = event.type;
 
-          // take to next state if target
-          if (rootHandler.target)
-            takeToNextState(
-              rootHandler.target,
-              machineInstance,
-              rootHandler,
-              event
-            );
+  if (rootOn) {
+    /** check if this machine listens to this eventType */
+    const rootHandler = rootOn[t];
+    if (
+      rootHandler &&
+      (!rootHandler.cond || rootHandler.cond(machineInstance.x, event))
+    ) {
+      // add to machinesThatTransitioned.
+      // this will allow machines to rerender on events even
+      // if they don't do anything ("listen" to events).
+      // the cond will still allow machines to NOT rerender (like a list of machines
+      // of same type in which one machine cares about the event)
+      machinesThatTransitioned.set(machineInstance.id, machineInstance.v.h!);
+
+      const effects = rootHandler.effects;
+
+      if (effects)
+        if (typeof effects === 'function')
+          effects(machineInstance.x, event, machineInstance.id);
+        else {
+          i = 0;
+          l = effects.length;
+          while (i < l) allEffects.push([effects[i++], machineInstance]);
         }
-      }
 
-      /** check if this machine listens to this eventType */
-      const stateHandler = machineInstance.s.states[machineInstance.st];
+      // take to next state if target
+      if (rootHandler.target)
+        takeToNextState(
+          rootHandler.target,
+          machineInstance,
+          rootHandler,
+          allEffects
+        );
+    }
+  }
 
-      /** for js users who may specify invalid states */
-      if (process.env.NODE_ENV !== 'production') {
-        if (!stateHandler) {
-          throw TypeError(
-            `The specified state handler for '${machineInstance.st}' does not exist on ${machineInstance.id}`
+  /** check if the machine has a handler/behavior spec
+   * for its current state (it has to if written in TS) */
+  const stateHandler = machineInstance.s.states[machineInstance.st];
+
+  /** for js users who may specify invalid states */
+  if (process.env.NODE_ENV !== 'production') {
+    if (!stateHandler) {
+      throw TypeError(
+        `The specified state handler for '${machineInstance.st}' does not exist on ${machineInstance.id}`
+      );
+    }
+  }
+
+  if (stateHandler.on) {
+    /** check if this machine listens to this eventType */
+    const transitionHandler = stateHandler.on[t];
+
+    if (transitionHandler) {
+      machinesThatTransitioned.set(machineInstance.id, machineInstance.v.h!);
+
+      const cond = transitionHandler.cond;
+
+      if (!cond || cond(machineInstance.x, event)) {
+        const targetState = transitionHandler.target;
+        const effects = transitionHandler.effects;
+
+        if (targetState)
+          takeToNextState(
+            targetState,
+            machineInstance,
+            stateHandler,
+            allEffects
           );
-        }
-      }
 
-      if (stateHandler.on) {
-        /** check if this machine listens to this eventType */
-        const transitionHandler = stateHandler.on[eventType];
-
-        if (transitionHandler) {
-          machinesThatTransitioned.set(
-            machineInstance.id,
-            machineInstance.v.h!
-          );
-
-          const cond = transitionHandler.cond;
-
-          if (!cond || cond(machineInstance.x, event)) {
-            const targetState = transitionHandler.target;
-            const effects = transitionHandler.effects;
-
-            /**
-             * onMount and onUnmount are handled in createElement and diff. handle the
-             * state transitions (onExit of old state, onEntry of new state, effect array) here!
-             *
-             * Perform transitions (moving from state -> state, onExit, onEntry) first,
-             * then perform effects after all transitions + machines for this event!
-             */
-
-            if (effects)
-              if (typeof effects === 'function')
-                allEffects.push([effects, machineInstance]);
-              else {
-                i = 0;
-                l = effects.length;
-                while (i < l) allEffects.push([effects[i++], machineInstance]);
-              }
-
-            if (targetState)
-              takeToNextState(
-                targetState,
-                machineInstance,
-                stateHandler,
-                event
-              );
+        if (effects)
+          if (typeof effects === 'function')
+            effects(machineInstance.x, event, machineInstance.id);
+          else {
+            i = 0;
+            l = effects.length;
+            while (i < l) allEffects.push([effects[i++], machineInstance]);
           }
-        }
       }
     }
-
-    i = 0;
-    l = allEffects.length;
-    let machineInstance: MachineInstance;
-    while (i < l) {
-      machineInstance = allEffects[i][1];
-      allEffects[i++][0](machineInstance.x, event, machineInstance.id);
-
-      // don't delete, this is here for leaf node optimizations
-      // machinesThatTransitioned.set(machineInstance.id, true);
-    }
-
-    /**
-     * check if machines have transitioned. if so, rerender.
-     *
-     * decision: can make the optimization of only rendering 1 machine if only 1 machine
-     * transitioned, but i'm choosing to make global events rerender from the root.
-     *
-     * after all, if the event has a target in mind, users should specify it.
-     * globally emitted events should have predictable behavior
-     * (useful for POJO global stores, because you know that
-     * everything referencing the global store will be accurate)
-     */
   }
 }
 
@@ -284,7 +181,7 @@ function takeToNextState(
   targetState: string | DeriveTargetFunction<any, any>,
   machineInstance: MachineInstance,
   stateHandler: any,
-  event: { type: string; [key: string]: any }
+  allEffects: Array<[Effect, MachineInstance]> = []
 ): void {
   // check for target function. standardized to string
   let stdTargetState: string;
@@ -311,10 +208,16 @@ function takeToNextState(
        * */
 
       stateHandler.onExit &&
-        stateHandler.onExit(machineInstance.x, event, machineInstance.id);
+        allEffects.push([stateHandler.onExit, machineInstance]);
+
+      // stateHandler.onExit &&
+      //   stateHandler.onExit(machineInstance.x, event, machineInstance.id);
 
       nextStateHandler.onEntry &&
-        nextStateHandler.onEntry(machineInstance.x, event, machineInstance.id);
+        allEffects.push([nextStateHandler.onEntry, machineInstance]);
+
+      // nextStateHandler.onEntry &&
+      //   nextStateHandler.onEntry(machineInstance.x, event, machineInstance.id);
 
       machinesThatTransitioned.set(machineInstance.id, machineInstance.v.h!);
     } else {
