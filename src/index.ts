@@ -218,6 +218,7 @@ declare global {
     interface HTMLAttributes<RefType extends EventTarget = EventTarget>
       extends DOMAttributes<RefType> {
       key?: string | number;
+      ref?: (el: any) => void;
 
       // Standard HTML Attributes
       accept?: string;

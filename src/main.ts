@@ -14,6 +14,7 @@ import {
   MachineInstance,
   machinesThatTransitioned,
   renderType,
+  machineDuty,
 } from './machineRegistry';
 
 let isTransitioning = false;
@@ -97,6 +98,13 @@ function transitionMachine(
   if (rootOn) {
     /** check if this machine listens to this eventType */
     const rootHandler = rootOn[t];
+
+    /**
+     * NEXT TASK: refactoring to support shorthand string target
+     *
+     *
+     */
+
     if (
       rootHandler &&
       (!rootHandler.cond || rootHandler.cond(machineInstance.x, event))
@@ -176,6 +184,12 @@ function transitionMachine(
     }
   }
 }
+
+// type StateHandler = {
+//   on?: any;
+//   onEntry?: any;
+//   onExit?: any;
+// };
 
 function takeToNextState(
   targetState: string | DeriveTargetFunction<any, any>,
@@ -282,7 +296,7 @@ export function emit(
 
       // machine.v.c.h! -> vnode.h -> node depth
       diff(machInst.v.c, vNode || createTextVNode(''), null, machInst.v.c.h!);
-      machinesThatTransitioned.clear();
+      machineDuty();
       machInst.v.c = vNode as VNode;
     }
   }
@@ -350,7 +364,7 @@ function newRoute(): void {
   const vNode: VNode | null = b(currentRootComponent, {});
 
   diff(currentVRoot, vNode, $root, 0);
-  machinesThatTransitioned.clear();
+  machineDuty();
   currentVRoot = vNode;
 }
 
@@ -393,6 +407,7 @@ export function mount(
 
   currentRootComponent = rootComponent;
   currentVRoot = vNode;
+  machineDuty();
 
   return $root;
 }
