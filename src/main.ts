@@ -40,6 +40,9 @@ function transitionMachines(
 ): void {
   const eventType = event.type;
 
+  let i: number;
+  let l: number;
+
   /**
    * logic for non-wildcard events (there is a named target)
    *
@@ -77,9 +80,12 @@ function transitionMachines(
           if (effects)
             if (typeof effects === 'function')
               effects(machineInstance.x, event, machineInstance.id);
-            else
-              for (let i = 0; i < effects.length; i++)
-                effects[i](machineInstance.x, event, machineInstance.id);
+            else {
+              i = 0;
+              l = effects.length;
+              while (i < l)
+                effects[i++](machineInstance.x, event, machineInstance.id);
+            }
 
           // take to next state if target
           if (rootHandler.target)
@@ -132,9 +138,12 @@ function transitionMachines(
             if (effects)
               if (typeof effects === 'function')
                 effects(machineInstance.x, event, machineInstance.id);
-              else
-                for (let i = 0; i < effects.length; i++)
-                  effects[i](machineInstance.x, event, machineInstance.id);
+              else {
+                i = 0;
+                l = effects.length;
+                while (i < l)
+                  effects[i++](machineInstance.x, event, machineInstance.id);
+              }
           }
         }
       }
@@ -145,11 +154,12 @@ function transitionMachines(
 
     /** execute effects after transitions + onEntry + onExit.
      *  using an array of tuples instead of a map so that the
-     *  same effect function can be used for multiple machine instances */
+     *  same effect function can be used for multiple machine instances
+     *
+     * batch all effects for each event for executing so that all machines will
+     * have transitioned before "nested"/"ping pong" events work as expected!
+     *  */
     const allEffects: Array<[Effect, MachineInstance]> = [];
-
-    let i: number;
-    let l: number;
 
     for (const [, machineInstance] of machineRegistry) {
       // check if there is a catch all listener for this event (root-level "on")
@@ -228,7 +238,6 @@ function transitionMachines(
               if (typeof effects === 'function')
                 allEffects.push([effects, machineInstance]);
               else {
-                // let j = effects.length;
                 i = 0;
                 l = effects.length;
                 while (i < l) allEffects.push([effects[i++], machineInstance]);
