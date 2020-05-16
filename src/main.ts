@@ -14,6 +14,7 @@ import {
   MachineInstance,
   machinesThatTransitioned,
   renderType,
+  machineDuty,
 } from './machineRegistry';
 
 let isTransitioning = false;
@@ -95,31 +96,32 @@ function transitionMachine(
   let t = event.type;
 
   if (rootOn) {
-    /** check if this machine listens to this eventType */
-    const rootHandler = rootOn[t];
+    /** check if this machine always listens to this eventType */
+    const transitionHandler = rootOn[t];
 
     /**
      * NEXT TASK: refactoring to support shorthand string target
      *
+     * - common logic btwn root handler and state handler.
+     *    - if the whole handler is a string, go to next state and handle only onentry.
+     * actually, if the handler is a string, the current state may still have a transition.
+     *    - else, handle both onexit and onentry
      *
+     * tbh, just add this logic to "take to next state"
      */
 
     if (
-      rootHandler &&
-      (!rootHandler.cond || rootHandler.cond(machineInstance.x, event))
+      transitionHandler &&
+      (!transitionHandler.cond ||
+        transitionHandler.cond(machineInstance.x, event))
     ) {
-      // add to machinesThatTransitioned.
-      // this will allow machines to rerender on events even
-      // if they don't do anything ("listen" to events).
-      // the cond will still allow machines to NOT rerender (like a list of machines
-      // of same type in which one machine cares about the event)
       machinesThatTransitioned.set(machineInstance.id, machineInstance.v.h!);
 
-      const effects = rootHandler.effects;
+      const effects = transitionHandler.effects;
 
       if (effects)
         if (typeof effects === 'function')
-          effects(machineInstance.x, event, machineInstance.id);
+          allEffects.push([effects, machineInstance]);
         else {
           i = 0;
           l = effects.length;
@@ -127,11 +129,11 @@ function transitionMachine(
         }
 
       // take to next state if target
-      if (rootHandler.target)
+      if (transitionHandler.target)
         takeToNextState(
-          rootHandler.target,
+          transitionHandler.target,
           machineInstance,
-          rootHandler,
+          transitionHandler,
           allEffects
         );
     }
@@ -151,7 +153,7 @@ function transitionMachine(
   }
 
   if (stateHandler.on) {
-    /** check if this machine listens to this eventType */
+    /** check if this machine listens to this eventType in its current state */
     const transitionHandler = stateHandler.on[t];
 
     if (transitionHandler) {
@@ -173,7 +175,7 @@ function transitionMachine(
 
         if (effects)
           if (typeof effects === 'function')
-            effects(machineInstance.x, event, machineInstance.id);
+            allEffects.push([effects, machineInstance]);
           else {
             i = 0;
             l = effects.length;
@@ -295,7 +297,7 @@ export function emit(
 
       // machine.v.c.h! -> vnode.h -> node depth
       diff(machInst.v.c, vNode || createTextVNode(''), null, machInst.v.c.h!);
-      machinesThatTransitioned.clear();
+      machineDuty();
       machInst.v.c = vNode as VNode;
     }
   }
@@ -363,7 +365,7 @@ function newRoute(): void {
   const vNode: VNode | null = b(currentRootComponent, {});
 
   diff(currentVRoot, vNode, $root, 0);
-  machinesThatTransitioned.clear();
+  machineDuty();
   currentVRoot = vNode;
 }
 
@@ -406,7 +408,7 @@ export function mount(
 
   currentRootComponent = rootComponent;
   currentVRoot = vNode;
-  machinesThatTransitioned.clear();
+  machineDuty();
 
   return $root;
 }
