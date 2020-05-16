@@ -9,14 +9,16 @@ export function renderDOM(
 ): HTMLElement | Text {
   node.h = nodeDepth;
 
+  let doc = document; // helps w/ minification
+
   switch (node.x) {
     case VNodeKind.E:
       isSvg = node.t === 'svg' || isSvg;
 
       // any saves bytes (useless checking of 'disabled in el')
       const $el: any = isSvg
-        ? document.createElementNS('http://www.w3.org/2000/svg', node.t)
-        : document.createElement(node.t);
+        ? doc.createElementNS('http://www.w3.org/2000/svg', node.t)
+        : doc.createElement(node.t);
 
       const attrs = node.a;
 
@@ -54,7 +56,7 @@ export function renderDOM(
       return $el;
 
     case VNodeKind.T:
-      node.d = document.createTextNode(node.a.n);
+      node.d = doc.createTextNode(node.a.n);
 
       return node.d;
 

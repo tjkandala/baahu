@@ -56,8 +56,8 @@ export function diff(
              *
              * most of the time, call diffChildren */
 
-            const firstOldChild = oldVNode.c[0];
-            const firstNewChild = newVNode.c[0];
+            const firstOldChild = oldVNode.c[0],
+              firstNewChild = newVNode.c[0];
 
             if (
               firstOldChild &&
@@ -287,25 +287,25 @@ function keyedDiffChildren(
   nodeDepth: number,
   isSvg: boolean
 ): undefined {
+  let oldStart = 0,
+    newStart = 0,
+    oldLen = oldVChildren.length,
+    oldEnd = oldLen - 1,
+    newEnd = newVChildren.length - 1,
+    $node: HTMLElement | Text | ChildNode | undefined,
+    $nextNode: HTMLElement | Text | ChildNode | null | undefined = undefined,
+    oldVNode: VNode,
+    newVNode: VNode,
+    indexInOldChildren: number,
+    indexInNewChildren: number | undefined,
+    pos = -1,
+    newChildrenLeft: number;
+
   /**
    * Common prefix and suffix optimization.
    * Iterate over old children and new children simultaneously from both sides,
    * patching nodes in place when keys are equal.
    */
-  let oldStart = 0;
-  let newStart = 0;
-
-  let oldLen = oldVChildren.length;
-
-  let oldEnd = oldLen - 1;
-  let newEnd = newVChildren.length - 1;
-
-  let $node: HTMLElement | Text | ChildNode | undefined;
-  let $nextNode: HTMLElement | Text | ChildNode | null | undefined = undefined;
-
-  let oldVNode: VNode;
-  let newVNode: VNode;
-
   outer: while (true) {
     // check common suffix
     let oldEndNode = oldVChildren[oldEnd];
@@ -331,8 +331,8 @@ function keyedDiffChildren(
     // exhausted common suffix
 
     // check common prefix
-    let oldStartNode = oldVChildren[oldStart];
-    let newStartNode = newVChildren[newStart];
+    let oldStartNode = oldVChildren[oldStart],
+      newStartNode = newVChildren[newStart];
 
     while (oldStartNode.k === newStartNode.k) {
       diff(oldStartNode, newStartNode, parentDom, nodeDepth + 1, isSvg);
@@ -403,10 +403,10 @@ function keyedDiffChildren(
     return;
   }
 
-  let newChildrenLeft = newEnd - newStart + 1;
-  const sources = new Int32Array(newChildrenLeft);
+  newChildrenLeft = newEnd - newStart + 1;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const keyIndex = new Map<any, number>();
+  const keyIndex = new Map<any, number>(),
+    sources = new Int32Array(newChildrenLeft);
 
   /** Iterate over remaining newChildren (left to right),
    * storing each child's pos/index (in the new array) by its key
@@ -417,14 +417,10 @@ function keyedDiffChildren(
    */
   for (let i = 0; i < newChildrenLeft; i++) {
     // newStart is offset between 'sources' and actual new children array
-    const indexInNewChildren = i + newStart;
+    indexInNewChildren = i + newStart;
     sources[i] = -1;
     keyIndex.set(newVChildren[indexInNewChildren].k, indexInNewChildren);
   }
-
-  let indexInOldChildren: number;
-  let indexInNewChildren: number | undefined;
-  let pos = -1;
 
   /** -2 for patch in place, -1 for mount, any other value for move */
   let actionAtIndex: number;

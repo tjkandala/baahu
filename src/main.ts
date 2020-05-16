@@ -91,9 +91,9 @@ function transitionMachine(
   // check if there is a catch all listener for this event (root-level "on")
   const rootOn = machineInstance.s.on;
 
-  let i: number;
-  let l: number;
-  let t = event.type;
+  let i: number,
+    l: number,
+    t = event.type;
 
   if (rootOn) {
     /** check if this machine always listens to this eventType */
