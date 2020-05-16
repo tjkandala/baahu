@@ -10,7 +10,7 @@ export function renderDOM(
   node.h = nodeDepth;
 
   switch (node.x) {
-    case VNodeKind.Element:
+    case VNodeKind.E:
       isSvg = node.t === 'svg' || isSvg;
 
       // any saves bytes (useless checking of 'disabled in el')
@@ -53,16 +53,16 @@ export function renderDOM(
 
       return $el;
 
-    case VNodeKind.Text:
+    case VNodeKind.T:
       node.d = document.createTextNode(node.a.n);
 
       return node.d;
 
-    case VNodeKind.Machine:
+    case VNodeKind.M:
       node.d = renderDOM(node.c, nodeDepth + 1, isSvg) as HTMLElement;
       return node.d;
 
-    case VNodeKind.Memo:
+    case VNodeKind.O:
       /**
        * the following code should be run from diffChildren (keyed or unkeyed)
        * (when a new node is created at this position), or replace() from diff()

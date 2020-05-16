@@ -36,7 +36,7 @@ let $root: HTMLElement;
  */
 
 function transitionMachines(
-  event: { type: string; [key: string]: any },
+  event: { type: string | number; [key: string]: any },
   target = '*'
 ): void {
   let i: number;
@@ -85,7 +85,7 @@ function transitionMachines(
 
 function transitionMachine(
   machineInstance: MachineInstance,
-  event: { type: string; [key: string]: any },
+  event: { type: string | number; [key: string]: any },
   allEffects: Array<[Effect, MachineInstance]> = []
 ): void {
   // check if there is a catch all listener for this event (root-level "on")
@@ -241,7 +241,7 @@ function takeToNextState(
 }
 
 export function emit(
-  event: { type: string; [key: string]: any },
+  event: { type: string | number; [key: string]: any },
   target: string = '*'
 ): void {
   // make sure to set this for free 'memo' type optimizations for machines!

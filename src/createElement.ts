@@ -34,7 +34,7 @@ export type Props = {
 
 type TextVNode = {
   /** Kind of vNode */
-  x: VNodeKind.Text;
+  x: VNodeKind.T;
   /** tag. used for element nodes */
   t: null;
   /** key */
@@ -55,7 +55,7 @@ type TextVNode = {
 };
 
 export type ElementVNode = {
-  x: VNodeKind.Element;
+  x: VNodeKind.E;
   t: string;
   k: string | number | null;
   /** attributes */
@@ -70,7 +70,7 @@ export type ElementVNode = {
 };
 
 export type MachineVNode = {
-  x: VNodeKind.Machine;
+  x: VNodeKind.M;
   t: null;
   k: string | number | null;
   a: null;
@@ -86,7 +86,7 @@ export type MachineVNode = {
 
 // for functions wrapped w/ memo (make them rerender on global events!)
 export type MemoVNode = {
-  x: VNodeKind.Memo;
+  x: VNodeKind.O;
   /** i of a lazyvnode is the functional component */
   t: SFC;
   k: string | number | null;
@@ -103,14 +103,14 @@ export type MemoVNode = {
 /** unfortunately, i had to make this enum less readable bc the minifier wasn't doing the trick */
 export enum VNodeKind {
   /** ELEMENT_NODE */
-  Element,
+  E,
   /** TEXT_NODE */
-  Text,
+  T,
 
   /** MACHINE_NODE */
-  Machine,
+  M,
   // /** LAZY_NODE (functions) */
-  Memo,
+  O,
 }
 
 // export type VNode = ElementVNode | TextVNode | MachineVNode | MemoVNode;
@@ -118,7 +118,7 @@ export type VNode = ElementVNode | TextVNode | MachineVNode | MemoVNode;
 
 export function createTextVNode(text: string): TextVNode {
   return {
-    x: VNodeKind.Text,
+    x: VNodeKind.T,
     t: null,
     k: null,
     a: {
@@ -196,7 +196,7 @@ export function b<Props extends PropsArg>(
     /** HTML element */
     case 'string':
       return {
-        x: VNodeKind.Element,
+        x: VNodeKind.E,
         k: props && props.key ? props.key : null,
         t: type,
         a: props || null,
@@ -257,7 +257,7 @@ export function b<Props extends PropsArg>(
           );
 
           const vNode: MachineVNode = {
-            x: VNodeKind.Machine,
+            x: VNodeKind.M,
             t: null,
             // can't just check for truthiness, or 0
             // becomes a null key
@@ -307,7 +307,7 @@ export function b<Props extends PropsArg>(
             );
 
             const vNode: MachineVNode = {
-              x: VNodeKind.Machine,
+              x: VNodeKind.M,
               t: null,
               // can't just check for truthiness, or 0
               // becomes a null key
@@ -344,7 +344,7 @@ export function b<Props extends PropsArg>(
             : createTextVNode('');
 
         const memoVNode: MemoVNode = {
-          x: VNodeKind.Memo,
+          x: VNodeKind.O,
           t: sfc,
           // can't just check for truthiness, or 0
           // becomes a null key

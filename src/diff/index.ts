@@ -19,7 +19,7 @@ export function diff(
   /** there is no node in the new tree corresponding
    * to the old tree, so remove node */
   if (!newVNode) {
-    if (oldVNode.x === VNodeKind.Machine) {
+    if (oldVNode.x === VNodeKind.M) {
       oldVNode.c.d && oldVNode.c.d.remove();
     } else {
       oldVNode.d && oldVNode.d.remove();
@@ -36,9 +36,9 @@ export function diff(
   newVNode.h = nodeDepth;
 
   switch (oldVNode.x) {
-    case VNodeKind.Element:
+    case VNodeKind.E:
       switch (newVNode.x) {
-        case VNodeKind.Element:
+        case VNodeKind.E:
           if (oldVNode.t !== newVNode.t) {
             /** different tags can't represent the same node */
             return replace(oldVNode, newVNode, parentDom, nodeDepth, isSvg);
@@ -94,9 +94,9 @@ export function diff(
           return replace(oldVNode, newVNode, parentDom, nodeDepth, isSvg);
       }
 
-    case VNodeKind.Text:
+    case VNodeKind.T:
       switch (newVNode.x) {
-        case VNodeKind.Text:
+        case VNodeKind.T:
           if (oldVNode.a.n === newVNode.a.n) newVNode.d = oldVNode.d;
           else {
             oldVNode.d && (oldVNode.d.nodeValue = newVNode.a.n);
@@ -108,9 +108,9 @@ export function diff(
           return replace(oldVNode, newVNode, parentDom, nodeDepth, isSvg);
       }
 
-    case VNodeKind.Machine:
+    case VNodeKind.M:
       switch (newVNode.x) {
-        case VNodeKind.Machine:
+        case VNodeKind.M:
           oldVNode.i !== newVNode.i && unmountMachine(oldVNode.i);
 
           // "children" of a machineVNode is one child
@@ -127,9 +127,9 @@ export function diff(
      * without wrapping in a div. just store parent dom on the lazy node. when fallback timeout
      * or import comes in, replace the placeholder text node using parent.replaceChild(import/fallback, placeholder)
      */
-    case VNodeKind.Memo:
+    case VNodeKind.O:
       switch (newVNode.x) {
-        case VNodeKind.Memo:
+        case VNodeKind.O:
           /**
            * all the reasons that a memo component should rerender:
            * - the functions are different.
@@ -231,7 +231,7 @@ export function shouldRender<Props extends PropsArg = any>(
  * of this node */
 function safelyRemoveVNode(node: VNode) {
   switch (node.x) {
-    case VNodeKind.Machine: {
+    case VNodeKind.M: {
       // we found a machine to unmount
       unmountMachine(node.i);
       // keep looking for machine desc.
@@ -239,7 +239,7 @@ function safelyRemoveVNode(node: VNode) {
       return;
     }
 
-    case VNodeKind.Element: {
+    case VNodeKind.E: {
       // keep looking for machine desc.
       let i = node.c.length;
       while (i--) safelyRemoveVNode(node.c[i]);
@@ -389,7 +389,7 @@ function keyedDiffChildren(
     while (oldStart <= oldEnd) {
       oldVNode = oldVChildren[oldStart];
 
-      oldVNode.x === VNodeKind.Machine
+      oldVNode.x === VNodeKind.M
         ? oldVNode.c.d!.remove()
         : oldVNode.d!.remove();
       // we can assert that dom exists because it is only null before "renderDOM",
@@ -447,7 +447,7 @@ function keyedDiffChildren(
       pos = pos < indexInNewChildren ? indexInNewChildren : 99999999;
       sources[indexInNewChildren - newStart] = i;
     } else {
-      oldVNode.x === VNodeKind.Machine
+      oldVNode.x === VNodeKind.M
         ? oldVNode.c.d!.remove()
         : oldVNode.d!.remove();
       // we can assert that dom exists because it is only null before "renderDOM",
