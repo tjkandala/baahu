@@ -587,23 +587,22 @@ function keyedDiffChildren(
  * but that's irrelevant here because the values represent indices (min 0)
  */
 export function markLIS(sources: Int32Array): Int32Array {
-  const n = sources.length;
-  /** The value at each index i is the index (in the sources array)
-   * of the immediate predecessor in the longest increasing subsequence that ends with sources[i].
-   * i.e. sources[predecessors[i]] directly precedes sources[i] in an increasing subsequence  */
-  const predecessors = new Int32Array(n);
-  /** Length is n + 1 bc we skip index 0.
-   * The value at each index i is the index in sources array of the
-   * (smallest) last member of an increasing subsequence of length i
-   */
-  const indices = new Int32Array(n + 1);
-
-  let length = 0;
-  let lo: number;
-  let hi: number;
-  let mid: number;
-  let newLength: number;
-  let i: number;
+  let n = sources.length,
+    /** The value at each index i is the index (in the sources array)
+     * of the immediate predecessor in the longest increasing subsequence that ends with sources[i].
+     * i.e. sources[predecessors[i]] directly precedes sources[i] in an increasing subsequence  */
+    predecessors = new Int32Array(n),
+    /** Length is n + 1 bc we skip index 0.
+     * The value at each index i is the index in sources array of the
+     * (smallest) last member of an increasing subsequence of length i
+     */
+    indices = new Int32Array(n + 1),
+    length = 0,
+    lo: number,
+    hi: number,
+    mid: number,
+    newLength: number,
+    i: number;
 
   for (i = 0; i < n; i++) {
     const num = sources[i];
@@ -631,8 +630,8 @@ export function markLIS(sources: Int32Array): Int32Array {
   }
 
   // backtracking to mark lis a copy of the sources array
-  const markedLIS = Int32Array.from(sources);
-  let k = indices[length];
+  let markedLIS = Int32Array.from(sources),
+    k = indices[length];
   for (i = 0; i < length; i++) {
     markedLIS[k] = -2;
     k = predecessors[k];
@@ -661,12 +660,11 @@ function diffChildren(
   nodeDepth: number,
   isSvg: boolean
 ): void {
-  let i = 0;
-  const len = oldVChildren.length;
-  let newLen = newVChildren.length;
-
-  let oldVChild: VNode;
-  let newVChild: VNode;
+  let i = 0,
+    len = oldVChildren.length,
+    newLen = newVChildren.length,
+    oldVChild: VNode,
+    newVChild: VNode;
 
   /** This will automatically delete removed children, bc newVChildren[i] will be undefined */
   for (; i < len; i++) {

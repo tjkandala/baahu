@@ -43,18 +43,18 @@ export class RouTrie<T = () => unknown> {
 
   /** insert */
   i(path: string, handler: T): void {
-    let node = this.r;
-    const routes = path[0] === '/' ? path.slice(1).split('/') : path.split('/');
-    /** have to use this placeholder node bc typescript
-     * can't ensure that a node exists in children even
-     * after checking node.children.has(key)! */
-    let nextNode: RTNode<T> | undefined;
-    /** variable to hold first char to check is route is named/a wildcard */
-    let prefix: string;
-    /** holds each "subroute"; each element of the resulting routes array */
-    let route: string;
-    let i: number;
-    let paramName: string;
+    let node = this.r,
+      routes = path[0] === '/' ? path.slice(1).split('/') : path.split('/'),
+      /** have to use this placeholder node bc typescript
+       * can't ensure that a node exists in children even
+       * after checking node.children.has(key)! */
+      nextNode: RTNode<T> | undefined,
+      /** variable to hold first char to check is route is named/a wildcard */
+      prefix: string,
+      /** holds each "subroute"; each element of the resulting routes array */
+      route: string,
+      i: number,
+      paramName: string;
 
     // default route logic: root handler. don't need to
     // check for length; * has to be wildcard
@@ -114,17 +114,17 @@ export class RouTrie<T = () => unknown> {
     const cached = this.c.get(path);
     if (cached) return cached;
 
-    let node = this.r;
-    const routes = path[0] === '/' ? path.slice(1).split('/') : path.split('/');
-    /** have to use this placeholder node bc typescript
-     * can't ensure that a node exists in children even
-     * after checking node.children.has(key)! */
-    let nextNode: RTNode<T> | undefined;
-    /** holds each "subroot", each element of the resulting routes array */
-    let route: string;
-    let i: number;
-    const params: Params = {};
-    let result: { h: T; p: Params };
+    let node = this.r,
+      routes = path[0] === '/' ? path.slice(1).split('/') : path.split('/'),
+      /** have to use this placeholder node bc typescript
+       * can't ensure that a node exists in children even
+       * after checking node.children.has(key)! */
+      nextNode: RTNode<T> | undefined,
+      /** holds each "subroot", each element of the resulting routes array */
+      route: string,
+      i: number,
+      params: Params = {},
+      result: { h: T; p: Params };
 
     // TODO: try/catch for decodeURIComponent (for malformed uris, w/ % not followed by 2 digits)
     // ...might not be important tho? that's not an encoded route!
