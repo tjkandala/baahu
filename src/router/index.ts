@@ -31,17 +31,19 @@ export type Params = {
 };
 
 export class RouTrie<T = () => unknown> {
-  root: RTNode<T>;
-  cache: Map<string, { h: T; p: Params }>;
+  /** root */
+  r: RTNode<T>;
+  /** cache */
+  c: Map<string, { h: T; p: Params }>;
 
   constructor() {
-    this.root = new RTNode();
-    this.cache = new Map();
+    this.r = new RTNode();
+    this.c = new Map();
   }
 
   /** insert */
   i(path: string, handler: T): void {
-    let node = this.root;
+    let node = this.r;
     const routes = path[0] === '/' ? path.slice(1).split('/') : path.split('/');
     /** have to use this placeholder node bc typescript
      * can't ensure that a node exists in children even
@@ -57,7 +59,7 @@ export class RouTrie<T = () => unknown> {
     // default route logic: root handler. don't need to
     // check for length; * has to be wildcard
     if (routes[0] === '*') {
-      this.root.h = handler;
+      this.r.h = handler;
       return;
     }
 
@@ -109,10 +111,10 @@ export class RouTrie<T = () => unknown> {
 
   /** find */
   f(path: string): { h: T; p: Params } | undefined {
-    const cached = this.cache.get(path);
+    const cached = this.c.get(path);
     if (cached) return cached;
 
-    let node = this.root;
+    let node = this.r;
     const routes = path[0] === '/' ? path.slice(1).split('/') : path.split('/');
     /** have to use this placeholder node bc typescript
      * can't ensure that a node exists in children even
@@ -147,9 +149,9 @@ export class RouTrie<T = () => unknown> {
           return node.h ? { h: node.h, p: params } : void 0;
         } else {
           // if there isn't a nested wildcard, check if there is a default wildcard
-          return this.root.h
+          return this.r.h
             ? {
-                h: this.root.h,
+                h: this.r.h,
                 p: {
                   wildcard: decodeURIComponent(
                     path[0] === '/' ? path.slice(1) : path
@@ -165,7 +167,7 @@ export class RouTrie<T = () => unknown> {
 
     if (node.h) {
       result = { h: node.h, p: params };
-      this.cache.size < 10000 && this.cache.set(path, result);
+      this.c.size < 10000 && this.c.set(path, result);
       return result;
     } else return void 0;
   }

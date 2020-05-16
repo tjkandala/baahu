@@ -1,26 +1,26 @@
-import { b, createMachine, mount, emit } from '../../../src';
+import { b, machine, mount, emit } from '../../../src';
 import { machineRegistry } from '../../../src/machineRegistry';
 
 describe('conditional rendering', () => {
   let $root = document.body;
 
   test('one conditionally rendered element in div', () => {
-    const Toggle = createMachine<any>({
+    const Toggle = machine<any>({
       id: 'toggle',
-      initialState: 'even',
-      initialContext: () => ({}),
-      states: {
+      initial: 'even',
+      context: () => ({}),
+      when: {
         even: {
           on: {
             TOGGLE: {
-              target: 'odd',
+              to: 'odd',
             },
           },
         },
         odd: {
           on: {
             TOGGLE: {
-              target: 'even',
+              to: 'even',
             },
           },
         },
@@ -53,22 +53,22 @@ describe('conditional rendering', () => {
   });
 
   test('two conditionally rendered elements in div', () => {
-    const Toggle = createMachine<any>({
+    const Toggle = machine<any>({
       id: 'toggle',
-      initialState: 'even',
-      initialContext: () => ({}),
-      states: {
+      initial: 'even',
+      context: () => ({}),
+      when: {
         even: {
           on: {
             TOGGLE: {
-              target: 'odd',
+              to: 'odd',
             },
           },
         },
         odd: {
           on: {
             TOGGLE: {
-              target: 'even',
+              to: 'even',
             },
           },
         },

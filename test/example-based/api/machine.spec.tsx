@@ -1,7 +1,7 @@
-// TODO: computed id + targeted events (this can be combined into one good test!)
+// TODO: computed id + toed events (this can be combined into one good test!)
 // TOOD: initial context? may just combine it with first test
 
-import { SFC, createMachine } from '../../../src/component';
+import { SFC, machine } from '../../../src/component';
 import { b, emit, linkTo, mount } from '../../../src';
 
 describe('machine components', () => {
@@ -10,11 +10,11 @@ describe('machine components', () => {
   // TODO: recursive machines
 
   test('constructor works', () => {
-    const MyMach = createMachine<{ name: string }>({
+    const MyMach = machine<{ name: string }>({
       id: 'myMach',
-      initialContext: () => ({}),
-      initialState: 'loading',
-      states: {
+      context: () => ({}),
+      initial: 'loading',
+      when: {
         loading: {},
       },
       render: () => (
@@ -42,22 +42,22 @@ describe('machine components', () => {
     type State = 'sleeping' | 'eating';
     type Event = { type: 'WAKE_UP' } | { type: 'STOMACH_FILLED' };
 
-    const ReusableAnimalMachine = createMachine<Props, State, Event>({
+    const ReusableAnimalMachine = machine<Props, State, Event>({
       id: props => `${props.species}-machine`,
-      initialContext: () => ({}),
-      initialState: 'sleeping',
-      states: {
+      context: () => ({}),
+      initial: 'sleeping',
+      when: {
         sleeping: {
           on: {
             WAKE_UP: {
-              target: 'eating',
+              to: 'eating',
             },
           },
         },
         eating: {
           on: {
             STOMACH_FILLED: {
-              target: 'sleeping',
+              to: 'sleeping',
             },
           },
         },
@@ -109,11 +109,11 @@ describe('machine components', () => {
     const intState = ['even', 'odd'] as const;
     type IntState = typeof intState[number];
 
-    const IntMachine = createMachine<{ num: number }, IntState>({
+    const IntMachine = machine<{ num: number }, IntState>({
       id: ({ num }) => `int-${num}`,
-      initialState: ({ num }) => (num % 2 === 0 ? 'even' : 'odd'),
-      initialContext: () => ({}),
-      states: {
+      initial: ({ num }) => (num % 2 === 0 ? 'even' : 'odd'),
+      context: () => ({}),
+      when: {
         even: {},
         odd: {},
       },
@@ -139,33 +139,33 @@ describe('machine components', () => {
   });
 
   test('can replace machine nodes with other nodes (+ vice-versa)', () => {
-    const Item = createMachine({
+    const Item = machine({
       id: 'item',
-      initialContext: ({ todo }) => ({ todo: todo }),
-      initialState: 'default',
-      states: {
+      context: ({ todo }) => ({ todo: todo }),
+      initial: 'default',
+      when: {
         default: {},
       },
       render: (_s, ctx) => <p>{ctx.todo.todo}</p>,
     });
 
-    const Toggle = createMachine<any, any, any, any>({
+    const Toggle = machine<any, any, any, any>({
       id: 'toggle',
-      initialState: 'even',
-      initialContext: () => ({}),
-      states: {
+      initial: 'even',
+      context: () => ({}),
+      when: {
         even: {
           on: {
             TOGGLE: {
               // effects: () => alert("toggled"),
-              target: 'odd',
+              to: 'odd',
             },
           },
         },
         odd: {
           on: {
             TOGGLE: {
-              target: 'even',
+              to: 'even',
             },
           },
         },

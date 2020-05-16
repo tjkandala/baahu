@@ -1,5 +1,5 @@
 import { memo } from '../../../src/component';
-import { b, mount, createMachine, VNode, emit } from '../../../src';
+import { b, mount, machine, VNode, emit } from '../../../src';
 import { machineRegistry } from '../../../src/machineRegistry';
 import { shouldRender } from '../../../src/diff/index';
 import { ElementVNode } from '../../../src/createElement';
@@ -65,18 +65,18 @@ describe('optimizations', () => {
       return <p>{count}</p>;
     });
 
-    const Mach = createMachine<{}>({
+    const Mach = machine<{}>({
       id: 'mach',
-      initialState: 'default',
-      initialContext: () => ({
+      initial: 'default',
+      context: () => ({
         first: 10,
         second: 22,
       }),
-      states: {
+      when: {
         default: {
           on: {
             INC_FIRST: {
-              effects: ctx => (ctx.first = ctx.first + 1),
+              do: ctx => (ctx.first = ctx.first + 1),
             },
           },
         },

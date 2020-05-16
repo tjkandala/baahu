@@ -256,7 +256,7 @@ function unmountMachine(idToDelete: string) {
   const mInst = machineRegistry.get(idToDelete);
 
   if (mInst) {
-    mInst.s.onUnmount && mInst.s.onUnmount(mInst.x, mInst.st);
+    mInst.s.unmount && mInst.s.unmount(mInst.x, mInst.st);
 
     machineRegistry.delete(idToDelete);
   }

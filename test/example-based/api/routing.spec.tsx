@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { RouTrie } from '../../../src/router';
-import { SFC, createMachine } from '../../../src/component';
+import { SFC, machine } from '../../../src/component';
 import { b, createRouter, linkTo, mount } from '../../../src/index';
 import { machineRegistry } from '../../../src/machineRegistry';
 
 describe('router', () => {
   let $root = document.body;
   test('machine unmount on route change', () => {
-    const HomeMachine = createMachine({
+    const HomeMachine = machine({
       id: 'home',
-      initialContext: () => ({}),
-      initialState: 'here',
-      states: {
+      context: () => ({}),
+      initial: 'here',
+      when: {
         here: {},
       },
       render: () => <p>the home machine</p>,

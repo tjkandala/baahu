@@ -51,9 +51,9 @@ export function machineDuty() {
     if (mInst) {
       const spec = mInst.s;
 
-      spec.onMount && spec.onMount(mInst.x);
+      spec.mount && spec.mount(mInst.x);
 
-      const stateHandler = spec.states[mInst.st];
+      const stateHandler = spec.when[mInst.st];
 
       if (process.env.NODE_ENV !== 'production') {
         if (!stateHandler) {
@@ -64,8 +64,7 @@ export function machineDuty() {
       }
 
       /** call onEntry for initial state */
-      stateHandler.onEntry &&
-        stateHandler.onEntry(mInst.x, { type: 'MOUNT' }, id);
+      stateHandler.entry && stateHandler.entry(mInst.x, { type: 'MOUNT' }, id);
     }
   }
   machinesThatMounted.clear();

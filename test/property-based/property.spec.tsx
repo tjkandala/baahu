@@ -2,7 +2,7 @@ import {
   SFC,
   b,
   emit,
-  createMachine,
+  machine,
   createRouter,
   RouterSchema,
   mount,
@@ -31,7 +31,7 @@ describe('machine property-based tests', () => {
   /**
    * brainstorming properties to test
    *
-   * - the state at any given time must be in the states array (use randomly generated states arrays to generate machine schemas!)
+   * - the state at any given time must be in the when array (use randomly generated when arrays to generate machine schemas!)
    * - the machine must not be in "machinesThatTransitioned" if the event that was emitted is not in the events array
    *    (again, use randomly generated events arrays to generate machine schemas!)
    * - the machine must be in "machinesThatTransitioned"
@@ -42,7 +42,7 @@ describe('machine property-based tests', () => {
   test('machine property 1', () => {
     /**
      * for any two sets of strings a (length n) and b (length k, k >= n),
-     * where a is the set of states and b is the set of events,
+     * where a is the set of when and b is the set of events,
      * and a[0] is the initial state, and each state[i] transitions to the
      * next state[i + 1] on event[i], the state after emitting
      * event[0] through event[k - 1] will be state[n - 1] (final state).
@@ -55,59 +55,59 @@ describe('machine property-based tests', () => {
       fc.property(
         fc.set(fc.string(2, 10), 3, 10),
         fc.set(fc.string(2, 10), 10, 10),
-        (states, events) => {
-          const stateSchema: {
+        (when, events) => {
+          const whenSchema: {
             [state: string]: {
               on: {
                 [event: string]: {
-                  target: string;
+                  to: string;
                 };
               };
             };
           } = {};
 
-          for (let i = 0; i < states.length; i++) {
-            const state = states[i];
+          for (let i = 0; i < when.length; i++) {
+            const state = when[i];
             // no transition for the last state
-            if (i < states.length - 1) {
-              const nextState = states[i + 1];
+            if (i < when.length - 1) {
+              const nextState = when[i + 1];
 
-              const thisStateSchema = {
+              const thisWhenSchema = {
                 on: {
                   [events[i]]: {
-                    target: nextState,
+                    to: nextState,
                   },
                 },
               };
 
-              stateSchema[state] = thisStateSchema;
+              whenSchema[state] = thisWhenSchema;
             } else {
-              stateSchema[state] = { on: {} };
+              whenSchema[state] = { on: {} };
             }
           }
 
-          const Mach = createMachine({
+          const Mach = machine({
             id: 'Mach',
-            initialState: states[0],
-            initialContext: () => ({}),
-            states: stateSchema,
+            initial: when[0],
+            context: () => ({}),
+            when: whenSchema,
             render: s => <p>{s}</p>,
           });
 
           $root = mount(Mach, $root);
 
-          // is initial state (states[0])
+          // is initial state (when[0])
           expect($root.nodeName).toBe('P');
-          expect($root.firstChild?.nodeValue).toBe(states[0]);
+          expect($root.firstChild?.nodeValue).toBe(when[0]);
 
           // emit all events
           for (const eventType of events) {
             emit({ type: eventType });
           }
 
-          // is final state (states[n - 1])
+          // is final state (when[n - 1])
           expect($root.nodeName).toBe('P');
-          expect($root.firstChild?.nodeValue).toBe(states[states.length - 1]);
+          expect($root.firstChild?.nodeValue).toBe(when[when.length - 1]);
 
           // have to clear bc its the same app instance
           machineRegistry.clear();
@@ -132,11 +132,11 @@ describe('machine property-based tests', () => {
           </div>
         );
 
-        const Machine = createMachine<{ i: number }>({
+        const Machine = machine<{ i: number }>({
           id: props => `${props.i}`,
-          initialState: 'exists',
-          initialContext: () => ({}),
-          states: {
+          initial: 'exists',
+          context: () => ({}),
+          when: {
             exists: {},
           },
           render: (_, _ctx, self) => <p>{self}</p>,
@@ -163,15 +163,15 @@ describe('machine property-based tests', () => {
 
     fc.assert(
       fc.property(fc.integer(0, 50), fc.integer(0, 50), (numOne, numTwo) => {
-        const MachThatTransitions = createMachine<{ i: number }>({
+        const MachThatTransitions = machine<{ i: number }>({
           id: props => `transitions-${props.i}`,
-          initialState: 'loading',
-          initialContext: () => ({}),
-          states: {
+          initial: 'loading',
+          context: () => ({}),
+          when: {
             loading: {
               on: {
                 LOADED: {
-                  target: 'ready',
+                  to: 'ready',
                 },
               },
             },
@@ -180,11 +180,11 @@ describe('machine property-based tests', () => {
           render: () => <p>i transition</p>,
         });
 
-        const MachThatDoesntTransition = createMachine<{ i: number }>({
+        const MachThatDoesntTransition = machine<{ i: number }>({
           id: props => `doesnottransition-${props.i}`,
-          initialState: 'loading',
-          initialContext: () => ({}),
-          states: {
+          initial: 'loading',
+          context: () => ({}),
+          when: {
             loading: {},
           },
           render: () => <p>i don't transition</p>,
@@ -282,11 +282,11 @@ describe('machine property-based tests', () => {
           );
         }
 
-        const PageMachine = createMachine<{ routeName: string }>({
+        const PageMachine = machine<{ routeName: string }>({
           id: ({ routeName }) => routeName,
-          initialState: 'here',
-          initialContext: () => ({}),
-          states: { here: {} },
+          initial: 'here',
+          context: () => ({}),
+          when: { here: {} },
           render: (_s, _c, self) => <p>{self}</p>,
         });
 

@@ -221,14 +221,12 @@ export function b<Props extends PropsArg>(
         if (!existingInstance) {
           const spec = type(mProps);
 
-          const initialContext = spec.initialContext
-            ? spec.initialContext(mProps)
-            : {};
+          const initialContext = spec.context ? spec.context(mProps) : {};
 
           const initialState =
-            typeof spec.initialState === 'function'
-              ? spec.initialState(mProps)
-              : spec.initialState;
+            typeof spec.initial === 'function'
+              ? spec.initial(mProps)
+              : spec.initial;
 
           machinesThatMounted.add(instanceId);
 

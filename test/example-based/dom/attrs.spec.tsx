@@ -1,25 +1,25 @@
-import { b, createMachine, emit, mount } from '../../../src';
+import { b, machine, emit, mount } from '../../../src';
 
 describe('attributes', () => {
   let $root = document.body;
 
   test('can add and remove class', () => {
-    const AttrsMachine = createMachine<{}, 'attrs' | 'noAttrs'>({
+    const AttrsMachine = machine<{}, 'attrs' | 'noAttrs'>({
       id: 'eventy',
-      initialContext: () => ({}),
-      initialState: 'attrs',
-      states: {
+      context: () => ({}),
+      initial: 'attrs',
+      when: {
         attrs: {
           on: {
             REMOVE_ATTRS: {
-              target: 'noAttrs',
+              to: 'noAttrs',
             },
           },
         },
         noAttrs: {
           on: {
             ADD_ATTRS: {
-              target: 'attrs',
+              to: 'attrs',
             },
           },
         },

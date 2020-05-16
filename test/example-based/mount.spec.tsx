@@ -1,13 +1,13 @@
 import { b, mount, emit, SFC } from '../../src';
-import { createMachine } from '../../src/component';
+import { machine } from '../../src/component';
 // import { machineRegistry } from '../../src/machineRegistry';
 
 describe('mounting', () => {
-  const TestMach = createMachine({
+  const TestMach = machine({
     id: 'testRoot',
-    initialContext: () => ({}),
-    initialState: 'ready',
-    states: {
+    context: () => ({}),
+    initial: 'ready',
+    when: {
       ready: {},
     },
     render: () => b('div', {}, b('h1', {}, 'mach test')),
@@ -37,15 +37,15 @@ describe('mounting', () => {
    * important
    */
 
-  const Foo = createMachine<{ num: number }>({
+  const Foo = machine<{ num: number }>({
     id: ({ num }) => `foo-${num}`,
-    initialContext: () => ({}),
-    initialState: 'sleeping',
-    states: {
+    context: () => ({}),
+    initial: 'sleeping',
+    when: {
       sleeping: {
         on: {
           WAKE_UP: {
-            target: 'awake',
+            to: 'awake',
           },
         },
       },
@@ -56,22 +56,22 @@ describe('mounting', () => {
 
   // this works with AND without keys!
   test("doesn't unmount nested machines bc of conditional rendering (right)", () => {
-    const AppMachine = createMachine<{}>({
+    const AppMachine = machine<{}>({
       id: 'app',
-      initialContext: () => ({}),
-      initialState: 'even',
-      states: {
+      context: () => ({}),
+      initial: 'even',
+      when: {
         even: {
           on: {
             TOGGLE: {
-              target: 'odd',
+              to: 'odd',
             },
           },
         },
         odd: {
           on: {
             TOGGLE: {
-              target: 'even',
+              to: 'even',
             },
           },
         },
@@ -135,22 +135,22 @@ describe('mounting', () => {
 
   // this works with keys, but not without keys! (works now)
   test("doesn't unmount nested machines bc of conditional rendering (left)", () => {
-    const AppMachine = createMachine<{}>({
+    const AppMachine = machine<{}>({
       id: 'app',
-      initialContext: () => ({}),
-      initialState: 'even',
-      states: {
+      context: () => ({}),
+      initial: 'even',
+      when: {
         even: {
           on: {
             TOGGLE: {
-              target: 'odd',
+              to: 'odd',
             },
           },
         },
         odd: {
           on: {
             TOGGLE: {
-              target: 'even',
+              to: 'even',
             },
           },
         },

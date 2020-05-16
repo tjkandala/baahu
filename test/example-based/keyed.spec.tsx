@@ -1,5 +1,5 @@
 import { b, emit, mount, memo } from '../../src';
-import { SFC, createMachine, MachineComponent } from '../../src/component';
+import { SFC, machine, MachineComponent } from '../../src/component';
 import {
   machineRegistry,
   machinesThatTransitioned,
@@ -22,15 +22,15 @@ type ListState = 'first' | 'second';
 
 const failures = [];
 
-const BadVideoComponent = createMachine<{}, BadVideoState, BadVideoEvent>({
+const BadVideoComponent = machine<{}, BadVideoState, BadVideoEvent>({
   id: 'video',
-  initialContext: () => ({}),
-  initialState: 'loading',
-  states: {
+  context: () => ({}),
+  initial: 'loading',
+  when: {
     loading: {
       on: {
         LOADED: {
-          effects: [() => failures.push('another one')],
+          do: [() => failures.push('another one')],
         },
       },
     },
@@ -47,25 +47,25 @@ function createListDiffComponent(
   testCase: string,
   type: 'element' | 'machine' | 'memo'
 ): MachineComponent<{}, ListState, ListEvent> {
-  const ListMach: MachineComponent<{}, ListState, ListEvent> = createMachine<
+  const ListMach: MachineComponent<{}, ListState, ListEvent> = machine<
     {},
     ListState,
     ListEvent
   >({
     id: `listMach-${diffType}-${testCase}`,
-    initialContext: () => ({}),
-    initialState: 'first',
-    states: {
+    context: () => ({}),
+    initial: 'first',
+    when: {
       first: {
         on: {
           TOGGLE: {
-            target: 'second',
+            to: 'second',
           },
         },
       },
       second: {
         on: {
-          TOGGLE: { target: 'first' },
+          TOGGLE: { to: 'first' },
         },
       },
     },
@@ -122,11 +122,11 @@ function createListDiffComponent(
   return ListMach;
 }
 
-const ItemMachine = createMachine<{ item: ListItem }>({
+const ItemMachine = machine<{ item: ListItem }>({
   id: ({ item }) => `item-${item.key}`,
-  initialContext: ({ item }) => ({ item }),
-  initialState: 'default',
-  states: {
+  context: ({ item }) => ({ item }),
+  initial: 'default',
+  when: {
     default: {},
   },
   render: (_s, ctx) => <p>{ctx.item.todo}</p>,
@@ -400,7 +400,7 @@ const listMap: ListMap = {
           expect(child.firstChild?.nodeValue).toBe(listTwo[i].todo);
         });
 
-        // target a different leaf machine, machine shouldn't rerender
+        // to a different leaf machine, machine shouldn't rerender
         emit({ type: 'LOADED' });
 
         // now, render the first list again
@@ -427,7 +427,7 @@ const listMap: ListMap = {
  * Only testing keyed diff, as reordering machines
  * without keys is sure to break them! also, here we
  * emit global events (the children will have the correct order either way,
- * but they won't rerender their content without targeted/global events)
+ * but they won't rerender their content without toed/global events)
  */
 ['keyed'].forEach(diffType => {
   describe(`${diffType} list diffing (machine)`, () => {
@@ -477,7 +477,7 @@ const listMap: ListMap = {
           expect(child.firstChild?.nodeValue).toBe(listTwo[i].todo);
         });
 
-        // target a different leaf machine, machine shouldn't rerender
+        // to a different leaf machine, machine shouldn't rerender
         emit({ type: 'LOADED' });
 
         // now, render the first list again
@@ -553,7 +553,7 @@ const listMap: ListMap = {
           expect(child.firstChild?.nodeValue).toBe(listTwo[i].todo);
         });
 
-        // target a different leaf machine, machine shouldn't rerender
+        // to a different leaf machine, machine shouldn't rerender
         emit({ type: 'LOADED' });
 
         // now, render the first list again
@@ -584,20 +584,20 @@ describe('basic events', () => {
     ctx.text = ctx.text + '!';
   }
 
-  const testMach = createMachine<{}, MyState, MyEvent, MyContext>({
+  const testMach = machine<{}, MyState, MyEvent, MyContext>({
     id: 'testMach',
-    initialContext: () => ({
+    context: () => ({
       text: 'initial text',
     }),
-    initialState: 'running',
-    states: {
+    initial: 'running',
+    when: {
       running: {
         on: {
           CHANGE_TEXT: {
-            effects: [updateText],
+            do: [updateText],
           },
           COMPLETED: {
-            target: 'complete',
+            to: 'complete',
           },
         },
       },
@@ -612,10 +612,10 @@ describe('basic events', () => {
     $root = mount(testMach, $root) as HTMLElement;
     expect($root.firstChild?.firstChild?.nodeValue).toBe('initial text');
 
-    // wrong target, shouldn't change it
+    // wrong to, shouldn't change it
     emit({ type: 'CHANGE_TEXT' }, 'wrongID');
     expect($root.firstChild?.firstChild?.nodeValue).toBe('initial text');
-    // correct target, should work
+    // correct to, should work
     emit({ type: 'CHANGE_TEXT' }, 'testMach');
     expect($root.firstChild?.firstChild?.nodeValue).toBe('initial text!');
     // wild card events should work too
@@ -640,22 +640,22 @@ describe('can replace nodes of different types', () => {
     type State = 'one' | 'two';
     type MyEvent = { type: 'TOGGLE' };
 
-    const ToggleMachine = createMachine<{}, State, MyEvent>({
+    const ToggleMachine = machine<{}, State, MyEvent>({
       id: 'toggle',
-      initialContext: () => ({}),
-      initialState: 'one',
-      states: {
+      context: () => ({}),
+      initial: 'one',
+      when: {
         one: {
           on: {
             TOGGLE: {
-              target: 'two',
+              to: 'two',
             },
           },
         },
         two: {
           on: {
             TOGGLE: {
-              target: 'one',
+              to: 'one',
             },
           },
         },

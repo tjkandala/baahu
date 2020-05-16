@@ -36,7 +36,7 @@ export function memo<Props>(sfc: SFC<Props>): MemoComponent<Props> {
  * when called). also, might only be appropriate for route-level code-splitting.
  * work on resuable lazy
  */
-export function bLazy<Props>(
+export function lazy<Props>(
   lazyComponent: () => Promise<{
     default: MachineComponent<Props> | SFC<Props> | MemoComponent<Props>;
   }>,
@@ -143,7 +143,7 @@ export interface MachineComponent<
  *
  * @param machineSpec Specification for how the machine should behave
  */
-export function createMachine<
+export function machine<
   Props extends PropsArg = any,
   StateSchema extends string = any,
   EventSchema extends Event = any,
@@ -168,16 +168,16 @@ export interface MachineSpec<
 > {
   // config
   id: DeriveIdFunction<Props> | string;
-  initialContext: DeriveContextFunction<Props, ContextSchema>;
-  initialState: StateSchema | DeriveInitialStateFunction<Props, StateSchema>;
+  context: DeriveContextFunction<Props, ContextSchema>;
+  initial: StateSchema | DeriveInitialStateFunction<Props, StateSchema>;
   // behavior
-  onMount?: (context: ContextSchema) => void;
-  onUnmount?: (context: ContextSchema, state: StateSchema) => void;
+  mount?: (context: ContextSchema) => void;
+  unmount?: (context: ContextSchema, state: StateSchema) => void;
   // events for all states
   on?: {
     [K in EventSchema['type']]?: {
-      target?: StateSchema | DeriveTargetFunction<ContextSchema, StateSchema>;
-      effects?:
+      to?: StateSchema | DeriveTargetFunction<ContextSchema, StateSchema>;
+      do?:
         | Effect<
             ContextSchema,
             K extends EventSchema['type']
@@ -192,7 +192,7 @@ export interface MachineSpec<
                 : Event
             >
           >;
-      cond?: (
+      if?: (
         context: ContextSchema,
         event: K extends EventSchema['type']
           ? Extract<EventSchema, { type: K }>
@@ -201,15 +201,13 @@ export interface MachineSpec<
     };
   };
   // state specific behavior
-  states: Record<
+  when: Record<
     StateSchema,
     {
       on?: {
         [K in EventSchema['type']]?: {
-          target?:
-            | StateSchema
-            | DeriveTargetFunction<ContextSchema, StateSchema>;
-          effects?:
+          to?: StateSchema | DeriveTargetFunction<ContextSchema, StateSchema>;
+          do?:
             | Effect<
                 ContextSchema,
                 K extends EventSchema['type']
@@ -224,7 +222,7 @@ export interface MachineSpec<
                     : Event
                 >
               >;
-          cond?: (
+          if?: (
             context: ContextSchema,
             event: K extends EventSchema['type']
               ? Extract<EventSchema, { type: K }>
@@ -232,8 +230,8 @@ export interface MachineSpec<
           ) => boolean;
         };
       };
-      onEntry?: Effect<ContextSchema, EventSchema>;
-      onExit?: Effect<ContextSchema, EventSchema>;
+      entry?: Effect<ContextSchema, EventSchema>;
+      exit?: Effect<ContextSchema, EventSchema>;
     }
   >;
   // UI

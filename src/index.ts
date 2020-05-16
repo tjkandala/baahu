@@ -9,8 +9,8 @@ import {
 import { b, ChildArg, VNode } from './createElement';
 import {
   memo,
-  bLazy,
-  createMachine,
+  lazy,
+  machine,
   MachineComponent,
   MachineSpec,
   Effect,
@@ -26,8 +26,8 @@ export {
   mount,
   b,
   memo,
-  bLazy,
-  createMachine,
+  lazy,
+  machine,
   createRouter,
   emit,
   linkTo,

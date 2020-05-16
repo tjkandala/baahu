@@ -112,12 +112,11 @@ function transitionMachine(
 
     if (
       transitionHandler &&
-      (!transitionHandler.cond ||
-        transitionHandler.cond(machineInstance.x, event))
+      (!transitionHandler.if || transitionHandler.if(machineInstance.x, event))
     ) {
       machinesThatTransitioned.set(machineInstance.id, machineInstance.v.h!);
 
-      const effects = transitionHandler.effects;
+      const effects = transitionHandler.do;
 
       if (effects)
         if (typeof effects === 'function')
@@ -129,11 +128,11 @@ function transitionMachine(
         }
 
       // take to next state if target
-      if (transitionHandler.target)
+      if (transitionHandler.to)
         takeToNextState(
-          transitionHandler.target,
+          transitionHandler.to,
           machineInstance,
-          machineInstance.s.states[machineInstance.st],
+          machineInstance.s.when[machineInstance.st],
           allEffects
         );
     }
@@ -141,7 +140,7 @@ function transitionMachine(
 
   /** check if the machine has a handler/behavior spec
    * for its current state (it has to if written in TS) */
-  const stateHandler = machineInstance.s.states[machineInstance.st];
+  const stateHandler = machineInstance.s.when[machineInstance.st];
 
   /** for js users who may specify invalid states */
   if (process.env.NODE_ENV !== 'production') {
@@ -156,46 +155,40 @@ function transitionMachine(
     /** check if this machine listens to this eventType in its current state */
     const transitionHandler = stateHandler.on[t];
 
-    if (transitionHandler) {
+    if (
+      transitionHandler &&
+      (!transitionHandler.if || transitionHandler.if(machineInstance.x, event))
+    ) {
       machinesThatTransitioned.set(machineInstance.id, machineInstance.v.h!);
 
-      const cond = transitionHandler.cond;
+      const targetState = transitionHandler.to;
+      const effects = transitionHandler.do;
 
-      if (!cond || cond(machineInstance.x, event)) {
-        const targetState = transitionHandler.target;
-        const effects = transitionHandler.effects;
+      if (targetState)
+        takeToNextState(targetState, machineInstance, stateHandler, allEffects);
 
-        if (targetState)
-          takeToNextState(
-            targetState,
-            machineInstance,
-            stateHandler,
-            allEffects
-          );
-
-        if (effects)
-          if (typeof effects === 'function')
-            allEffects.push([effects, machineInstance]);
-          else {
-            i = 0;
-            l = effects.length;
-            while (i < l) allEffects.push([effects[i++], machineInstance]);
-          }
-      }
+      if (effects)
+        if (typeof effects === 'function')
+          allEffects.push([effects, machineInstance]);
+        else {
+          i = 0;
+          l = effects.length;
+          while (i < l) allEffects.push([effects[i++], machineInstance]);
+        }
     }
   }
 }
 
-// type StateHandler = {
-//   on?: any;
-//   onEntry?: any;
-//   onExit?: any;
-// };
+type StateHandler = {
+  on?: any;
+  entry?: any;
+  exit?: any;
+};
 
 function takeToNextState(
   targetState: string | DeriveTargetFunction<any, any>,
   machineInstance: MachineInstance,
-  currentStateHandler: any,
+  currentStateHandler: StateHandler,
   allEffects: Array<[Effect, MachineInstance]> = []
 ): void {
   // check for target function. standardized to string
@@ -208,7 +201,7 @@ function takeToNextState(
   if (stdTargetState !== machineInstance.st) {
     // only do anything if targetState !== current machine instance state
 
-    const nextStateHandler = machineInstance.s.states[stdTargetState];
+    const nextStateHandler = machineInstance.s.when[stdTargetState];
 
     if (nextStateHandler) {
       machineInstance.st = stdTargetState;
@@ -217,16 +210,16 @@ function takeToNextState(
        *
        * the pseudocode for the code below:
        *
-       * machine.spec.states[oldState]?.onExit()
-       * machine.spec.states[target]?.onEntry()
+       * machine.spec.states[oldState]?.exit()
+       * machine.spec.states[target]?.entry()
        *
        * */
 
-      currentStateHandler.onExit &&
-        allEffects.push([currentStateHandler.onExit, machineInstance]);
+      currentStateHandler.exit &&
+        allEffects.push([currentStateHandler.exit, machineInstance]);
 
-      nextStateHandler.onEntry &&
-        allEffects.push([nextStateHandler.onEntry, machineInstance]);
+      nextStateHandler.entry &&
+        allEffects.push([nextStateHandler.entry, machineInstance]);
 
       machinesThatTransitioned.set(machineInstance.id, machineInstance.v.h!);
     } else {

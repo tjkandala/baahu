@@ -1,4 +1,4 @@
-import { createMachine } from '../../../src/component';
+import { machine } from '../../../src/component';
 import { b, emit, mount } from '../../../src';
 
 describe('real world events', () => {
@@ -17,16 +17,16 @@ describe('real world events', () => {
       emit({ type: 'PROCESSED_DATA' });
     }
 
-    const NestedEventMach = createMachine<{}, MyState, MyEvent>({
+    const NestedEventMach = machine<{}, MyState, MyEvent>({
       id: 'nestedEventMach',
-      initialContext: () => ({}),
-      initialState: 'loading',
-      states: {
+      context: () => ({}),
+      initial: 'loading',
+      when: {
         loading: {
           on: {
             FINISHED_LOADING: {
-              target: 'ready',
-              effects: processData,
+              to: 'ready',
+              do: processData,
             },
           },
         },
@@ -34,7 +34,7 @@ describe('real world events', () => {
           // onEntry: processData,
           on: {
             PROCESSED_DATA: {
-              target: 'complete',
+              to: 'complete',
             },
           },
         },
@@ -60,23 +60,23 @@ describe('real world events', () => {
       }).then(() => emit({ type: 'PROCESSED_DATA' }));
     }
 
-    const NestedEventMach = createMachine<{}, MyState, MyEvent>({
+    const NestedEventMach = machine<{}, MyState, MyEvent>({
       id: 'nestedEventMachAsync',
-      initialContext: () => ({}),
-      initialState: 'loading',
-      states: {
+      context: () => ({}),
+      initial: 'loading',
+      when: {
         loading: {
           on: {
             FINISHED_LOADING: {
-              target: 'ready',
+              to: 'ready',
             },
           },
         },
         ready: {
-          onEntry: processData,
+          entry: processData,
           on: {
             PROCESSED_DATA: {
-              target: 'complete',
+              to: 'complete',
             },
           },
         },

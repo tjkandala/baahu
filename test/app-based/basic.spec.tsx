@@ -2,7 +2,7 @@ import {
   SFC,
   b,
   emit,
-  createMachine,
+  machine,
   createRouter,
   memo,
   mount,
@@ -50,15 +50,15 @@ describe('basic apps', () => {
     // using arrays to define machines and states
     //  so we can iterate through them for tests
 
-    const Home = createMachine<{}, HomeState, HomeEvent, {}>({
+    const Home = machine<{}, HomeState, HomeEvent, {}>({
       id: 'Home',
-      initialState: 'loading',
-      initialContext: () => ({}),
-      states: {
+      initial: 'loading',
+      context: () => ({}),
+      when: {
         loading: {
           on: {
             LOADED_CATEGORIES: {
-              target: 'loaded',
+              to: 'loaded',
             },
           },
         },
@@ -91,31 +91,31 @@ describe('basic apps', () => {
 
     // videolist is parent + static/singleton
     // video is leaf + dynamic/many instances
-    const VideoList = createMachine<
+    const VideoList = machine<
       VideoListProps,
       VideoListState,
       VideoListEvent,
       VideoListContext
     >({
       id: 'VideoList',
-      initialState: 'loading',
-      initialContext: props => ({
+      initial: 'loading',
+      context: props => ({
         category: props.initialCategory,
       }),
-      states: {
+      when: {
         loading: {
           on: {
             LOADED_VIDEOS: {
-              target: 'loaded',
+              to: 'loaded',
             },
           },
         },
         loaded: {
           on: {
             CHANGE_CATEGORY: {
-              target: 'loading',
-              effects: (ctx, e) => (ctx.category = e.category),
-              cond: (ctx, e) => ctx.category !== e.category,
+              to: 'loading',
+              do: (ctx, e) => (ctx.category = e.category),
+              if: (ctx, e) => ctx.category !== e.category,
             },
           },
         },
@@ -154,32 +154,32 @@ describe('basic apps', () => {
       },
     });
 
-    const Video = createMachine<VideoProps, VideoState, VideoEvent, {}>({
+    const Video = machine<VideoProps, VideoState, VideoEvent, {}>({
       id: props => `video-${props.category}-${props.listPosition}`,
-      initialContext: () => ({}),
-      initialState: 'buffering',
-      states: {
+      context: () => ({}),
+      initial: 'buffering',
+      when: {
         buffering: {
           on: {
             CAN_PLAY: {
-              target: 'playing',
+              to: 'playing',
             },
           },
         },
         playing: {
           on: {
             NEEDS_TO_BUFFER: {
-              target: 'buffering',
+              to: 'buffering',
             },
             PAUSE: {
-              target: 'paused',
+              to: 'paused',
             },
           },
         },
         paused: {
           on: {
             PLAY: {
-              target: 'playing',
+              to: 'playing',
             },
           },
         },

@@ -1,4 +1,4 @@
-import { b, createMachine, emit, mount } from '../../../src';
+import { b, machine, emit, mount } from '../../../src';
 
 describe('input', () => {
   let $root = document.body;
@@ -9,15 +9,15 @@ describe('input', () => {
   test('removing event listeners', () => {
     function handleClick(): void {}
 
-    const EventedMachine = createMachine<{}, 'events' | 'noEvents'>({
+    const EventedMachine = machine<{}, 'events' | 'noEvents'>({
       id: 'eventy',
-      initialContext: () => ({}),
-      initialState: 'events',
-      states: {
+      context: () => ({}),
+      initial: 'events',
+      when: {
         events: {
           on: {
             REMOVE_EVENT: {
-              target: 'noEvents',
+              to: 'noEvents',
             },
           },
         },

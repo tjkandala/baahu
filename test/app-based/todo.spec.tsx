@@ -1,26 +1,26 @@
-import { b, mount, createMachine, emit } from '../../src';
+import { b, mount, machine, emit } from '../../src';
 import { machineRegistry } from '../../src/machineRegistry';
 
 describe('todo app', () => {
   let $root = document.body;
 
   test('works', () => {
-    const List = createMachine<any, any, any, any>({
+    const List = machine<any, any, any, any>({
       id: 'list',
-      initialContext: () => ({
+      context: () => ({
         todos: [],
         nextId: 0,
       }),
-      initialState: 'default',
-      states: {
+      initial: 'default',
+      when: {
         default: {
           on: {
             NEW_TODO: {
-              effects: (ctx, e) =>
+              do: (ctx, e) =>
                 ctx.todos.push({ todo: e.todo, key: ctx.nextId++ }),
             },
             DELETE_ITEM: {
-              effects: (ctx, e) =>
+              do: (ctx, e) =>
                 (ctx.todos = ctx.todos.filter(
                   (todo: any) => todo.key !== e.key
                 )),
@@ -48,11 +48,11 @@ describe('todo app', () => {
         </div>
       ),
     });
-    const Item = createMachine<{ todo: { todo: string; key: number } }>({
+    const Item = machine<{ todo: { todo: string; key: number } }>({
       id: ({ todo }) => `todo-${todo.key}`,
-      initialContext: ({ todo }) => ({ todo: todo }),
-      initialState: 'default',
-      states: {
+      context: ({ todo }) => ({ todo: todo }),
+      initial: 'default',
+      when: {
         default: {
           on: {},
         },
