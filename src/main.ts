@@ -133,7 +133,7 @@ function transitionMachine(
         takeToNextState(
           transitionHandler.target,
           machineInstance,
-          transitionHandler,
+          machineInstance.s.states[machineInstance.st],
           allEffects
         );
     }
@@ -195,7 +195,7 @@ function transitionMachine(
 function takeToNextState(
   targetState: string | DeriveTargetFunction<any, any>,
   machineInstance: MachineInstance,
-  stateHandler: any,
+  currentStateHandler: any,
   allEffects: Array<[Effect, MachineInstance]> = []
 ): void {
   // check for target function. standardized to string
@@ -222,8 +222,8 @@ function takeToNextState(
        *
        * */
 
-      stateHandler.onExit &&
-        allEffects.push([stateHandler.onExit, machineInstance]);
+      currentStateHandler.onExit &&
+        allEffects.push([currentStateHandler.onExit, machineInstance]);
 
       nextStateHandler.onEntry &&
         allEffects.push([nextStateHandler.onEntry, machineInstance]);
