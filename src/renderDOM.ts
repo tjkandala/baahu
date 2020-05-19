@@ -30,6 +30,7 @@ export function renderDOM(
             if (k === 'disabled') {
               $el[k] = attrs[k];
             } else if (k === 'ref') {
+              /** istanbul ignore next */
               if (process.env.NODE_ENV !== 'production') {
                 if (typeof attrs[k] !== 'function') {
                   throw new TypeError('ref must be a function');

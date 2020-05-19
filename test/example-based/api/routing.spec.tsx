@@ -216,7 +216,21 @@ describe('router', () => {
     });
   });
 
-  test('works', () => {
+  test('returns undefined for bad route + no wildcard', () => {
+    const myTrie = new RouTrie();
+
+    const handler = () => 'hi';
+
+    myTrie.i('/good', handler);
+
+    // should return undefined for bad request + no wildcard
+    expect(myTrie.f('/bad')).toBe(undefined);
+
+    expect(myTrie.f('/good')).toStrictEqual({
+      h: handler,
+      p: {},
+    });
+
     expect(true).toBe(true);
   });
 });

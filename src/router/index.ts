@@ -110,7 +110,7 @@ export class RouTrie<T = () => unknown> {
   }
 
   /** find */
-  f(path: string): { h: T; p: Params } | undefined {
+  f(path: string): { h: T; p: Params } | void {
     const cached = this.c.get(path);
     if (cached) return cached;
 
@@ -169,6 +169,6 @@ export class RouTrie<T = () => unknown> {
       result = { h: node.h, p: params };
       this.c.size < 10000 && this.c.set(path, result);
       return result;
-    } else return void 0;
+    }
   }
 }

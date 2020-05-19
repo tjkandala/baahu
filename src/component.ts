@@ -36,11 +36,15 @@ export function memo<Props>(sfc: SFC<Props>): MemoComponent<Props> {
  * when called). also, might only be appropriate for route-level code-splitting.
  * work on resuable lazy
  */
+
+/**
+ * for dynamically importing a component
+ */
 export function lazy<Props>(
   lazyComponent: () => Promise<{
     default: MachineComponent<Props> | SFC<Props> | MemoComponent<Props>;
   }>,
-  fallback?: VNode,
+  fallback?: VNode | null,
   timeout?: number,
   onError?: VNode
 ): SFC<Props> {

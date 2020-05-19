@@ -23,18 +23,6 @@ let currentRootComponent: MachineComponent | SFC;
 let currentVRoot: VNode;
 let $root: HTMLElement;
 
-/**
- *
- * @param event
- * @param target
- *
- * INTERNAL, do not export!
- *
- * TOOD: try to extract common logic btwn targeted and global events
- * into a function to save bytes!
- *
- */
-
 function transitionMachines(
   event: { type: string | number; [key: string]: any },
   target = '*'
@@ -143,6 +131,7 @@ function transitionMachine(
   const stateHandler = machineInstance.s.when[machineInstance.st];
 
   /** for js users who may specify invalid states */
+  /* istanbul ignore next */
   if (process.env.NODE_ENV !== 'production') {
     if (!stateHandler) {
       throw TypeError(
@@ -224,6 +213,7 @@ function takeToNextState(
       machinesThatTransitioned.set(machineInstance.id, machineInstance.v.h!);
     } else {
       /** for js users who may specify invalid targets */
+      /* istanbul ignore next */
       if (process.env.NODE_ENV !== 'production') {
         throw TypeError(
           `The specified target (${targetState}) for this transition (${machineInstance.st} => ${targetState}) does not exist on your ${machineInstance.id}`
@@ -300,6 +290,7 @@ export function createRouter<Props extends PropsArg = any>(
   routerSchema: RouterSchema<Props>,
   prefix = ''
 ): SFC<Props & { children?: any }> {
+  /* istanbul ignore next */
   if (process.env.NODE_ENV !== 'production') {
     if (typeof prefix !== 'string') throw TypeError('prefix must be a string');
   }
@@ -313,6 +304,7 @@ export function createRouter<Props extends PropsArg = any>(
         : prefix);
 
   for (const key in routerSchema) {
+    /* istanbul ignore next */
     if (process.env.NODE_ENV !== 'production') {
       if (key[0] !== '*' && key[0] !== '/')
         throw SyntaxError('routes should begin with /');
@@ -365,6 +357,7 @@ function newRoute(): void {
 window.onpopstate = newRoute;
 
 function link(path: string, state: any = null): void {
+  /* istanbul ignore next */
   if (process.env.NODE_ENV !== 'production') {
     if (typeof path !== 'string')
       throw new TypeError('link path must be a string');

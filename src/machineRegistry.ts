@@ -55,6 +55,7 @@ export function machineDuty() {
 
       const stateHandler = spec.when[mInst.st];
 
+      /* istanbul ignore next */
       if (process.env.NODE_ENV !== 'production') {
         if (!stateHandler) {
           throw new TypeError(
