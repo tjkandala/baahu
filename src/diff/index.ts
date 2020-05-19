@@ -561,7 +561,7 @@ function keyedDiffChildren(
           diff(oldVNode, newVNode, parentDom, nodeDepth + 1, isSvg);
 
           if (newVNode.d) $nextNode = newVNode.d;
-        /* istanbul ignore next */
+
         // continue;
       }
     }

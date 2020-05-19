@@ -43,6 +43,7 @@ export function diffProps(
             $el[k] = newProps[k];
           } else if (k === 'ref') {
             // ref should be a function
+            /* istanbul ignore next */
             if (process.env.NODE_ENV !== 'production') {
               if (typeof newProps[k] !== 'function') {
                 throw new TypeError('ref must be a function');
@@ -66,8 +67,9 @@ export function diffProps(
       if (!newProps || !newProps[k]) {
         if (k[0] === 'o' && k[1] === 'n') {
           // event handlers
+          console.log('here');
 
-          $el.removeEventListener(k.slice(2), oldProps[k]);
+          $el.removeEventListener(k.slice(2).toLowerCase(), oldProps[k]);
         } else {
           $el.removeAttribute(k);
         }

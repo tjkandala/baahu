@@ -233,4 +233,8 @@ describe('router', () => {
 
     expect(true).toBe(true);
   });
+
+  test('link', () => {
+    expect(true).toBe(true);
+  });
 });

@@ -195,6 +195,33 @@ describe('machine components', () => {
     expect($root.firstChild?.firstChild?.nodeValue).toBe('even');
   });
 
+  test('derive target state fn', () => {
+    const ToggleMach = machine<{}, 'even' | 'odd'>({
+      id: 'toggle',
+      initial: 'even',
+      context: () => ({}),
+      when: {
+        even: {
+          on: {
+            SWITCH: {
+              to: () => 'odd',
+            },
+          },
+        },
+        odd: {},
+      },
+      render: state => <p>{state}</p>,
+    });
+
+    $root = mount(ToggleMach, $root);
+
+    expect($root.firstChild?.nodeValue).toBe('even');
+
+    emit({ type: 'SWITCH' }, 'toggle');
+
+    expect($root.firstChild?.nodeValue).toBe('odd');
+  });
+
   // TODO: make the most convoluted machine possible to test the limits of baahu. no
   // machine that passes the typechecks should be logically wrong/broken
 });

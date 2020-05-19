@@ -97,4 +97,41 @@ describe('real world events', () => {
       setTimeout(() => res(true), 0);
     }).then(() => expect($root.firstChild?.nodeValue).toBe('complete'));
   });
+
+  test('root on', () => {
+    let effectCount = 0;
+
+    const RootOnMach = machine<{}, 'even' | 'odd'>({
+      id: 'root',
+      initial: 'even',
+      context: () => ({}),
+      on: {
+        TOGGLE: {
+          do: [() => effectCount++, () => effectCount++],
+          to: 'odd',
+        },
+        DECREMENT: {
+          do: () => effectCount--,
+        },
+      },
+      when: {
+        even: {},
+        odd: {},
+      },
+      render: state => <p>{state}</p>,
+    });
+
+    $root = mount(RootOnMach, $root);
+
+    expect($root.firstChild?.nodeValue).toBe('even');
+
+    emit({ type: 'TOGGLE' });
+
+    expect($root.firstChild?.nodeValue).toBe('odd');
+    expect(effectCount).toBe(2);
+
+    emit({ type: 'DECREMENT' });
+
+    expect(effectCount).toBe(1);
+  });
 });
