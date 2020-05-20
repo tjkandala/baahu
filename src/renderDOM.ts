@@ -25,12 +25,12 @@ export function renderDOM(
       if (attrs) {
         for (const k in node.a) {
           if (k[0] === 'o' && k[1] === 'n') {
-            $el.addEventListener(k.substring(2).toLowerCase(), attrs[k]);
+            $el.addEventListener(eType(k), attrs[k]);
           } else {
             if (k === 'disabled') {
               $el[k] = attrs[k];
             } else if (k === 'ref') {
-              /** istanbul ignore next */
+              /* istanbul ignore next */
               if (process.env.NODE_ENV !== 'production') {
                 if (typeof attrs[k] !== 'function') {
                   throw new TypeError('ref must be a function');
@@ -51,7 +51,6 @@ export function renderDOM(
         // child = renderDOM(kids[i]);
         $el.appendChild(renderDOM(kids[i], nodeDepth + 1, isSvg));
       }
-
       node.d = $el;
 
       return $el;
@@ -84,4 +83,9 @@ export function renderDOM(
 
       return node.d;
   }
+}
+
+/** get lowercase event type. extracted to function for minification  */
+export function eType(e: string) {
+  return e.slice(2).toLowerCase();
 }

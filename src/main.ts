@@ -267,6 +267,7 @@ export function emit(
 
   while (j--) {
     const machInst = machineRegistry.get(idNodeDepth[j][0]);
+
     // the machine instance may not exist anymore (if an ancestor node stopped rendering it, for example)
     if (machInst) {
       let vNode: VNode | null = machInst.s.render(

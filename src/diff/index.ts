@@ -119,7 +119,7 @@ export function diff(
           return;
 
         default:
-          return replace(oldVNode.c, newVNode, parentDom, nodeDepth, isSvg);
+          return replace(oldVNode, newVNode, parentDom, nodeDepth, isSvg);
       }
 
     /**
@@ -162,7 +162,7 @@ export function diff(
           return;
 
         default:
-          return replace(oldVNode.c, newVNode, parentDom, nodeDepth, isSvg);
+          return replace(oldVNode, newVNode, parentDom, nodeDepth, isSvg);
       }
   }
 }
@@ -188,21 +188,21 @@ function replace(
 
   const $new = renderDOM(newVNode, nodeDepth, isSvg);
   if (parentDom) {
-    // replaceWith isn't supported on old browsers
-    // if (!oldVNode.d) {
-    //   // this might be an unneccesary test, check it. just make sure every node has to have a valid .d at diff time
-    //   parentDom.appendChild($new);
-    // } else {
+    // this might be an unneccesary test, check it. just make sure every node has to have a valid .d at diff time
     parentDom.replaceChild($new, oldVNode.d as HTMLElement);
-    // }
   } else {
-    // this is convoluted try to golf it
+    /**
+     * this branch is necessary for machine node diffing,
+     * as the first child doesn't have a reference to the parent
+     */
     const $d = oldVNode.d;
     if ($d) {
       const $parent = $d.parentElement;
+
       $parent && $parent.replaceChild($new, $d);
     }
   }
+
   safelyRemoveVNode(oldVNode);
 }
 
@@ -220,6 +220,7 @@ export function shouldRender<Props extends PropsArg = any>(
     for (let i in newProps) if (oldProps[i] !== newProps[i]) return true;
   } else {
     // one of new/old props don't exist, but the other do. have to rerender
+    // this won't happen with JSX
     return true;
   }
   // this means both newProps and oldProps exist, but they are shallow equal
@@ -231,13 +232,16 @@ export function shouldRender<Props extends PropsArg = any>(
  * of this node */
 function safelyRemoveVNode(node: VNode) {
   switch (node.x) {
-    case VNodeKind.M: {
+    case VNodeKind.M:
       // we found a machine to unmount
       unmountMachine(node.i);
       // keep looking for machine desc.
       safelyRemoveVNode(node.c);
       return;
-    }
+
+    case VNodeKind.O:
+      safelyRemoveVNode(node.c);
+      return;
 
     case VNodeKind.E: {
       // keep looking for machine desc.
@@ -562,7 +566,7 @@ function keyedDiffChildren(
 
           if (newVNode.d) $nextNode = newVNode.d;
 
-        // continue;
+          continue;
       }
     }
   }

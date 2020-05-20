@@ -1,10 +1,6 @@
 import { machine, b, mount, emit } from '../../../src';
 
 describe('input', () => {
-  test('works', () => {
-    expect(true).toBe(true);
-  });
-
   test('disable/enable button', () => {
     const ButtonMach = machine<{}>({
       id: 'button',

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Props } from '../createElement';
+import { eType } from '../renderDOM';
 
 // this is actually attrs.... rename! change to in-place diff
 export function diffProps(
@@ -20,7 +21,7 @@ export function diffProps(
     for (const k in newProps) {
       if (k[0] === 'o' && k[1] === 'n') {
         // event handlers
-        const eventType = k.slice(2).toLowerCase();
+        const eventType = eType(k);
         // just add the event if there aren't old props, or if old props doesn't have the event
         if (!oldProps || !oldProps[k]) {
           $el.addEventListener(eventType, newProps[k]);
@@ -67,9 +68,7 @@ export function diffProps(
       if (!newProps || !newProps[k]) {
         if (k[0] === 'o' && k[1] === 'n') {
           // event handlers
-          console.log('here');
-
-          $el.removeEventListener(k.slice(2).toLowerCase(), oldProps[k]);
+          $el.removeEventListener(eType(k), oldProps[k]);
         } else {
           $el.removeAttribute(k);
         }

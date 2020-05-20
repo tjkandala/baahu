@@ -8,6 +8,9 @@ describe('machine components', () => {
   let $root = document.body;
 
   // TODO: recursive machines
+  test('recursive machines', () => {
+    expect(true).toBe(true);
+  });
 
   test('constructor works', () => {
     const MyMach = machine<{ name: string }>({

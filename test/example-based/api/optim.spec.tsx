@@ -34,7 +34,9 @@ describe('optimizations', () => {
 
     idNodeDepth.sort((a, b) => b[1] - a[1]);
 
-    expect(true).toBe(true);
+    const ids = idNodeDepth.map(node => node[1]);
+
+    expect(ids).toStrictEqual([4, 3, 2, 1]);
   });
 
   test('shouldRender', () => {
@@ -179,8 +181,56 @@ describe('optimizations', () => {
       initial: 'even',
       context: () => ({}),
       when: {
-        even: {},
+        even: {
+          on: {
+            TOGGLE: {
+              to: 'odd',
+            },
+          },
+        },
         odd: {},
+      },
+      render: state => {
+        renders++;
+
+        return (
+          <div>
+            {state === 'even' && <CFMach id="c" />}
+            <DEMach id="d" />
+          </div>
+        );
+      },
+    });
+
+    const BMach = machine<{}>({
+      id: 'b',
+      initial: 'default',
+      context: () => ({}),
+      when: {
+        default: {
+          on: { TOGGLE: {} },
+        },
+      },
+      render: () => {
+        renders++;
+
+        return (
+          <div>
+            <CFMach id="f" />
+            <DEMach id="e" />
+          </div>
+        );
+      },
+    });
+
+    const CFMach = machine<{ id: 'c' | 'f' }>({
+      id: ({ id }) => id,
+      initial: 'default',
+      context: () => ({}),
+      when: {
+        default: {
+          on: { TOGGLE: {} },
+        },
       },
       render: () => {
         renders++;
@@ -189,22 +239,38 @@ describe('optimizations', () => {
       },
     });
 
-    // const BMach = machine<{}>({
-    //   id: 'b',
-    //   initial: 'default',
-    //   context: () => ({}),
-    //   when: {
-    //     default: {},
-    //   },
-    //   render: () => {
-    //     renders++;
+    const DEMach = machine<{ id: 'd' | 'e' }>({
+      id: ({ id }) => id,
+      initial: 'default',
+      context: () => ({}),
+      when: {
+        default: {},
+      },
+      render: () => {
+        renders++;
 
-    //     return <div>hi</div>;
-    //   },
-    // });
-    mount(AMach, $root);
-    console.log(renders);
-    expect(true).toBe(true);
+        return <div>hi</div>;
+      },
+    });
+
+    const Root = () => (
+      <div>
+        <AMach />
+        <BMach />
+      </div>
+    );
+
+    mount(Root, $root);
+
+    expect(renders).toBe(6);
+
+    expect(machineRegistry.size).toBe(6);
+
+    emit({ type: 'TOGGLE' });
+
+    expect(renders).toBe(9);
+
+    expect(machineRegistry.size).toBe(5);
   });
 
   const Comp = () => (
@@ -212,6 +278,41 @@ describe('optimizations', () => {
       <p>me lazy</p>
     </div>
   );
+
+  test('memo DOES render when needed', () => {
+    // this case really shouldn't happen in the real world
+    const MemoName = memo<{ name: string | null }>(props => {
+      const name = props ? props.name : 'second';
+      return <p>{name}</p>;
+    });
+
+    const ToggleName = machine<{}, 'even' | 'odd'>({
+      id: 'toggle',
+      initial: 'even',
+      context: () => ({}),
+      when: {
+        even: {
+          on: {
+            TOGGLE: { to: 'odd' },
+          },
+        },
+        odd: {
+          on: { TOGGLE: { to: 'even' } },
+        },
+      },
+      render: state => b(MemoName, state === 'even' ? { name: 'first' } : null),
+    });
+
+    const $root = mount(ToggleName, document.body);
+
+    expect($root.firstChild?.nodeValue).toBe('first');
+
+    emit({ type: 'TOGGLE' });
+    expect($root.firstChild?.nodeValue).toBe('second');
+
+    emit({ type: 'TOGGLE' });
+    expect($root.firstChild?.nodeValue).toBe('first');
+  });
 
   test('lazy', () => {
     async function mockDynamicImport<Props>(
