@@ -1,5 +1,3 @@
-# baahu 🐘
-
 ![transparentHQ](https://user-images.githubusercontent.com/37420160/82601152-18f2bd00-9b7d-11ea-9188-a60d70518bb5.png)
 
 
