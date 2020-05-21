@@ -7,29 +7,9 @@ import {
 import { VNode } from '../../src/createElement';
 import { markLIS } from '../../src/diff';
 
-/**
- * Think of properties to test:
- *
- * - number of machines in the machine registry is equal to number
- * of machine instances rendered in the vdom
- *
- * - use "document.isSameNode" for keyed diff!
- */
-
 describe('machine property-based tests', () => {
   let $root = document.body;
 
-  /**
-   * brainstorming properties to test
-   *
-   * - the state at any given time must be in the when array (use randomly generated when arrays to generate machine schemas!)
-   * - the machine must not be in "machinesThatTransitioned" if the event that was emitted is not in the events array
-   *    (again, use randomly generated events arrays to generate machine schemas!)
-   * - the machine must be in "machinesThatTransitioned"
-   *
-   * after passing these core machine property tests, test properties of multiple machines on same page, leaves, etc.
-   * this might be taken care of in app property tests!
-   */
   test('machine property 1', () => {
     /**
      * for any two sets of strings a (length n) and b (length k, k >= n),
