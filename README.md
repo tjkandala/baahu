@@ -3,15 +3,30 @@
 <p align="center">
   
   <a href="https://unpkg.com/baahu/dist/baahu.cjs.production.min.js">
-  <img src="http://img.badgesize.io/https://unpkg.com/baahu/dist/baahu.cjs.production.min.js?compression=gzip&label=gzip" alt="GZIP Bundle Size" />
+  <img src="http://img.badgesize.io/https://unpkg.com/baahu/dist/baahu.cjs.production.min.js?compression=gzip&label=gzip" alt="gzip size" />
   </a>
   
-[![gzip size](http://img.badgesize.io/https://unpkg.com/baahu/dist/baahu.cjs.production.min.js?compression=gzip&label=gzip)](https://unpkg.com/baahu/dist/baahu.cjs.production.min.js)
-[![brotli size](http://img.badgesize.io/https://unpkg.com/baahu/dist/baahu.cjs.production.min.js?compression=brotli&label=brotli)](https://unpkg.com/baahu/dist/baahu.cjs.production.min.js)
-![GitHub top language](https://img.shields.io/github/languages/top/tjkandala/baahu)
-![GitHub](https://img.shields.io/github/license/tjkandala/baahu)
-![GitHub issues](https://img.shields.io/github/issues/tjkandala/baahu)
-![Read the docs](https://img.shields.io/badge/go%20to-docs-blue)
+    <a href="https://unpkg.com/baahu/dist/baahu.cjs.production.min.js">
+  <img src="http://img.badgesize.io/https://unpkg.com/baahu/dist/baahu.cjs.production.min.js?compression=brotli&label=brotli" alt="brotli size" />
+  </a>
+  
+    <a>
+  <img src="https://img.shields.io/github/languages/top/tjkandala/baahu" alt="GitHub top language" />
+  </a>
+  
+      <a>
+  <img src="https://img.shields.io/github/license/tjkandala/baahu" alt="license" />
+  </a>
+  
+    <a>
+  <img src="https://img.shields.io/github/issues/tjkandala/baahu" alt="GitHub issues" />
+  </a>
+  
+    <a>
+  <img src="https://img.shields.io/badge/go%20to-docs-blue" alt="read the documentation" />
+  </a>
+  
+
 
 </p>
 
