@@ -4,6 +4,14 @@
 [![gzip size](http://img.badgesize.io/https://unpkg.com/browse/baahu/dist/baahu.cjs.production.min.js?compression=gzip&label=gzip)](https://unpkg.com/browse/baahu/dist/baahu.cjs.production.min.js)
 [![brotli size](http://img.badgesize.io/https://unpkg.com/browse/baahu/dist/baahu.cjs.production.min.js?compression=brotli&label=brotli)](https://unpkg.com/browse/baahu/dist/baahu.cjs.production.min.js)
 
+![GitHub top language](https://img.shields.io/github/languages/top/tjkandala/baahu)
+
+![GitHub](https://img.shields.io/github/license/tjkandala/baahu)
+
+![GitHub issues](https://img.shields.io/github/issues/tjkandala/baahu)
+
+![Read the docs](https://img.shields.io/badge/go%20to-docs-blue)
+
 
 [3.8 kb](https://bundlephobia.com/result?p=baahu@0.10.2) batteries-included UI framework / web app SDK (once it has a cli)
 
