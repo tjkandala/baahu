@@ -1,33 +1,24 @@
 ![transparentHQ](https://user-images.githubusercontent.com/37420160/82601152-18f2bd00-9b7d-11ea-9188-a60d70518bb5.png)
 
 <p align="center">
-  
   <a href="https://unpkg.com/baahu/dist/baahu.cjs.production.min.js">
   <img src="http://img.badgesize.io/https://unpkg.com/baahu/dist/baahu.cjs.production.min.js?compression=gzip&label=gzip" alt="gzip size" />
-  </a>
-  
-    <a href="https://unpkg.com/baahu/dist/baahu.cjs.production.min.js">
+  </a> 
+  <a href="https://unpkg.com/baahu/dist/baahu.cjs.production.min.js">
   <img src="http://img.badgesize.io/https://unpkg.com/baahu/dist/baahu.cjs.production.min.js?compression=brotli&label=brotli" alt="brotli size" />
   </a>
-  
-    <a>
+  <a>
   <img src="https://img.shields.io/github/languages/top/tjkandala/baahu" alt="GitHub top language" />
   </a>
-  
-      <a>
+  <a>
   <img src="https://img.shields.io/github/license/tjkandala/baahu" alt="license" />
   </a>
-  
-    <a>
+  <a>
   <img src="https://img.shields.io/github/issues/tjkandala/baahu" alt="GitHub issues" />
   </a>
-  
-    <a>
+  <a>
   <img src="https://img.shields.io/badge/go%20to-docs-blue" alt="read the documentation" />
   </a>
-  
-
-
 </p>
 
 
