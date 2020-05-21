@@ -3,6 +3,8 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/tjkandala/baahu/badge.svg?branch=master)](https://coveralls.io/github/tjkandala/baahu?branch=master)
 
+[![Coverage Status](https://coveralls.io/repos/github/tjkandala/baahu/badge.svg?branch=master)](https://coveralls.io/github/tjkandala/baahu?branch=master)
+
 [3.8 kb](https://bundlephobia.com/result?p=baahu@0.10.2) batteries-included UI framework / web app SDK (once it has a cli)
 
 dx strengths
