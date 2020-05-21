@@ -20,6 +20,7 @@
   <a>
   <img src="https://img.shields.io/badge/go%20to-docs-blue" alt="read the documentation" />
   </a>
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/tjkandala/baahu/CI">
 </p>
 
 
