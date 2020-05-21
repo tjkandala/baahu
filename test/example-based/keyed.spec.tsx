@@ -6,133 +6,16 @@ import {
 } from '../../src/machineRegistry';
 
 /**
- * The first test generates 14 tests (7 unkeyed, 7 keyed)
- * for the diffing algorithms. Feel free to add
- * crazier lists to test accuracy
+ * Why am I not using fast-check/property-based
+ * testing for this?
  *
- * TODO: test machine (not just element) node keyed diff!
+ * The test cases generated from `listMap` target
+ * specific code branches. If a test fails, I know
+ * which part of the algorithm has regressed.
+ *
+ * I may use fast-check for this later, but that will
+ * be in addition to these targeted tests.
  */
-
-type BadVideoEvent = { type: 'LOADED' };
-type BadVideoState = 'loading';
-
-type ListItem = { key: string; todo: string };
-type ListEvent = { type: 'TOGGLE' };
-type ListState = 'first' | 'second';
-
-const failures = [];
-
-const BadVideoComponent = machine<{}, BadVideoState, BadVideoEvent>({
-  id: 'video',
-  context: () => ({}),
-  initial: 'loading',
-  when: {
-    loading: {
-      on: {
-        LOADED: {
-          do: [() => failures.push('another one')],
-        },
-      },
-    },
-  },
-  render() {
-    return b('div', null, b('p', null, 'this component sucks'));
-  },
-});
-
-function createListDiffComponent(
-  listOne: ListItem[],
-  listTwo: ListItem[],
-  diffType: string,
-  testCase: string,
-  type: 'element' | 'machine' | 'memo'
-): MachineComponent<{}, ListState, ListEvent> {
-  const ListMach: MachineComponent<{}, ListState, ListEvent> = machine<
-    {},
-    ListState,
-    ListEvent
-  >({
-    id: `listMach-${diffType}-${testCase}`,
-    context: () => ({}),
-    initial: 'first',
-    when: {
-      first: {
-        on: {
-          TOGGLE: {
-            to: 'second',
-          },
-        },
-      },
-      second: {
-        on: {
-          TOGGLE: { to: 'first' },
-        },
-      },
-    },
-    render: state => {
-      switch (state) {
-        case 'first':
-          return b(
-            'div',
-            {},
-            ...listOne.map(item =>
-              type === 'machine' ? (
-                <ItemMachine
-                  item={item}
-                  key={diffType === 'keyed' ? item.key : undefined}
-                />
-              ) : type === 'memo' ? (
-                <MemoItem
-                  todo={item.todo}
-                  key={diffType === 'keyed' ? item.key : undefined}
-                />
-              ) : (
-                <p key={diffType === 'keyed' ? item.key : undefined}>
-                  {item.todo}
-                </p>
-              )
-            )
-          );
-
-        case 'second':
-          return b(
-            'div',
-            {},
-            ...listTwo.map(item =>
-              type === 'machine' ? (
-                <ItemMachine
-                  item={item}
-                  key={diffType === 'keyed' ? item.key : undefined}
-                />
-              ) : type === 'memo' ? (
-                <MemoItem
-                  todo={item.todo}
-                  key={diffType === 'keyed' ? item.key : undefined}
-                />
-              ) : (
-                <p key={diffType === 'keyed' ? item.key : undefined}>
-                  {item.todo}
-                </p>
-              )
-            )
-          );
-      }
-    },
-  });
-  return ListMach;
-}
-
-const ItemMachine = machine<{ item: ListItem }>({
-  id: ({ item }) => `item-${item.key}`,
-  context: ({ item }) => ({ item }),
-  initial: 'default',
-  when: {
-    default: {},
-  },
-  render: (_s, ctx) => <p>{ctx.item.todo}</p>,
-});
-
-const MemoItem = memo<{ todo: string }>(({ todo }) => <p>{todo}</p>);
 
 /** keys represent test cases */
 type ListMap = {
@@ -380,6 +263,127 @@ const listMap: ListMap = {
     ],
   },
 };
+
+type BadVideoEvent = { type: 'LOADED' };
+type BadVideoState = 'loading';
+
+type ListItem = { key: string; todo: string };
+type ListEvent = { type: 'TOGGLE' };
+type ListState = 'first' | 'second';
+
+const failures = [];
+
+const BadVideoComponent = machine<{}, BadVideoState, BadVideoEvent>({
+  id: 'video',
+  context: () => ({}),
+  initial: 'loading',
+  when: {
+    loading: {
+      on: {
+        LOADED: {
+          do: [() => failures.push('another one')],
+        },
+      },
+    },
+  },
+  render() {
+    return b('div', null, b('p', null, 'this component sucks'));
+  },
+});
+
+function createListDiffComponent(
+  listOne: ListItem[],
+  listTwo: ListItem[],
+  diffType: string,
+  testCase: string,
+  type: 'element' | 'machine' | 'memo'
+): MachineComponent<{}, ListState, ListEvent> {
+  const ListMach: MachineComponent<{}, ListState, ListEvent> = machine<
+    {},
+    ListState,
+    ListEvent
+  >({
+    id: `listMach-${diffType}-${testCase}`,
+    context: () => ({}),
+    initial: 'first',
+    when: {
+      first: {
+        on: {
+          TOGGLE: {
+            to: 'second',
+          },
+        },
+      },
+      second: {
+        on: {
+          TOGGLE: { to: 'first' },
+        },
+      },
+    },
+    render: state => {
+      switch (state) {
+        case 'first':
+          return b(
+            'div',
+            {},
+            ...listOne.map(item =>
+              type === 'machine' ? (
+                <ItemMachine
+                  item={item}
+                  key={diffType === 'keyed' ? item.key : undefined}
+                />
+              ) : type === 'memo' ? (
+                <MemoItem
+                  todo={item.todo}
+                  key={diffType === 'keyed' ? item.key : undefined}
+                />
+              ) : (
+                <p key={diffType === 'keyed' ? item.key : undefined}>
+                  {item.todo}
+                </p>
+              )
+            )
+          );
+
+        case 'second':
+          return b(
+            'div',
+            {},
+            ...listTwo.map(item =>
+              type === 'machine' ? (
+                <ItemMachine
+                  item={item}
+                  key={diffType === 'keyed' ? item.key : undefined}
+                />
+              ) : type === 'memo' ? (
+                <MemoItem
+                  todo={item.todo}
+                  key={diffType === 'keyed' ? item.key : undefined}
+                />
+              ) : (
+                <p key={diffType === 'keyed' ? item.key : undefined}>
+                  {item.todo}
+                </p>
+              )
+            )
+          );
+      }
+    },
+  });
+  return ListMach;
+}
+
+const ItemMachine = machine<{ item: ListItem }>({
+  id: ({ item }) => `item-${item.key}`,
+  context: ({ item }) => ({ item }),
+  initial: 'default',
+  when: {
+    default: {},
+  },
+  render: (_s, ctx) => <p>{ctx.item.todo}</p>,
+});
+
+const MemoItem = memo<{ todo: string }>(({ todo }) => <p>{todo}</p>);
 
 /**
  * Testing diffing lists. The variety of lists ensures that
