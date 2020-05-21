@@ -29,7 +29,6 @@
 
 ---
 
-
 ## What is Baahu?
 
 Baahu is a small zero-dependency state-machine-based SPA framework for Javascript + TypeScript
@@ -48,3 +47,107 @@ Baahu is a small zero-dependency state-machine-based SPA framework for Javascrip
 
 - Events only cause the targeted machine component to re-render; you don't have to memoize children
 
+## Get Started
+
+Everything you need to know about Baahu is in the docs!
+
+## Example Components
+
+You should read the docs, but if you want a sneak peek at what the API looks like, here a couple of example components:
+
+### Toggle
+
+```tsx
+import { b, machine, emit } from 'baahu';
+
+const Toggle = machine({
+  id: 'toggle',
+  initial: 'inactive',
+  context: () => ({}),
+  when: {
+    inactive: { on: { TOGGLE: { to: 'active' } } },
+    active: { on: { TOGGLE: { to: 'inactive' } } },
+  },
+  render: state => (
+    <div>
+      <h3>{state}</h3>
+      <button onClick={() => emit({ type: 'TOGGLE' })}>Toggle</button>
+    </div>
+  ),
+});
+```
+
+### Traffic Light
+
+A traffic light component that doesn't let you cross the street when it is red, and displays the # of times you crossed the street.
+
+```tsx
+import { b, machine, emit } from 'baahu';
+
+/**
+ * you can make your own abstractions for
+ * entry/exit/"do" actions. embracing js/ts keeps
+ * baahu fast and light!
+ */
+
+function delayedEmit(event, delayMS) {
+  /** returns a function that is called by baahu. emit the
+   * provided event after the specified time */
+  return () => setTimeout(() => emit(event, 'light'), delayMS);
+}
+
+const Light = machine({
+  id: 'light',
+  initial: 'red',
+  context: () => ({
+    streetsCrossed: 0,
+  }),
+  when: {
+    red: {
+      entry: delayedEmit({ type: 'START' }, 3000),
+      on: {
+        START: {
+          to: 'green',
+        },
+        CROSS: {
+          do: () => alert('JAYWALKING'),
+        },
+      },
+    },
+    yellow: {
+      entry: delayedEmit({ type: 'STOP' }, 1500),
+      on: {
+        STOP: {
+          to: 'red',
+        },
+        CROSS: {
+          do: ctx => ctx.streetsCrossed++,
+        },
+      },
+    },
+    green: {
+      entry: delayedEmit({ type: 'SLOW_DOWN' }, 2500),
+      on: {
+        SLOW_DOWN: {
+          to: 'yellow',
+        },
+        CROSS: {
+          do: ctx => ctx.streetsCrossed++,
+        },
+      },
+    },
+  },
+  render: (state, ctx) => (
+    <div>
+      <h3>{state}</h3>
+      {/* this is a targeted event: 
+        only the machine with the specified
+        id will be checked */}
+      <button onClick={() => emit({ type: 'CROSS' }, 'light')}>
+        Cross the Street
+      </button>
+      <p>Time(s) street crossed: {ctx.streetsCrossed}</p>
+    </div>
+  ),
+});
+```
