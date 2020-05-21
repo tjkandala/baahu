@@ -1,6 +1,7 @@
 ![transparentHQ](https://user-images.githubusercontent.com/37420160/82601152-18f2bd00-9b7d-11ea-9188-a60d70518bb5.png)
 
-<p align="center">
+<p align="center" style="border-top: 1px solid black">
+  <a href='https://coveralls.io/github/tjkandala/baahu?branch=master'><img src='https://coveralls.io/repos/github/tjkandala/baahu/badge.svg?branch=master' alt='Coverage Status' /></a>
   <a href="https://unpkg.com/baahu/dist/baahu.cjs.production.min.js">
   <img src="http://img.badgesize.io/https://unpkg.com/baahu/dist/baahu.cjs.production.min.js?compression=gzip&label=gzip" alt="gzip size" />
   </a> 
