@@ -1,13 +1,4 @@
-import {
-  SFC,
-  b,
-  emit,
-  machine,
-  createRouter,
-  memo,
-  mount,
-  linkTo,
-} from '../../src';
+import { SFC, b, emit, machine, router, memo, mount, linkTo } from '../../src';
 import { machineRegistry } from '../../src/machineRegistry';
 
 describe('basic apps', () => {
@@ -27,7 +18,7 @@ describe('basic apps', () => {
      *
      */
 
-    const MyRouter = createRouter({
+    const MyRouter = router({
       '/': () => <Home />,
       '/videos': () => <VideoList initialCategory={'sports'} />,
     });

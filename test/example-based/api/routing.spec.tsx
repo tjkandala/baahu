@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { RouTrie } from '../../../src/router';
 import { SFC, machine } from '../../../src/component';
-import { b, createRouter, linkTo, mount } from '../../../src/index';
+import { b, router, linkTo, mount } from '../../../src/index';
 import { machineRegistry } from '../../../src/machineRegistry';
+import { Link } from '../../../src/main';
 
 describe('router', () => {
   let $root = document.body;
@@ -30,7 +31,7 @@ describe('router', () => {
       </div>
     );
 
-    const MyRouter = createRouter({
+    const MyRouter = router({
       '/': () => <Home />,
       '/room/:roomid': ({ roomid }) => <Room roomid={roomid} />,
     });
@@ -235,6 +236,45 @@ describe('router', () => {
   });
 
   test('link', () => {
-    expect(true).toBe(true);
+    const FirstPage = () => <p>first</p>;
+
+    const SecondPage = () => <p>second</p>;
+
+    const MyRouter = router({
+      '/': () => <FirstPage />,
+      '/second': () => <SecondPage />,
+    });
+
+    let onClicksHandled = 0;
+
+    const App = () => (
+      <div>
+        <MyRouter />
+        <Link to="/second" onClick={() => onClicksHandled++}></Link>
+        <Link to={{ path: '/', state: { name: 'TJ' } }}></Link>
+      </div>
+    );
+
+    const $root = mount(App, document.body);
+
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('first');
+
+    const firstA = $root.childNodes[1] as HTMLAnchorElement;
+    const secondA = $root.childNodes[2] as HTMLAnchorElement;
+
+    expect(firstA?.nodeName).toBe('A');
+    expect(secondA?.nodeName).toBe('A');
+
+    firstA.click();
+
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('second');
+
+    secondA.click();
+
+    expect($root.firstChild?.firstChild?.nodeValue).toBe('first');
+
+    expect(window.history.state).toStrictEqual({ name: 'TJ' });
+
+    expect(onClicksHandled).toBe(1);
   });
 });

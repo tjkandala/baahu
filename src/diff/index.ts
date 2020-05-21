@@ -273,7 +273,7 @@ function unmountMachine(idToDelete: string) {
  */
 
 /**
- * Diffing algorithm for keyed children. Call this when the first
+ * algorithm for keyed children. Call this when the first
  * index of oldVChildren and newVChildren are both keyed.
  *
  * Inspired by the algorithm used in Ivi, but modified to account
@@ -296,6 +296,10 @@ function keyedDiffChildren(
     oldLen = oldVChildren.length,
     oldEnd = oldLen - 1,
     newEnd = newVChildren.length - 1,
+    oldEndNode: VNode,
+    newEndNode: VNode,
+    oldStartNode: VNode,
+    newStartNode: VNode,
     $node: HTMLElement | Text | ChildNode | undefined,
     $nextNode: HTMLElement | Text | ChildNode | null | undefined = undefined,
     oldVNode: VNode,
@@ -312,8 +316,8 @@ function keyedDiffChildren(
    */
   outer: while (true) {
     // check common suffix
-    let oldEndNode = oldVChildren[oldEnd];
-    let newEndNode = newVChildren[newEnd];
+    oldEndNode = oldVChildren[oldEnd];
+    newEndNode = newVChildren[newEnd];
 
     while (oldEndNode.k === newEndNode.k) {
       // this part is important: if the last node not part of the
@@ -335,8 +339,8 @@ function keyedDiffChildren(
     // exhausted common suffix
 
     // check common prefix
-    let oldStartNode = oldVChildren[oldStart],
-      newStartNode = newVChildren[newStart];
+    oldStartNode = oldVChildren[oldStart];
+    newStartNode = newVChildren[newStart];
 
     while (oldStartNode.k === newStartNode.k) {
       diff(oldStartNode, newStartNode, parentDom, nodeDepth + 1, isSvg);
@@ -444,7 +448,7 @@ function keyedDiffChildren(
        * Set pos to 99999999 when the new position of a node is less
        * than the new position of the node that used to precede it */
 
-      pos = pos < indexInNewChildren ? indexInNewChildren : 99999999;
+      pos = pos < indexInNewChildren ? indexInNewChildren : movedNum;
       sources[indexInNewChildren - newStart] = i;
     } else {
       oldVNode.x === VNodeKind.M
@@ -470,7 +474,7 @@ function keyedDiffChildren(
   let sourcesActions: Int32Array;
 
   // slightly different logic if nodes have moved
-  if (pos === 99999999) {
+  if (pos === movedNum) {
     // at least one node has moved
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     sourcesActions = markLIS(sources);
@@ -684,3 +688,5 @@ function diffChildren(
     parentDom.appendChild(renderDOM(newVChild, nodeDepth + 1, isSvg));
   }
 }
+
+let movedNum = 99999999;

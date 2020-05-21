@@ -287,7 +287,7 @@ export function emit(
   }
 }
 
-export function createRouter<Props extends PropsArg = any>(
+export function router<Props extends PropsArg = any>(
   routerSchema: RouterSchema<Props>,
   prefix = ''
 ): SFC<Props & { children?: any }> {
@@ -369,12 +369,56 @@ function link(path: string, state: any = null): void {
   newRoute();
 }
 
+/** programmatic routing */
 export function linkTo(path: string, state: any = null): void {
   /** wait for transitions/rerenders to complete. this logic is only in place because of the
    * possibility that a state transition could trigger a redirect. not really a good pattern,
    * but should be supported/behave in the expected manner. */
   isTransitioning ? setTimeout(() => link(path, state), 0) : link(path, state);
 }
+
+/** link component */
+export const Link: SFC<{
+  to: string | { path: string; state: any };
+  key?: string | number;
+  onClick?: (e: JSX.TargetedEvent<HTMLAnchorElement, MouseEvent>) => void;
+  target?: string;
+  children?: any;
+  ref?: (el: HTMLAnchorElement) => void;
+}> = (props, children) => {
+  const path = typeof props.to === 'string' ? props.to : props.to.path;
+
+  const o = props.onClick,
+    target = props.target;
+
+  const onClickOverride = (
+    e: JSX.TargetedEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    if (o) o(e);
+
+    /**
+     * conditions from:
+     * https://github.com/ReactTraining/react-router/blob/master/packages/react-router-dom/modules/Link.js#L43
+     *
+     * behave like a normal anchor tag to open in new tabs etc.
+     */
+    if (
+      !e.defaultPrevented &&
+      e.button === 0 &&
+      (!props.target || props.target === '_self') &&
+      !(e.metaKey || e.altKey || e.ctrlKey || e.shiftKey)
+    ) {
+      e.preventDefault();
+      linkTo(path, typeof props.to === 'object' && props.to.state);
+    }
+  };
+
+  return b(
+    'a',
+    { href: path, onClick: onClickOverride, target: target, key: props.key },
+    children
+  );
+};
 
 export function mount(
   rootComponent: MachineComponent | SFC,
