@@ -2,6 +2,10 @@
 
 <p align="center">
   
+  <a href="https://unpkg.com/baahu/dist/baahu.cjs.production.min.js">
+  <img src="http://img.badgesize.io/https://unpkg.com/baahu/dist/baahu.cjs.production.min.js?compression=gzip&label=gzip" alt="GZIP Bundle Size" />
+  </a>
+  
 [![gzip size](http://img.badgesize.io/https://unpkg.com/baahu/dist/baahu.cjs.production.min.js?compression=gzip&label=gzip)](https://unpkg.com/baahu/dist/baahu.cjs.production.min.js)
 [![brotli size](http://img.badgesize.io/https://unpkg.com/baahu/dist/baahu.cjs.production.min.js?compression=brotli&label=brotli)](https://unpkg.com/baahu/dist/baahu.cjs.production.min.js)
 ![GitHub top language](https://img.shields.io/github/languages/top/tjkandala/baahu)
