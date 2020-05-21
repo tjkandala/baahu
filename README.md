@@ -1,4 +1,4 @@
-# baahu 💪
+# baahu 🐘
 
 [![Coverage Status](https://coveralls.io/repos/github/tjkandala/baahu/badge.svg?branch=master)](https://coveralls.io/github/tjkandala/baahu?branch=master)
 
