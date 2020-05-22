@@ -5,6 +5,9 @@
 <br/>
 
 <p align="center" style="border-top: 1px solid black">
+  <a>
+  <img src="https://img.shields.io/badge/go%20to-docs-blue" alt="read the documentation" />
+  </a>
   <a href='https://coveralls.io/github/tjkandala/baahu?branch=master'><img src='https://coveralls.io/repos/github/tjkandala/baahu/badge.svg?branch=master&service=github' alt='Coverage Status' /></a>
   <a href="https://unpkg.com/baahu/dist/baahu.cjs.production.min.js">
   <img src="http://img.badgesize.io/https://unpkg.com/baahu/dist/baahu.cjs.production.min.js?compression=gzip&label=gzip" alt="gzip size" />
@@ -16,13 +19,13 @@
   <img src="https://img.shields.io/github/languages/top/tjkandala/baahu" alt="GitHub top language" />
   </a>
   <a>
+  <img alt="npm" src="https://img.shields.io/npm/v/baahu">
+  </a>
+  <a>
   <img src="https://img.shields.io/github/license/tjkandala/baahu" alt="license" />
   </a>
   <a>
   <img src="https://img.shields.io/github/issues/tjkandala/baahu" alt="GitHub issues" />
-  </a>
-  <a>
-  <img src="https://img.shields.io/badge/go%20to-docs-blue" alt="read the documentation" />
   </a>
   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/tjkandala/baahu/CI">
 </p>
@@ -84,17 +87,19 @@ A traffic light component that doesn't let you cross the street when it is red, 
 ```tsx
 import { b, machine, emit } from 'baahu';
 
-/**
- * you can make your own abstractions for
- * entry/exit/"do" actions. embracing js/ts keeps
- * baahu fast and light!
- */
-
+/** returns a function that is called by baahu. emit the
+ * provided event after the specified time */
 function delayedEmit(event, delayMS) {
-  /** returns a function that is called by baahu. emit the
-   * provided event after the specified time */
   return () => setTimeout(() => emit(event, 'light'), delayMS);
 }
+
+/**
+ * you can make your own abstractions like `delayedEmit`
+ * for entry/exit/"do" actions.
+ *
+ * embracing js/ts (as opposed to shipping with every
+ * possible abstraction) keeps baahu fast and light!
+ */
 
 const Light = machine({
   id: 'light',
