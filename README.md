@@ -39,15 +39,10 @@ Baahu is a small zero-dependency state-machine-based SPA framework for Javascrip
 ## Features
 
 - [Faster and smaller than major frameworks/libraries]() (Svelte, Preact, Vue, React, and Angular)
-
 - Built-in robust state management: Finite State Machines!
-
 - Event-driven, not change-driven/reactive
-
 - Built-in trie-based router & code-splitting
-
 - First-class TypeScript support: type-checked JSX, props, states, events.
-
 - Events only cause the targeted machine component to re-render; you don't have to memoize children
 
 ## Get Started
