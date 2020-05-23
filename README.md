@@ -76,6 +76,8 @@ const Toggle = machine({
 
 A traffic light component that doesn't let you cross the street when it is red, and displays the # of times you crossed the street.
 
+[codesandbox](https://codesandbox.io/s/baahu-traffic-light-zox6c)
+
 ```tsx
 import { b, machine, emit } from 'baahu';
 
@@ -148,5 +150,3 @@ const Light = machine({
   ),
 });
 ```
-
-[Code sandbox](https://codesandbox.io/s/baahu-uncontrolled-form-x5m6u?file=/src/index.tsx)
