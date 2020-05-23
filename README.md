@@ -35,12 +35,12 @@ Baahu is a small zero-dependency [Moore machine-based](https://en.wikipedia.org/
 
 ## Features
 
-- [Faster and smaller than major frameworks/libraries](performance.md) (Svelte, Preact, Vue, React, and Angular)
+- [Faster and smaller than major frameworks/libraries](https://baahu.dev/performance.md) (Svelte, Preact, Vue, React, and Angular)
 - Built-in robust state management: Finite State Machines!
 - Event-driven, not change-driven/reactive
 - Built-in trie-based router & code-splitting
 - First-class TypeScript support: type-checked JSX, props, states, events.
-- [O(1) component rendering](performance#higher-level-internal-optimizations) for _all_ components, not just leaves.
+- [O(1) component rendering](https://baahu.dev/performance#higher-level-internal-optimizations) for _all_ components, not just leaves.
 
 ## Get Started
 
