@@ -24,9 +24,6 @@
   <a>
   <img src="https://img.shields.io/github/license/tjkandala/baahu" alt="license" />
   </a>
-  <a>
-  <img src="https://img.shields.io/github/issues/tjkandala/baahu" alt="GitHub issues" />
-  </a>
   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/tjkandala/baahu/CI">
 </p>
 
@@ -34,20 +31,20 @@
 
 ## What is Baahu?
 
-Baahu is a small zero-dependency state-machine-based SPA framework for Javascript + TypeScript
+Baahu is a small zero-dependency Mealy machine-based UI framework for Javascript + TypeScript
 
 ## Features
 
-- [Faster and smaller than major frameworks/libraries]() (Svelte, Preact, Vue, React, and Angular)
+- [Faster and smaller than major frameworks/libraries](performance.md) (Svelte, Preact, Vue, React, and Angular)
 - Built-in robust state management: Finite State Machines!
 - Event-driven, not change-driven/reactive
 - Built-in trie-based router & code-splitting
 - First-class TypeScript support: type-checked JSX, props, states, events.
-- Events only cause the targeted machine component to re-render; you don't have to memoize children
+- [O(1) component rendering](performance#higher-level-internal-optimizations) for _all_ components, not just leaves.
 
 ## Get Started
 
-Everything you need to know about Baahu is in the docs!
+Everything you need to know about Baahu is in the [docs](https://baahu.dev)!
 
 ## Example Components
 
