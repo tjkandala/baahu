@@ -31,7 +31,7 @@
 
 ## What is Baahu?
 
-Baahu is a small zero-dependency Mealy machine-based UI framework for Javascript + TypeScript
+Baahu is a small zero-dependency [Mealy machine-based](https://en.wikipedia.org/wiki/Mealy_machine) UI framework for Javascript + TypeScript
 
 ## Features
 
