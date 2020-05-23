@@ -148,3 +148,5 @@ const Light = machine({
   ),
 });
 ```
+
+[Code sandbox](https://codesandbox.io/s/baahu-uncontrolled-form-x5m6u?file=/src/index.tsx)
