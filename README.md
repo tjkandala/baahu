@@ -5,7 +5,7 @@
 <br/>
 
 <p align="center" style="border-top: 1px solid black">
-  <a>
+  <a href="https://baahu.dev/docs/introduction">
   <img src="https://img.shields.io/badge/go%20to-docs-blue" alt="read the documentation" />
   </a>
   <a href='https://coveralls.io/github/tjkandala/baahu?branch=master'><img src='https://coveralls.io/repos/github/tjkandala/baahu/badge.svg?branch=master&service=github' alt='Coverage Status' /></a>
@@ -31,7 +31,7 @@
 
 ## What is Baahu?
 
-Baahu is a small zero-dependency Mealy machine-based UI framework for Javascript + TypeScript
+Baahu is a small zero-dependency [Moore machine-based](https://en.wikipedia.org/wiki/Moore_machine) UI framework for Javascript + TypeScript
 
 ## Features
 
@@ -44,7 +44,7 @@ Baahu is a small zero-dependency Mealy machine-based UI framework for Javascript
 
 ## Get Started
 
-Everything you need to know about Baahu is in the [docs](https://baahu.dev)!
+Everything you need to know about Baahu is in the [docs](https://baahu.dev/docs/introduction)!
 
 [Code Sandbox template](https://codesandbox.io/s/hello-baahu-2zzv7?file=/src/index.tsx)
 
@@ -77,6 +77,8 @@ const Toggle = machine({
 ### Traffic Light
 
 A traffic light component that doesn't let you cross the street when it is red, and displays the # of times you crossed the street.
+
+[codesandbox](https://codesandbox.io/s/baahu-traffic-light-zox6c)
 
 ```tsx
 import { b, machine, emit } from 'baahu';
