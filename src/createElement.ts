@@ -49,9 +49,11 @@ type TextVNode = {
   /** dom */
   d: Text | null;
   i: null;
-  /** node depth (for global update opts). initialized during first render, spread by 'infection'
-   * on subsequent renders */
-  h: number | null;
+  /** node depth (for global update opts).
+   * initialized during first render, spread by 'infection'
+   * on subsequent renders (new nodes start with 0, but get their node depth
+   * from renderDOM / diff) */
+  h: number;
 };
 
 export type ElementVNode = {
@@ -66,7 +68,7 @@ export type ElementVNode = {
   /** id (for machine node lookup in registry) */
   i: null;
   /** node depth */
-  h: number | null;
+  h: number;
 };
 
 export type MachineVNode = {
@@ -81,7 +83,7 @@ export type MachineVNode = {
   /** id (for machine node lookup in registry) */
   i: string;
   /** node depth */
-  h: number | null;
+  h: number;
 };
 
 // for functions wrapped w/ memo (make them rerender on global events!)
@@ -127,7 +129,7 @@ export function createTextVNode(text: string): TextVNode {
     c: null,
     d: null,
     i: null,
-    h: null,
+    h: 0,
   };
 }
 
@@ -203,7 +205,7 @@ export function b<Props extends PropsArg>(
         c: processChildren(children),
         d: null,
         i: null,
-        h: null,
+        h: 0,
       };
 
     /** machine components or SFCs */
@@ -265,7 +267,7 @@ export function b<Props extends PropsArg>(
             c: child ? child : createTextVNode(''),
             d: null,
             i: instanceId,
-            h: null,
+            h: 0,
           };
 
           const newInstance = {
@@ -315,7 +317,7 @@ export function b<Props extends PropsArg>(
               c: child ? child : createTextVNode(''),
               d: null,
               i: instanceId,
-              h: null,
+              h: 0,
             };
 
             existingInstance.v = vNode;
