@@ -33,6 +33,8 @@
 
 Baahu is a small zero-dependency Mealy machine-based UI framework for Javascript + TypeScript
 
+[Code Sandbox template](https://codesandbox.io/s/hello-baahu-2zzv7?file=/src/index.tsx)
+
 ## Features
 
 - [Faster and smaller than major frameworks/libraries](performance.md) (Svelte, Preact, Vue, React, and Angular)
