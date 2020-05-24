@@ -1,5 +1,6 @@
 import { VNode, VNodeKind, b } from './createElement';
 import { renderType } from './machineRegistry';
+import { appendChild, setAttr, addEvtLst, doc } from './constants';
 
 /** call this function with a VNode. it will recursively append DOM children until it reaches leaves */
 export function renderDOM(
@@ -8,8 +9,6 @@ export function renderDOM(
   isSvg: boolean = false
 ): HTMLElement | Text {
   node.h = nodeDepth;
-
-  let doc = document; // helps w/ minification
 
   switch (node.x) {
     case VNodeKind.E:
@@ -25,7 +24,7 @@ export function renderDOM(
       if (attrs) {
         for (const k in node.a) {
           if (k[0] === 'o' && k[1] === 'n') {
-            $el.addEventListener(eType(k), attrs[k]);
+            $el[addEvtLst](eType(k), attrs[k]);
           } else {
             if (k === 'disabled') {
               $el[k] = attrs[k];
@@ -39,7 +38,7 @@ export function renderDOM(
 
               attrs[k]($el);
             } else if (k !== 'key') {
-              $el.setAttribute(k, attrs[k]);
+              $el[setAttr](k, attrs[k]);
             }
           }
         }
@@ -49,7 +48,7 @@ export function renderDOM(
       // let child: HTMLElement | Text;
       for (let i = 0, len = kids.length; i < len; i++) {
         // child = renderDOM(kids[i]);
-        $el.appendChild(renderDOM(kids[i], nodeDepth + 1, isSvg));
+        $el[appendChild](renderDOM(kids[i], nodeDepth + 1, isSvg));
       }
       node.d = $el;
 

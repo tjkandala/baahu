@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Props } from '../createElement';
 import { eType } from '../renderDOM';
+import { addEvtLst, rmvEvtLst, rmvAttr, setAttr } from '../constants';
 
 // this is actually attrs.... rename! change to in-place diff
 export function diffProps(
@@ -24,7 +25,7 @@ export function diffProps(
         const eventType = eType(k);
         // just add the event if there aren't old props, or if old props doesn't have the event
         if (!oldProps || !oldProps[k]) {
-          $el.addEventListener(eventType, newProps[k]);
+          $el[addEvtLst](eventType, newProps[k]);
         } else {
           /** if both old and new vnode have a listener for the same event,
            * check to see if they are the same fn. if they are, do nothing. */
@@ -32,8 +33,8 @@ export function diffProps(
           const newHandler = newProps[k];
 
           if (oldHandler !== newHandler) {
-            $el.removeEventListener(eventType, oldHandler);
-            $el.addEventListener(eventType, newHandler);
+            $el[rmvEvtLst](eventType, oldHandler);
+            $el[addEvtLst](eventType, newHandler);
           }
         }
       } else if (k !== 'key') {
@@ -53,8 +54,8 @@ export function diffProps(
 
             newProps[k]($el);
           } else {
-            $el.removeAttribute(k);
-            $el.setAttribute(k, newProps[k]);
+            $el[rmvAttr](k);
+            $el[setAttr](k, newProps[k]);
           }
         }
       }
@@ -68,9 +69,9 @@ export function diffProps(
       if (!newProps || !newProps[k]) {
         if (k[0] === 'o' && k[1] === 'n') {
           // event handlers
-          $el.removeEventListener(eType(k), oldProps[k]);
+          $el[rmvEvtLst](eType(k), oldProps[k]);
         } else {
-          $el.removeAttribute(k);
+          $el[rmvAttr](k);
         }
       }
     }

@@ -3,6 +3,13 @@ import { renderDOM } from '../renderDOM';
 import { diffProps } from './props';
 import { b } from '../createElement';
 import { renderType, machineRegistry } from '../machineRegistry';
+import {
+  appendChild,
+  TypedArray,
+  replaceChild,
+  insertBefore,
+  remove,
+} from '../constants';
 
 export function diff(
   oldVNode: VNode,
@@ -20,9 +27,9 @@ export function diff(
    * to the old tree, so remove node */
   if (!newVNode) {
     if (oldVNode.x === VNodeKind.M) {
-      oldVNode.c.d && oldVNode.c.d.remove();
+      oldVNode.c.d && oldVNode.c.d[remove]();
     } else {
-      oldVNode.d && oldVNode.d.remove();
+      oldVNode.d && oldVNode.d[remove]();
     }
     safelyRemoveVNode(oldVNode);
     return;
@@ -189,7 +196,7 @@ function replace(
   const $new = renderDOM(newVNode, nodeDepth, isSvg);
   if (parentDom) {
     // this might be an unneccesary test, check it. just make sure every node has to have a valid .d at diff time
-    parentDom.replaceChild($new, oldVNode.d as HTMLElement);
+    parentDom[replaceChild]($new, oldVNode.d as HTMLElement);
   } else {
     /**
      * this branch is necessary for machine node diffing,
@@ -199,7 +206,7 @@ function replace(
     if ($d) {
       const $parent = $d.parentElement;
 
-      $parent && $parent.replaceChild($new, $d);
+      $parent && $parent[replaceChild]($new, $d);
     }
   }
 
@@ -377,8 +384,8 @@ function keyedDiffChildren(
       $node = renderDOM(newVChildren[newStart], nodeDepth + 1, isSvg);
 
       oldStart >= oldLen
-        ? parentDom.appendChild($node)
-        : parentDom.insertBefore($node, oldVChildren[oldStart].d);
+        ? parentDom[appendChild]($node)
+        : parentDom[insertBefore]($node, oldVChildren[oldStart].d);
 
       newStart++;
     }
@@ -398,8 +405,8 @@ function keyedDiffChildren(
       oldVNode = oldVChildren[oldStart];
 
       oldVNode.x === VNodeKind.M
-        ? oldVNode.c.d!.remove()
-        : oldVNode.d!.remove();
+        ? oldVNode.c.d![remove]()
+        : oldVNode.d![remove]();
       // we can assert that dom exists because it is only null before "renderDOM",
       // which surely would have been run before diffing
 
@@ -452,8 +459,8 @@ function keyedDiffChildren(
       sources[indexInNewChildren - newStart] = i;
     } else {
       oldVNode.x === VNodeKind.M
-        ? oldVNode.c.d!.remove()
-        : oldVNode.d!.remove();
+        ? oldVNode.c.d![remove]()
+        : oldVNode.d![remove]();
       // we can assert that dom exists because it is only null before "renderDOM",
       // which surely would have been run before diffing
 
@@ -508,8 +515,8 @@ function keyedDiffChildren(
           $node = renderDOM(newVNode, nodeDepth + 1, isSvg);
 
           $nextNode
-            ? parentDom.insertBefore($node, $nextNode)
-            : parentDom.appendChild($node);
+            ? parentDom[insertBefore]($node, $nextNode)
+            : parentDom[appendChild]($node);
 
           $nextNode = $node;
           continue;
@@ -524,8 +531,8 @@ function keyedDiffChildren(
 
           if (newVNode.d) {
             $nextNode
-              ? parentDom.insertBefore(newVNode.d, $nextNode)
-              : parentDom.appendChild(newVNode.d);
+              ? parentDom[insertBefore](newVNode.d, $nextNode)
+              : parentDom[appendChild](newVNode.d);
 
             $nextNode = newVNode.d;
           }
@@ -552,8 +559,8 @@ function keyedDiffChildren(
           $node = renderDOM(newVNode, nodeDepth + 1, isSvg);
 
           $nextNode
-            ? parentDom.insertBefore($node, $nextNode)
-            : parentDom.appendChild($node);
+            ? parentDom[insertBefore]($node, $nextNode)
+            : parentDom[appendChild]($node);
 
           $nextNode = $node;
           continue;
@@ -593,18 +600,20 @@ function keyedDiffChildren(
  *
  * Doesn't work correctly if source array values are -1 or -2,
  * but that's irrelevant here because the values represent indices (min 0)
+ *
+ * TypedArray is an alias for Int32Array
  */
 export function markLIS(sources: Int32Array): Int32Array {
   let n = sources.length,
     /** The value at each index i is the index (in the sources array)
      * of the immediate predecessor in the longest increasing subsequence that ends with sources[i].
      * i.e. sources[predecessors[i]] directly precedes sources[i] in an increasing subsequence  */
-    predecessors = new Int32Array(n),
+    predecessors = new TypedArray(n),
     /** Length is n + 1 bc we skip index 0.
      * The value at each index i is the index in sources array of the
      * (smallest) last member of an increasing subsequence of length i
      */
-    indices = new Int32Array(n + 1),
+    indices = new TypedArray(n + 1),
     length = 0,
     lo: number,
     hi: number,
@@ -638,7 +647,7 @@ export function markLIS(sources: Int32Array): Int32Array {
   }
 
   // backtracking to mark lis a copy of the sources array
-  let markedLIS = Int32Array.from(sources),
+  let markedLIS = TypedArray.from(sources),
     k = indices[length];
   for (i = 0; i < length; i++) {
     markedLIS[k] = -2;
@@ -685,7 +694,7 @@ function diffChildren(
   /** This will only be executed if newVChildren is longer than oldVChildren */
   for (; i < newLen; i++) {
     newVChild = newVChildren[i];
-    parentDom.appendChild(renderDOM(newVChild, nodeDepth + 1, isSvg));
+    parentDom[appendChild](renderDOM(newVChild, nodeDepth + 1, isSvg));
   }
 }
 

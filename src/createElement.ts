@@ -5,6 +5,7 @@ import {
   renderType,
   machinesThatMounted,
 } from './machineRegistry';
+import { context, initial, render } from './constants';
 
 export type TagName = keyof HTMLElementTagNameMap;
 
@@ -175,18 +176,6 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
   return children;
 }
 
-// const nullVNode: TextVNode = {
-//   x: VNodeKind.Text,
-//   t: null,
-//   k: null,
-//   a: {
-//     n: '',
-//   },
-//   c: null,
-//   d: null,
-//   i: null,
-// };
-
 /** createElement */
 export function b<Props extends PropsArg>(
   type: SFC<Props> | MachineComponent<Props> | MemoComponent<Props> | TagName,
@@ -223,30 +212,14 @@ export function b<Props extends PropsArg>(
         if (!existingInstance) {
           const spec = type(mProps);
 
-          const initialContext = spec.context ? spec.context(mProps) : {};
+          const initialContext = spec[context] ? spec[context](mProps) : {};
 
           const initialState =
-            typeof spec.initial === 'function'
-              ? spec.initial(mProps)
-              : spec.initial;
+            typeof spec[initial] === 'function'
+              ? spec[initial](mProps)
+              : spec[initial];
 
           machinesThatMounted.add(instanceId);
-
-          // spec.onMount && spec.onMount(initialContext); // has been moved to `machineDuty()`
-
-          // const stateHandler = spec.states[initialState];
-
-          // if (process.env.NODE_ENV !== 'production') {
-          //   if (!stateHandler) {
-          //     throw new TypeError(
-          //       `Machine ${instanceId} does not specify behavior for state: ${initialState}`
-          //     );
-          //   }
-          // }
-
-          // /** call onEntry for initial state */
-          // stateHandler.onEntry &&
-          //   stateHandler.onEntry(initialContext, { type: 'MOUNT' }, instanceId);
 
           const kids = processChildren(children);
           const child = spec.render(
@@ -299,7 +272,7 @@ export function b<Props extends PropsArg>(
 
             // not a leaf, or it is a leaf that has changed! rerender
             const kids = processChildren(children);
-            const child = spec.render(
+            const child = spec[render](
               existingInstance.st,
               existingInstance.x,
               existingInstance.id,

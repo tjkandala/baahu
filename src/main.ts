@@ -16,6 +16,7 @@ import {
   renderType,
   machineDuty,
 } from './machineRegistry';
+import { setTO, render, clear } from './constants';
 
 let isTransitioning = false;
 
@@ -270,7 +271,7 @@ export function emit(
 
     // the machine instance may not exist anymore (if an ancestor node stopped rendering it, for example)
     if (machInst) {
-      let vNode: VNode | null = machInst.s.render(
+      let vNode: VNode | null = machInst.s[render](
         machInst.st,
         machInst.x,
         machInst.id,
@@ -374,7 +375,7 @@ export function linkTo(path: string, state: any = null): void {
   /** wait for transitions/rerenders to complete. this logic is only in place because of the
    * possibility that a state transition could trigger a redirect. not really a good pattern,
    * but should be supported/behave in the expected manner. */
-  isTransitioning ? setTimeout(() => link(path, state), 0) : link(path, state);
+  isTransitioning ? setTO(() => link(path, state), 0) : link(path, state);
 }
 
 /** link component */
@@ -424,7 +425,7 @@ export function mount(
   rootComponent: MachineComponent | SFC,
   $target: HTMLElement
 ): HTMLElement {
-  machineRegistry.clear();
+  machineRegistry[clear]();
   // have to render the whole tree on mount ofc, so making it behave like a route event works!
   renderType.t = 'r';
   const vNode: VNode = b(rootComponent, {});

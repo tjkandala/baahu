@@ -1,6 +1,7 @@
 import { MachineSpec } from './component';
 import { MachineVNode } from './createElement';
 import { VNode } from '.';
+import { clear } from './constants';
 
 export type MachineInstance = {
   id: string;
@@ -68,8 +69,8 @@ export function machineDuty() {
       stateHandler.entry && stateHandler.entry(mInst.x, { type: 'MOUNT' }, id);
     }
   }
-  machinesThatMounted.clear();
-  machinesThatTransitioned.clear();
+  machinesThatMounted[clear]();
+  machinesThatTransitioned[clear]();
 }
 
 /**
