@@ -46,7 +46,7 @@ Baahu is a small zero-dependency [Moore machine-based](https://en.wikipedia.org/
 
 Everything you need to know about Baahu is in the [docs](https://baahu.dev/docs/introduction)!
 
-[Code Sandbox template](https://codesandbox.io/s/hello-baahu-2zzv7?file=/src/index.tsx)
+[Try it out live on Code Sandbox!](https://codesandbox.io/s/hello-baahu-2zzv7?file=/src/index.tsx)
 
 ## Example Components
 
