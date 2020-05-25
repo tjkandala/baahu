@@ -1,5 +1,3 @@
-import { decodeURIComp, slice, split } from '../constants';
-
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 class RTNode<T> {
   /**
@@ -32,6 +30,8 @@ export type Params = {
   [name: string]: string;
 };
 
+const decodeURIComp = decodeURIComponent;
+
 export class RouTrie<T = () => unknown> {
   /** root */
   r: RTNode<T>;
@@ -46,7 +46,7 @@ export class RouTrie<T = () => unknown> {
   /** insert */
   i(path: string, handler: T): void {
     let node = this.r,
-      routes = path[0] === '/' ? path[slice](1)[split]('/') : path[split]('/'),
+      routes = path[0] === '/' ? path.slice(1).split('/') : path.split('/'),
       /** have to use this placeholder node bc typescript
        * can't ensure that a node exists in children even
        * after checking node.children.has(key)! */
@@ -72,7 +72,7 @@ export class RouTrie<T = () => unknown> {
       switch (prefix) {
         case ':':
           /** name of the param */
-          paramName = route[slice](1);
+          paramName = route.slice(1);
 
           if (node.p) {
             /** this will rename the param name if it has changed...
@@ -117,7 +117,7 @@ export class RouTrie<T = () => unknown> {
     if (cached) return cached;
 
     let node = this.r,
-      routes = path[0] === '/' ? path[slice](1)[split]('/') : path[split]('/'),
+      routes = path[0] === '/' ? path.slice(1).split('/') : path.split('/'),
       /** have to use this placeholder node bc typescript
        * can't ensure that a node exists in children even
        * after checking node.children.has(key)! */
@@ -145,7 +145,7 @@ export class RouTrie<T = () => unknown> {
         } else if (node.wc) {
           // this might have a wildcard/catch-all
           node = node.wc;
-          params['wildcard'] = decodeURIComp(routes[slice](i).join('/'));
+          params['wildcard'] = decodeURIComp(routes.slice(i).join('/'));
           // stop iteration here, you wouldn't want to match a route after a wildcard
           // if there's no route handler, return undefined
           return node.h ? { h: node.h, p: params } : void 0;
@@ -156,7 +156,7 @@ export class RouTrie<T = () => unknown> {
                 h: this.r.h,
                 p: {
                   wildcard: decodeURIComp(
-                    path[0] === '/' ? path[slice](1) : path
+                    path[0] === '/' ? path.slice(1) : path
                   ),
                 },
               }

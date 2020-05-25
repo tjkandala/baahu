@@ -1,7 +1,6 @@
 import { b, VNode, PropsArg } from './createElement';
 import { renderDOM } from './renderDOM';
 import { machineDuty } from './machineRegistry';
-import { appendChild, remove, setTO } from './constants';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -63,12 +62,12 @@ export function lazy<Props>(
 
       if (!startedLoading) {
         fallback &&
-          setTO(() => {
+          setTimeout(() => {
             if (!cache) {
               // const $fallback = renderDOM(fallback);
               renderDOM(fallback, root.h! + 1);
               if (root.d && fallback.d) {
-                root.d[appendChild](fallback.d);
+                root.d.appendChild(fallback.d);
                 root.c = [fallback];
                 renderedFallback = true;
               }
@@ -88,8 +87,8 @@ export function lazy<Props>(
             const $dom = renderDOM(vNode, root.h! + 1);
 
             // 2 ops instead of one (replace), but shorter code!
-            renderedFallback && fallback && fallback.d && fallback.d[remove]();
-            root.d && root.d[appendChild]($dom);
+            renderedFallback && fallback && fallback.d && fallback.d.remove();
+            root.d && root.d.appendChild($dom);
 
             machineDuty();
           })
@@ -100,11 +99,8 @@ export function lazy<Props>(
               // append dom
               const $dom = renderDOM(onError, root.h! + 1);
 
-              renderedFallback &&
-                fallback &&
-                fallback.d &&
-                fallback.d[remove]();
-              root.d && root.d[appendChild]($dom);
+              renderedFallback && fallback && fallback.d && fallback.d.remove();
+              root.d && root.d.appendChild($dom);
             }
           });
         startedLoading = true;

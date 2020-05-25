@@ -5,7 +5,6 @@ import {
   renderType,
   machinesThatMounted,
 } from './machineRegistry';
-import { context, initial, render } from './constants';
 
 export type TagName = keyof HTMLElementTagNameMap;
 
@@ -212,12 +211,12 @@ export function b<Props extends PropsArg>(
         if (!existingInstance) {
           const spec = type(mProps);
 
-          const initialContext = spec[context] ? spec[context](mProps) : {};
+          const initialContext = spec.context ? spec.context(mProps) : {};
 
           const initialState =
-            typeof spec[initial] === 'function'
-              ? spec[initial](mProps)
-              : spec[initial];
+            typeof spec.initial === 'function'
+              ? spec.initial(mProps)
+              : spec.initial;
 
           machinesThatMounted.add(instanceId);
 
@@ -272,7 +271,7 @@ export function b<Props extends PropsArg>(
 
             // not a leaf, or it is a leaf that has changed! rerender
             const kids = processChildren(children);
-            const child = spec[render](
+            const child = spec.render(
               existingInstance.st,
               existingInstance.x,
               existingInstance.id,

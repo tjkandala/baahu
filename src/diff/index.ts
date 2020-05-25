@@ -3,13 +3,6 @@ import { renderDOM } from '../renderDOM';
 import { diffProps } from './props';
 import { b } from '../createElement';
 import { renderType, machineRegistry } from '../machineRegistry';
-import {
-  appendChild,
-  TypedArray,
-  replaceChild,
-  insertBefore,
-  remove,
-} from '../constants';
 
 export function diff(
   oldVNode: VNode,
@@ -26,11 +19,10 @@ export function diff(
   /** there is no node in the new tree corresponding
    * to the old tree, so remove node */
   if (!newVNode) {
-    if (oldVNode.x === VNodeKind.M) {
-      oldVNode.c.d && oldVNode.c.d[remove]();
-    } else {
-      oldVNode.d && oldVNode.d[remove]();
-    }
+    // dom node "bubbles up" to closest non-element VNode, so every
+    // node will have dom
+    oldVNode.d!.remove();
+
     safelyRemoveVNode(oldVNode);
     return;
   }
@@ -196,7 +188,7 @@ function replace(
   const $new = renderDOM(newVNode, nodeDepth, isSvg);
   if (parentDom) {
     // this might be an unneccesary test, check it. just make sure every node has to have a valid .d at diff time
-    parentDom[replaceChild]($new, oldVNode.d as HTMLElement);
+    parentDom.replaceChild($new, oldVNode.d as HTMLElement);
   } else {
     /**
      * this branch is necessary for machine node diffing,
@@ -206,7 +198,7 @@ function replace(
     if ($d) {
       const $parent = $d.parentElement;
 
-      $parent && $parent[replaceChild]($new, $d);
+      $parent && $parent.replaceChild($new, $d);
     }
   }
 
@@ -272,6 +264,8 @@ function unmountMachine(idToDelete: string) {
     machineRegistry.delete(idToDelete);
   }
 }
+
+const TypedArray = Int32Array;
 
 /**
  *
@@ -384,8 +378,8 @@ function keyedDiffChildren(
       $node = renderDOM(newVChildren[newStart], nodeDepth + 1, isSvg);
 
       oldStart >= oldLen
-        ? parentDom[appendChild]($node)
-        : parentDom[insertBefore]($node, oldVChildren[oldStart].d);
+        ? parentDom.appendChild($node)
+        : parentDom.insertBefore($node, oldVChildren[oldStart].d);
 
       newStart++;
     }
@@ -404,9 +398,9 @@ function keyedDiffChildren(
     while (oldStart <= oldEnd) {
       oldVNode = oldVChildren[oldStart];
 
-      oldVNode.x === VNodeKind.M
-        ? oldVNode.c.d![remove]()
-        : oldVNode.d![remove]();
+      // dom node "bubbles up" to closest non-element VNode, so every
+      // node will have dom
+      oldVNode.d!.remove();
       // we can assert that dom exists because it is only null before "renderDOM",
       // which surely would have been run before diffing
 
@@ -421,7 +415,7 @@ function keyedDiffChildren(
   newChildrenLeft = newEnd - newStart + 1;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const keyIndex = new Map<any, number>(),
-    sources = new Int32Array(newChildrenLeft);
+    sources = new TypedArray(newChildrenLeft);
 
   /** Iterate over remaining newChildren (left to right),
    * storing each child's pos/index (in the new array) by its key
@@ -458,9 +452,9 @@ function keyedDiffChildren(
       pos = pos < indexInNewChildren ? indexInNewChildren : movedNum;
       sources[indexInNewChildren - newStart] = i;
     } else {
-      oldVNode.x === VNodeKind.M
-        ? oldVNode.c.d![remove]()
-        : oldVNode.d![remove]();
+      // dom node "bubbles up" to closest non-element VNode, so every
+      // node will have dom
+      oldVNode.d!.remove();
       // we can assert that dom exists because it is only null before "renderDOM",
       // which surely would have been run before diffing
 
@@ -515,8 +509,8 @@ function keyedDiffChildren(
           $node = renderDOM(newVNode, nodeDepth + 1, isSvg);
 
           $nextNode
-            ? parentDom[insertBefore]($node, $nextNode)
-            : parentDom[appendChild]($node);
+            ? parentDom.insertBefore($node, $nextNode)
+            : parentDom.appendChild($node);
 
           $nextNode = $node;
           continue;
@@ -531,8 +525,8 @@ function keyedDiffChildren(
 
           if (newVNode.d) {
             $nextNode
-              ? parentDom[insertBefore](newVNode.d, $nextNode)
-              : parentDom[appendChild](newVNode.d);
+              ? parentDom.insertBefore(newVNode.d, $nextNode)
+              : parentDom.appendChild(newVNode.d);
 
             $nextNode = newVNode.d;
           }
@@ -559,8 +553,8 @@ function keyedDiffChildren(
           $node = renderDOM(newVNode, nodeDepth + 1, isSvg);
 
           $nextNode
-            ? parentDom[insertBefore]($node, $nextNode)
-            : parentDom[appendChild]($node);
+            ? parentDom.insertBefore($node, $nextNode)
+            : parentDom.appendChild($node);
 
           $nextNode = $node;
           continue;
@@ -694,7 +688,7 @@ function diffChildren(
   /** This will only be executed if newVChildren is longer than oldVChildren */
   for (; i < newLen; i++) {
     newVChild = newVChildren[i];
-    parentDom[appendChild](renderDOM(newVChild, nodeDepth + 1, isSvg));
+    parentDom.appendChild(renderDOM(newVChild, nodeDepth + 1, isSvg));
   }
 }
 
