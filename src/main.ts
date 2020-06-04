@@ -373,8 +373,11 @@ function link(path: string, state: any = null): void {
 export function linkTo(path: string, state: any = null): void {
   /** wait for transitions/rerenders to complete. this logic is only in place because of the
    * possibility that a state transition could trigger a redirect. not really a good pattern,
-   * but should be supported/behave in the expected manner. */
-  isTransitioning ? setTimeout(() => link(path, state), 0) : link(path, state);
+   * but should be supported/behave in the expected manner.
+   *
+   * NOTE: this was originally `setTimeout`, but queuing a microtask prevents
+   * the browser from rendering/painting twice for what is essentially one user event */
+  isTransitioning ? queueMicrotask(() => link(path, state)) : link(path, state);
 }
 
 /** link component */
