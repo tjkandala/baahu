@@ -177,6 +177,11 @@ function processChildren(childrenArg: ChildrenArg): VNode[] {
 
 /** createElement */
 export function b<Props extends PropsArg>(
+  type: TagName,
+  props: Props,
+  ...children: ChildrenArg
+): VNode;
+export function b<Props extends PropsArg>(
   type: SFC<Props> | MachineComponent<Props> | MemoComponent<Props> | TagName,
   /** I call them props for everything, but they are really attributes for ELEMENT_NODEs */
   props: (Props & { key?: string | number }) | null | undefined,
