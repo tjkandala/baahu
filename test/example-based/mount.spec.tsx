@@ -2,7 +2,40 @@ import { b, mount, emit, SFC } from '../../src';
 import { machine } from '../../src/component';
 // import { machineRegistry } from '../../src/machineRegistry';
 
-describe('mounting', () => {
+describe('machine mounting', () => {
+  test("mount events don't cause infinite loop", () => {
+    /**
+     * regression test:
+     * this used to cause "RangeError: Maximum call stack size exceeded"
+     */
+    const Mach = machine<any>({
+      id: 'test',
+      context: () => ({
+        name: 'anon',
+      }),
+      initial: 'default',
+      mount: () => {
+        emit({ type: 'SET_NAME', name: 'ymous' }, 'test');
+      },
+      when: {
+        default: {
+          on: {
+            SET_NAME: {
+              do: (ctx, e) => (ctx.name = e.name),
+            },
+          },
+        },
+      },
+      render: (_, ctx) => <p>{ctx.name}</p>,
+    });
+
+    mount(Mach, document.body);
+
+    expect(document.body.firstChild?.firstChild?.nodeValue).toBe('ymous');
+  });
+});
+
+describe('app mounting', () => {
   const TestMach = machine({
     id: 'testRoot',
     context: () => ({}),

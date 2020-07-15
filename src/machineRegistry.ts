@@ -49,6 +49,9 @@ export function machineDuty() {
   for (const id of machinesThatMounted) {
     const mInst = machineRegistry.get(id);
     if (mInst) {
+      /** fixes recusive mount event bug (TODO: add test) */
+      machinesThatMounted.delete(id);
+
       const spec = mInst.s;
 
       spec.mount && spec.mount(mInst.x);
