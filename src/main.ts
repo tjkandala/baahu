@@ -351,8 +351,8 @@ function newRoute(): void {
   const vNode: VNode | null = b(currentRootComponent, {});
 
   diff(currentVRoot, vNode, $root, 0);
-  machineDuty();
   currentVRoot = vNode;
+  machineDuty();
 }
 
 window.onpopstate = newRoute;
