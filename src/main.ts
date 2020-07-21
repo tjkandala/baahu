@@ -281,8 +281,8 @@ export function emit(
 
       // machine.v.c.h! -> vnode.h -> node depth
       diff(machInst.v.c, vNode || createTextVNode(''), null, machInst.v.c.h!);
-      machineDuty();
       machInst.v.c = vNode as VNode;
+      machineDuty();
     }
   }
 }
