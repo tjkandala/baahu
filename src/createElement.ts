@@ -29,7 +29,7 @@ export type Props = {
 // DO NOT add optional keys to VNodes! more info: https://mrale.ph/blog/2015/01/11/whats-up-with-monomorphism.html
 // make them all have the same shape, but some values will have different meaning/nulled based on the
 // discriminant, "kind"
-// Also, had to make the property names super short because they can't be minified.
+// Also, had to make the property names super short because they can't be minified. may consider using closure compiler.
 // Hover over the properties to see their full names
 
 type TextVNode = {

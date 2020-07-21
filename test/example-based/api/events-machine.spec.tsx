@@ -1,6 +1,73 @@
 import { machine } from '../../../src/component';
 import { b, emit, mount } from '../../../src';
 
+describe("mount events stale tree", () => {
+  // TODO: better names, finish test!
+  /**
+   * bug: 
+   * Old VTree
+   *      P
+   *     /
+   *    C1
+   * 
+   * New VTree
+   *      P
+   *    /  \
+   *   C1   C2
+   * 
+   * After render and diff, Baahu used to call mount hooks, THEN replaced the machines VTree.
+   * This lead to problems on mount hooks that emitted events on the same machine: Baahu still
+   * diffed against the old VTree, so it created an extra DOM node for C2
+   */
+  // test("mount events don't create extra dom nodes", () => {
+  //   type Data = {key: string, text: string}
+  //   const oldData: Data[] = [{key: "c1", text: "first"}]
+  //   const newData: Data[] = [{key: "c1", text: "first"}, {key: "c2", text: "second"}]
+
+  //   const Root = machine<any>({
+  //     id: "root",
+  //     context: () => ({}),
+  //     initial: "no",
+  //   })
+
+  //   const Mounter = machine<any>({
+  //     id: "mounter",
+  //     context: () => ({}),
+  //     initial: "old",
+  //     when: {
+  //       old: {
+  //         on : {
+  //           TOGGLE: {
+  //             to: "new"
+  //           }
+  //         }
+  //       },
+  //        new: {
+  //          on: {
+  //            TOGGLE: {
+  //              to: "old"
+  //            }
+  //          }
+  //        }
+  //     },
+  //     render:(state) => {
+      
+  //       const vnodes: VNode[] = state === "old" ? oldData.map(datum => <p key={datum.key}>{datum.text}</p>) : newData.map(datum => <p key={datum.key}>{datum.text}</p>)
+
+
+  //     return <div>{vnodes}</div>
+      
+
+    
+  //     }
+  //   })
+
+  //   const $root = mount(Mounter, document.body)
+
+  //   expect(true).toBe(true)
+  // })
+})
+
 describe('real world events', () => {
   type MyState = 'loading' | 'ready' | 'complete';
   type MyEvent = { type: 'FINISHED_LOADING' } | { type: 'PROCESSED_DATA' };
