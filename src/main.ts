@@ -282,9 +282,9 @@ export function emit(
       // machine.v.c.h! -> vnode.h -> node depth
       diff(machInst.v.c, vNode || createTextVNode(''), null, machInst.v.c.h!);
       machInst.v.c = vNode as VNode;
-      machineDuty();
     }
   }
+  machineDuty();
 }
 
 export function router<Props extends PropsArg = any>(
