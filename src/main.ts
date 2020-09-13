@@ -376,7 +376,10 @@ export function linkTo(path: string, state: any = null): void {
    * but should be supported/behave in the expected manner.
    *
    * NOTE: this was originally `setTimeout`, but queuing a microtask prevents
-   * the browser from rendering/painting twice for what is essentially one user event */
+   * the browser from rendering/painting twice for what is essentially one user event
+   * 
+   * TODO: make a small polyfill for queueMicrotask for older browsers
+   *  */
   isTransitioning ? queueMicrotask(() => link(path, state)) : link(path, state);
 }
 
